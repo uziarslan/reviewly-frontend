@@ -182,3 +182,10 @@ export const TwoToneStarIcon = ({ className = "w-6 h-6" }) => (
     <path opacity="0.4" d="M12 3C14.0361 3 14.2298 6.54652 15.442 7.79957C16.6531 9.05263 20.4229 7.61992 20.9454 9.84403C21.4679 12.0693 18.0787 12.8243 17.6596 14.7334C17.2405 16.6426 19.3108 19.3249 17.5408 20.6598C15.7709 21.9936 13.8656 18.9747 12 18.9747" stroke="#FFC92A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
+
+/** Contact form – category dropdown chevron. */
+export const MultiArrowDropdownIcon = ({ className = "w-6 h-6" }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M7 9.5L12 14.5L17 9.5H7Z" fill="#6C737F" />
+  </svg>
+);
