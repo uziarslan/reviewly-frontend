@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Home from './pages/Home';
 import Pricing from './pages/Pricing';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
@@ -17,7 +18,7 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Navigate to="/pricing" replace />} />
+        <Route path="/" element={<Home />} />
         <Route path="/pricing" element={<Pricing />} />
       </Routes>
     </Router>

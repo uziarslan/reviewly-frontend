@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import logo from '../Assets/logo.png';
 
@@ -9,8 +9,13 @@ const navLinkClass = ({ isActive }) =>
       : 'text-[#6C737F] border-transparent hover:text-[#6E43B9]'
   }`;
 
+const SCROLL_UP_THRESHOLD = 10;
+const TOP_THRESHOLD = 80;
+
 const Header = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [headerVisible, setHeaderVisible] = useState(true);
+  const lastScrollY = useRef(0);
 
   useEffect(() => {
     if (drawerOpen) {
@@ -23,13 +28,34 @@ const Header = () => {
     };
   }, [drawerOpen]);
 
+  useEffect(() => {
+    const handleScroll = () => {
+      const current = window.scrollY ?? window.pageYOffset;
+      if (current <= TOP_THRESHOLD) {
+        setHeaderVisible(true);
+      } else if (current < lastScrollY.current - SCROLL_UP_THRESHOLD) {
+        setHeaderVisible(true);
+      } else if (current > lastScrollY.current) {
+        setHeaderVisible(false);
+      }
+      lastScrollY.current = current;
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   return (
-    <header className="bg-white border-b border-gray-100">
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-[104px]">
+    <>
+      <header
+        className={`fixed top-0 left-0 right-0 z-30 bg-white border-b border-gray-100 transition-transform duration-300 ease-out ${
+          headerVisible ? 'translate-y-0' : '-translate-y-full'
+        }`}
+      >
+      <div className="max-w-[1440px] mx-auto px-3 py-2 sm:px-6 md:py-0 lg:px-8">
+        <div className="flex justify-between items-center h-14 md:h-[104px]">
           {/* Logo */}
           <Link to="/" className="flex items-center">
-            <img src={logo} alt="Reviewly" width={150} height={56} className="h-[56px] w-[150px] object-contain" />
+            <img src={logo} alt="Reviewly" width={150} height={56} className="h-9 w-auto max-w-[110px] object-contain md:h-[56px] md:w-[150px] md:max-w-none" />
           </Link>
 
           {/* Desktop Navigation */}
@@ -58,7 +84,7 @@ const Header = () => {
               onClick={() => setDrawerOpen(true)}
               className="md:hidden p-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
             >
-              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
@@ -84,7 +110,7 @@ const Header = () => {
         aria-modal="true"
         aria-label="Navigation menu"
       >
-        <div className="flex justify-between items-center h-[104px] px-6 border-b border-gray-100">
+        <div className="flex justify-between items-center h-14 px-6 border-b border-gray-100">
           <span className="text-lg font-semibold text-gray-900">Menu</span>
           <button
             type="button"
@@ -115,6 +141,9 @@ const Header = () => {
         </div>
       </div>
     </header>
+      {/* Spacer so content doesn't jump when header is fixed */}
+      <div className="h-[72px] md:h-[104px] w-full" aria-hidden="true" />
+    </>
   );
 };
 
