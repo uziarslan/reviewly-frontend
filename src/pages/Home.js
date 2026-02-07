@@ -266,7 +266,7 @@ const Home = () => {
                   <img src={heroImage1} alt="" className="w-full h-full max-w-[270.86px] max-h-[344.68px] object-cover" />
                 </div>
                 {/* Bottom circular image - woman with tablet - offset so it triggers on load with hero (not after scroll) */}
-                <div className="absolute bottom-0 left-0" data-aos="fade-up" data-aos-duration="400" data-aos-delay="0" data-aos-offset="320">
+                <div className="absolute bottom-0 left-0" data-aos="fade-up" data-aos-duration="400" data-aos-delay="0" data-aos-offset="500">
                   <img src={heroImage2} alt="" className="w-full h-full max-w-[349.6px] max-h-[345.53px] object-cover" />
                 </div>
 
