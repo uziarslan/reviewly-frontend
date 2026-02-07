@@ -262,7 +262,7 @@ const Home = () => {
               {/* Right: Circular images, speech bubbles, decorative icons - each with its own AOS */}
               <div className="relative hidden lg:block min-h-[544.53px]">
                 {/* Top circular image - man with phone */}
-                <div className="absolute top-[3px] right-0" data-aos="fade-left" data-aos-duration="400" data-aos-delay="0">
+                <div className="absolute top-[3px] right-0" data-aos="fade-down" data-aos-duration="400" data-aos-delay="0">
                   <img src={heroImage1} alt="" className="w-full h-full max-w-[270.86px] max-h-[344.68px] object-cover" />
                 </div>
                 {/* Bottom circular image - woman with tablet */}
@@ -271,10 +271,10 @@ const Home = () => {
                 </div>
 
                 {/* Speech bubbles - man (white), tails point down-left toward circle */}
-                <div className="absolute top-0 left-[42.6px] max-w-[393px] bg-white py-[8px] px-[16px] rounded-tl-[15px] rounded-tr-[15px] rounded-br-[3px] rounded-bl-[15px]" data-aos="fade-right" data-aos-duration="400" data-aos-delay="0">
+                <div className="absolute top-0 left-[42.6px] max-w-[393px] bg-white py-[8px] px-[16px] rounded-tl-[15px] rounded-tr-[15px] rounded-br-[3px] rounded-bl-[15px]" data-aos="fade-up" data-aos-duration="400" data-aos-delay="0">
                   <p className="font-roboto text-[17px] font-regular text-[#0F172A] m-0">May mura nang alternative sa review centers!</p>
                 </div>
-                <div className="absolute top-[58px] left-[134.6px] max-w-[301px] bg-white py-[8px] px-[16px] rounded-tl-[15px] rounded-tr-[15px] rounded-br-[3px] rounded-bl-[15px]" data-aos="fade-right" data-aos-duration="400" data-aos-delay="0">
+                <div className="absolute top-[58px] left-[134.6px] max-w-[301px] bg-white py-[8px] px-[16px] rounded-tl-[15px] rounded-tr-[15px] rounded-br-[3px] rounded-bl-[15px]" data-aos="fade-up" data-aos-duration="400" data-aos-delay="0">
                   <p className="font-roboto text-[17px] font-regular text-[#0F172A] m-0">May exam result AI evaluation pa!</p>
                 </div>
                 {/* Speech bubbles - woman (yellow), tails point down-right toward circle */}
@@ -306,7 +306,7 @@ const Home = () => {
               {/* Left: 10-image collage. Tailwind w/h; responsive below lg, desktop exact at lg. Shadow via class. */}
               <div className="flex flex-row gap-2 sm:gap-3 md:gap-[10px] lg:gap-[15.5px] w-max max-w-full overflow-hidden" aria-hidden>
                 <div className="flex flex-col gap-2 sm:gap-3 md:gap-[10px] lg:gap-[15.5px] justify-center items-end">
-                  <div data-aos="fade-right" data-aos-duration="400" data-aos-delay="0">
+                  <div data-aos="fade-up" data-aos-duration="400" data-aos-delay="0">
                     <img src={whyImg1} alt="" className="object-cover rounded-lg w-[75px] h-[112px] sm:w-[93px] sm:h-[140px] md:w-[109px] md:h-[164px] lg:w-[124.23529815673828px] lg:h-[186.1818084716797px] shadow-why-collage" />
                   </div>
                   <div data-aos="fade-down" data-aos-duration="400" data-aos-delay="0">
@@ -317,7 +317,7 @@ const Home = () => {
                   <div data-aos="fade-up" data-aos-duration="400" data-aos-delay="0">
                     <img src={whyImg3} alt="" className="object-cover rounded-lg w-[75px] h-[123px] sm:w-[93px] sm:h-[148px] md:w-[109px] md:h-[164px] lg:w-[124.23529815673828px] lg:h-[205.5757598876953px] shadow-why-collage" />
                   </div>
-                  <div data-aos="fade-left" data-aos-duration="400" data-aos-delay="0">
+                  <div data-aos="fade-down" data-aos-duration="400" data-aos-delay="0">
                     <img src={whyImg4} alt="" className="object-cover rounded-lg w-[75px] h-[100px] sm:w-[93px] sm:h-[125px] md:w-[109px] md:h-[150px] lg:w-[124.23529815673828px] lg:h-[166.78787231445312px] shadow-why-collage" />
                   </div>
                   <div data-aos="fade-down" data-aos-duration="400" data-aos-delay="0">
@@ -325,13 +325,13 @@ const Home = () => {
                   </div>
                 </div>
                 <div className="flex flex-col gap-2 sm:gap-3 md:gap-[10px] lg:gap-[15.5px] justify-center">
-                  <div data-aos="fade-right" data-aos-duration="400" data-aos-delay="0">
+                  <div data-aos="fade-up" data-aos-duration="400" data-aos-delay="0">
                     <img src={whyImg6} alt="" className="object-cover rounded-lg w-[75px] h-[93px] sm:w-[93px] sm:h-[116px] md:w-[109px] md:h-[136px] lg:w-[124.23529815673828px] lg:h-[155.15151977539062px] shadow-why-collage" />
                   </div>
                   <div data-aos="fade-up" data-aos-duration="400" data-aos-delay="0">
                     <img src={whyImg7} alt="" className="object-cover rounded-lg w-[75px] h-[100px] sm:w-[93px] sm:h-[124px] md:w-[109px] md:h-[149px] lg:w-[124.23529815673828px] lg:h-[165.8181915283203px] shadow-why-collage" />
                   </div>
-                  <div data-aos="fade-left" data-aos-duration="400" data-aos-delay="0">
+                  <div data-aos="fade-down" data-aos-duration="400" data-aos-delay="0">
                     <img src={whyImg8} alt="" className="object-cover rounded-lg w-[75px] h-[112px] sm:w-[93px] sm:h-[140px] md:w-[109px] md:h-[164px] lg:w-[124.23529815673828px] lg:h-[186.1818084716797px] shadow-why-collage" />
                   </div>
                 </div>
@@ -339,14 +339,14 @@ const Home = () => {
                   <div data-aos="fade-down" data-aos-duration="400" data-aos-delay="0">
                     <img src={whyImg9} alt="" className="object-cover rounded-lg w-[93px] h-[148px] sm:w-[116px] sm:h-[185px] md:w-[136px] md:h-[217px] lg:w-[155.29412841796875px] lg:h-[247.27273559570312px] shadow-why-collage" />
                   </div>
-                  <div data-aos="fade-right" data-aos-duration="400" data-aos-delay="0">
+                  <div data-aos="fade-up" data-aos-duration="400" data-aos-delay="0">
                     <img src={whyImg10} alt="" className="object-cover rounded-lg w-[75px] h-[96px] sm:w-[93px] sm:h-[120px] md:w-[109px] md:h-[144px] lg:w-[124.23529815673828px] lg:h-[160px] shadow-why-collage" />
                   </div>
                 </div>
               </div>
 
               {/* Right: Heading + plane icon, 3 paragraphs */}
-              <div className="text-left max-w-[589px]" data-aos="fade-left" data-aos-duration="500" data-aos-delay="100">
+              <div className="text-left max-w-[589px]" data-aos="fade-up" data-aos-duration="500" data-aos-delay="100">
                 <div className="flex items-center gap-3 mb-6 sm:mb-8">
                   <h2 className="font-sans text-[#0F172A] font-normal text-[24px] sm:text-[30px] md:text-[36px] lg:text-[40px] leading-tight">
                     Why Reviewly?
