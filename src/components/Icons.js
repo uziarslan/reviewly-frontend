@@ -189,3 +189,92 @@ export const MultiArrowDropdownIcon = ({ className = "w-6 h-6" }) => (
     <path d="M7 9.5L12 14.5L17 9.5H7Z" fill="#6C737F" />
   </svg>
 );
+
+/* ----- Dashboard nav icons ----- */
+
+/** All Reviewers tab – active: purple + yellow; inactive: grey. */
+export const DashAllReviewersIcon = ({ className = "w-5 h-5", active = true }) => (
+  <svg className={className} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M6.08789 12.1449H14.0821" stroke={active ? '#FFC92A' : '#AEAEAE'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    <path fillRule="evenodd" clipRule="evenodd" d="M2.08301 6.49929C2.08301 4.46437 3.12467 2.71675 5.10134 2.31119C7.07717 1.90484 8.57884 2.04532 9.82634 2.71834C11.0747 3.39135 10.7172 4.385 11.9997 5.11437C13.283 5.84453 15.3472 4.7477 16.6955 6.20246C18.1072 7.72548 18.0997 10.0636 18.0997 11.5541C18.0997 17.2175 14.9272 17.6667 10.0913 17.6667C5.25551 17.6667 2.08301 17.2747 2.08301 11.5541V6.49929Z" stroke={active ? '#6E43B9' : '#AEAEAE'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+/** My Library tab. */
+export const DashMyLibraryIcon = ({ className = "w-5 h-5" }) => (
+  <svg className={className} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path opacity="0.4" d="M7.11914 7.68229H12.8316" stroke="black" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    <path fillRule="evenodd" clipRule="evenodd" d="M9.9752 2.08398C4.6527 2.08398 3.75354 2.86065 3.75354 9.10815C3.75354 16.1023 3.6227 17.9173 4.9527 17.9173C6.28187 17.9173 8.4527 14.8473 9.9752 14.8473C11.4977 14.8473 13.6685 17.9173 14.9977 17.9173C16.3277 17.9173 16.1969 16.1023 16.1969 9.10815C16.1969 2.86065 15.2977 2.08398 9.9752 2.08398Z" stroke="#AEAEAE" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+/** Account Settings tab. */
+export const DashSettingsIcon = ({ className = "w-5 h-5" }) => (
+  <svg className={className} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path opacity="0.4" fillRule="evenodd" clipRule="evenodd" d="M10.0003 7.91602C11.1511 7.91602 12.0837 8.84862 12.0837 9.99935C12.0837 11.1501 11.1511 12.0827 10.0003 12.0827C8.84959 12.0827 7.91699 11.1501 7.91699 9.99935C7.91699 8.84862 8.84959 7.91602 10.0003 7.91602Z" stroke="#AEAEAE" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    <path fillRule="evenodd" clipRule="evenodd" d="M16.807 6.04252V6.04252C16.2374 5.04898 14.9764 4.70902 13.9908 5.28275C13.1335 5.78076 12.062 5.15763 12.062 4.1608C12.062 3.01415 11.1386 2.08398 10.0001 2.08398V2.08398C8.8617 2.08398 7.93821 3.01415 7.93821 4.1608C7.93821 5.15763 6.8668 5.78076 6.01032 5.28275C5.0239 4.70902 3.76289 5.04898 3.19326 6.04252C2.62446 7.03607 2.96198 8.30619 3.9484 8.87911C4.80488 9.37794 4.80488 10.6234 3.9484 11.1222C2.96198 11.6959 2.62446 12.9661 3.19326 13.9588C3.76289 14.9523 5.0239 15.2923 6.0095 14.7194H6.01032C6.8668 14.2205 7.93821 14.8437 7.93821 15.8405V15.8405C7.93821 16.9872 8.8617 17.9173 10.0001 17.9173V17.9173C11.1386 17.9173 12.062 16.9872 12.062 15.8405V15.8405C12.062 14.8437 13.1335 14.2205 13.9908 14.7194C14.9764 15.2923 16.2374 14.9523 16.807 13.9588C17.3766 12.9661 17.0383 11.6959 16.0527 11.1222H16.0519C15.1954 10.6234 15.1954 9.37794 16.0527 8.87911C17.0383 8.30619 17.3766 7.03607 16.807 6.04252Z" stroke="#AEAEAE" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+/** Help Center tab. */
+export const DashHelpCenterIcon = ({ className = "w-5 h-5" }) => (
+  <svg className={className} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path opacity="0.4" d="M13.283 10.3444H13.2905" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path opacity="0.4" d="M9.94221 10.3444H9.94971" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path opacity="0.4" d="M6.60139 10.3444H6.60889" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path fillRule="evenodd" clipRule="evenodd" d="M15.8929 15.8909C13.3469 18.438 9.57499 18.9883 6.48891 17.561C6.03333 17.3776 3.0846 18.1942 2.44478 17.5552C1.80495 16.9152 2.62232 13.9661 2.43891 13.5105C1.01103 10.4248 1.56208 6.65152 4.10883 4.10526C7.35988 0.852932 12.6418 0.852932 15.8929 4.10526C19.1506 7.36262 19.1439 12.6394 15.8929 15.8909Z" stroke="#AEAEAE" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+/** Dashboard card – bookmark filled (in library), purple. */
+export const BookmarkFilledIcon = ({ className = "w-5 h-5" }) => (
+  <svg className={className} viewBox="0 0 18 23" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path fill-rule="evenodd" clip-rule="evenodd" d="M5.44444 0H12.3C15.3111 0 17.7444 1.18889 17.7778 4.21111V21.0778C17.7778 21.2667 17.7333 21.4556 17.6444 21.6222C17.5 21.8889 17.2556 22.0889 16.9556 22.1778C16.6667 22.2667 16.3444 22.2222 16.0778 22.0667L8.87778 18.4667L1.66667 22.0667C1.50111 22.1544 1.31111 22.2111 1.12222 22.2111C0.5 22.2111 0 21.7 0 21.0778V4.21111C0 1.18889 2.44444 0 5.44444 0ZM4.68889 8.46667H13.0556C13.5333 8.46667 13.9222 8.07667 13.9222 7.58889C13.9222 7.1 13.5333 6.71111 13.0556 6.71111H4.68889C4.21111 6.71111 3.82222 7.1 3.82222 7.58889C3.82222 8.07667 4.21111 8.46667 4.68889 8.46667Z" fill="#6E43B9" />
+  </svg>
+);
+
+/** Dashboard card – bookmark outline (add to library), grey. */
+export const BookmarkOutlineIcon = ({ className = "w-5 h-5" }) => (
+  <svg className={className} viewBox="0 0 18 23" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path fill-rule="evenodd" clip-rule="evenodd" d="M5.44444 0H12.3C15.3111 0 17.7444 1.18889 17.7778 4.21111V21.0778C17.7778 21.2667 17.7333 21.4556 17.6444 21.6222C17.5 21.8889 17.2556 22.0889 16.9556 22.1778C16.6667 22.2667 16.3444 22.2222 16.0778 22.0667L8.87778 18.4667L1.66667 22.0667C1.50111 22.1544 1.31111 22.2111 1.12222 22.2111C0.5 22.2111 0 21.7 0 21.0778V4.21111C0 1.18889 2.44444 0 5.44444 0ZM4.68889 8.46667H13.0556C13.5333 8.46667 13.9222 8.07667 13.9222 7.58889C13.9222 7.1 13.5333 6.71111 13.0556 6.71111H4.68889C4.21111 6.71111 3.82222 7.1 3.82222 7.58889C3.82222 8.07667 4.21111 8.46667 4.68889 8.46667Z" fill="#D5D5D5" />
+  </svg>
+);
+
+/** Search input – magnifying glass (design spec: 18×18, stroke #130F26). */
+export const SearchIcon = ({ className = "w-[18px] h-[18px]" }) => (
+  <svg className={className} viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <circle cx="8.24047" cy="8.24047" r="7.49047" stroke="#130F26" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M13.4502 13.8398L16.3869 16.7689" stroke="#130F26" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+/** Upgrade to Premium button – lock icon (18×21, stroke #421A83). */
+export const LockIcon = ({ className = "w-[18px] h-[21px]" }) => (
+  <svg className={className} viewBox="0 0 18 21" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M13.2206 7.65335V5.50435C13.1896 2.98535 11.1216 0.969353 8.60361 1.00035C6.13661 1.03135 4.14161 3.01735 4.09961 5.48435V7.65335" stroke="#421A83" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M8.66016 12.4062V14.6272" stroke="#421A83" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path fillRule="evenodd" clipRule="evenodd" d="M8.66 7.07422C2.915 7.07422 1 8.64222 1 13.3452C1 18.0492 2.915 19.6172 8.66 19.6172C14.405 19.6172 16.321 18.0492 16.321 13.3452C16.321 8.64222 14.405 7.07422 8.66 7.07422Z" stroke="#421A83" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+/** Exam Details – Important Notes section header (lightning). */
+export const ExamNotesLightningIcon = ({ className = "w-5 h-5" }) => (
+  <svg className={className} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M10.8333 1.66602L2.5 11.666H10L9.16667 18.3327L17.5 8.33268H10L10.8333 1.66602Z" stroke="#6E43B9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+  </svg>
+);
+
+/** Exam page – Time Left info icon (i). */
+export const ExamTimeInfoIcon = ({ className = "w-5 h-5" }) => (
+  <svg className={className} viewBox="0 0 2 10" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M0.875 3.17285C1.357 3.17285 1.75 3.56585 1.75 4.04785V8.46777C1.75 8.94977 1.357 9.34277 0.875 9.34277C0.393 9.34277 0 8.94977 0 8.46777V4.04785C0 3.56585 0.393 3.17285 0.875 3.17285ZM0.884766 0C1.36777 0 1.75977 0.393 1.75977 0.875C1.75977 1.357 1.368 1.75 0.875 1.75C0.396 1.75 0.00488281 1.357 0.00488281 0.875C0.00488281 0.393078 0.399873 0.000126584 0.884766 0Z" fill="#130F26" />
+  </svg>
+);
+
+/** Modal close (X) icon. */
+export const CloseIcon = ({ className = "w-6 h-6" }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M18 6L6 18" stroke="#45464E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M6 6L18 18" stroke="#45464E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
