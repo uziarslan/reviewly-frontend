@@ -169,7 +169,8 @@ function Exam() {
   };
 
   const handleViewResults = () => {
-    // TODO: navigate to results when implemented
+    if (!id) return;
+    navigate(`/dashboard/exam/${id}/results`);
   };
 
   const handlePrev = () => {

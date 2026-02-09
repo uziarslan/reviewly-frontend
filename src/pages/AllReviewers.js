@@ -5,10 +5,29 @@ import DashNav from '../components/DashNav';
 import { CURRENT_REVIEWERS, REVIEWER_LOGO_MAP } from '../data/reviewers';
 import { BookmarkFilledIcon, BookmarkOutlineIcon, SearchIcon, LockIcon } from '../components/Icons';
 
+const LIBRARY_STORAGE_KEY = 'reviewly_library_ids';
+
+function getStoredLibraryIds() {
+  try {
+    const s = localStorage.getItem(LIBRARY_STORAGE_KEY);
+    if (s) {
+      const a = JSON.parse(s);
+      if (Array.isArray(a)) return new Set(a.map(Number).filter(Boolean));
+    }
+  } catch (_) {}
+  return new Set([1]);
+}
+
+function setStoredLibraryIds(ids) {
+  try {
+    localStorage.setItem(LIBRARY_STORAGE_KEY, JSON.stringify([...ids]));
+  } catch (_) {}
+}
+
 const AllReviewers = () => {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
-  const [libraryIds, setLibraryIds] = useState(() => new Set([1])); // First card in library by default
+  const [libraryIds, setLibraryIds] = useState(getStoredLibraryIds);
 
   useEffect(() => {
     AOS.refresh();
@@ -24,6 +43,10 @@ const AllReviewers = () => {
         (card.type && String(card.type).toLowerCase().includes(q))
     );
   }, [search]);
+
+  useEffect(() => {
+    setStoredLibraryIds(libraryIds);
+  }, [libraryIds]);
 
   const toggleLibrary = (id) => {
     setLibraryIds((prev) => {

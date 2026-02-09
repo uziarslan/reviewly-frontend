@@ -192,37 +192,37 @@ export const MultiArrowDropdownIcon = ({ className = "w-6 h-6" }) => (
 
 /* ----- Dashboard nav icons ----- */
 
-/** All Reviewers tab – active: purple + yellow; inactive: grey. */
-export const DashAllReviewersIcon = ({ className = "w-5 h-5", active = true }) => (
+/** All Reviewers tab – inherits link color (active + hover). */
+export const DashAllReviewersIcon = ({ className = "w-5 h-5" }) => (
   <svg className={className} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-    <path d="M6.08789 12.1449H14.0821" stroke={active ? '#FFC92A' : '#AEAEAE'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    <path fillRule="evenodd" clipRule="evenodd" d="M2.08301 6.49929C2.08301 4.46437 3.12467 2.71675 5.10134 2.31119C7.07717 1.90484 8.57884 2.04532 9.82634 2.71834C11.0747 3.39135 10.7172 4.385 11.9997 5.11437C13.283 5.84453 15.3472 4.7477 16.6955 6.20246C18.1072 7.72548 18.0997 10.0636 18.0997 11.5541C18.0997 17.2175 14.9272 17.6667 10.0913 17.6667C5.25551 17.6667 2.08301 17.2747 2.08301 11.5541V6.49929Z" stroke={active ? '#6E43B9' : '#AEAEAE'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M6.08789 12.1449H14.0821" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    <path fillRule="evenodd" clipRule="evenodd" d="M2.08301 6.49929C2.08301 4.46437 3.12467 2.71675 5.10134 2.31119C7.07717 1.90484 8.57884 2.04532 9.82634 2.71834C11.0747 3.39135 10.7172 4.385 11.9997 5.11437C13.283 5.84453 15.3472 4.7477 16.6955 6.20246C18.1072 7.72548 18.0997 10.0636 18.0997 11.5541C18.0997 17.2175 14.9272 17.6667 10.0913 17.6667C5.25551 17.6667 2.08301 17.2747 2.08301 11.5541V6.49929Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
-/** My Library tab. */
+/** My Library tab – inherits link color (active + hover). */
 export const DashMyLibraryIcon = ({ className = "w-5 h-5" }) => (
   <svg className={className} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-    <path opacity="0.4" d="M7.11914 7.68229H12.8316" stroke="black" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    <path fillRule="evenodd" clipRule="evenodd" d="M9.9752 2.08398C4.6527 2.08398 3.75354 2.86065 3.75354 9.10815C3.75354 16.1023 3.6227 17.9173 4.9527 17.9173C6.28187 17.9173 8.4527 14.8473 9.9752 14.8473C11.4977 14.8473 13.6685 17.9173 14.9977 17.9173C16.3277 17.9173 16.1969 16.1023 16.1969 9.10815C16.1969 2.86065 15.2977 2.08398 9.9752 2.08398Z" stroke="#AEAEAE" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    <path opacity="0.4" d="M7.11914 7.68229H12.8316" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    <path fillRule="evenodd" clipRule="evenodd" d="M9.9752 2.08398C4.6527 2.08398 3.75354 2.86065 3.75354 9.10815C3.75354 16.1023 3.6227 17.9173 4.9527 17.9173C6.28187 17.9173 8.4527 14.8473 9.9752 14.8473C11.4977 14.8473 13.6685 17.9173 14.9977 17.9173C16.3277 17.9173 16.1969 16.1023 16.1969 9.10815C16.1969 2.86065 15.2977 2.08398 9.9752 2.08398Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
-/** Account Settings tab. */
+/** Account Settings tab – inherits link color (active + hover). */
 export const DashSettingsIcon = ({ className = "w-5 h-5" }) => (
   <svg className={className} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-    <path opacity="0.4" fillRule="evenodd" clipRule="evenodd" d="M10.0003 7.91602C11.1511 7.91602 12.0837 8.84862 12.0837 9.99935C12.0837 11.1501 11.1511 12.0827 10.0003 12.0827C8.84959 12.0827 7.91699 11.1501 7.91699 9.99935C7.91699 8.84862 8.84959 7.91602 10.0003 7.91602Z" stroke="#AEAEAE" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    <path fillRule="evenodd" clipRule="evenodd" d="M16.807 6.04252V6.04252C16.2374 5.04898 14.9764 4.70902 13.9908 5.28275C13.1335 5.78076 12.062 5.15763 12.062 4.1608C12.062 3.01415 11.1386 2.08398 10.0001 2.08398V2.08398C8.8617 2.08398 7.93821 3.01415 7.93821 4.1608C7.93821 5.15763 6.8668 5.78076 6.01032 5.28275C5.0239 4.70902 3.76289 5.04898 3.19326 6.04252C2.62446 7.03607 2.96198 8.30619 3.9484 8.87911C4.80488 9.37794 4.80488 10.6234 3.9484 11.1222C2.96198 11.6959 2.62446 12.9661 3.19326 13.9588C3.76289 14.9523 5.0239 15.2923 6.0095 14.7194H6.01032C6.8668 14.2205 7.93821 14.8437 7.93821 15.8405V15.8405C7.93821 16.9872 8.8617 17.9173 10.0001 17.9173V17.9173C11.1386 17.9173 12.062 16.9872 12.062 15.8405V15.8405C12.062 14.8437 13.1335 14.2205 13.9908 14.7194C14.9764 15.2923 16.2374 14.9523 16.807 13.9588C17.3766 12.9661 17.0383 11.6959 16.0527 11.1222H16.0519C15.1954 10.6234 15.1954 9.37794 16.0527 8.87911C17.0383 8.30619 17.3766 7.03607 16.807 6.04252Z" stroke="#AEAEAE" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    <path opacity="0.4" fillRule="evenodd" clipRule="evenodd" d="M10.0003 7.91602C11.1511 7.91602 12.0837 8.84862 12.0837 9.99935C12.0837 11.1501 11.1511 12.0827 10.0003 12.0827C8.84959 12.0827 7.91699 11.1501 7.91699 9.99935C7.91699 8.84862 8.84959 7.91602 10.0003 7.91602Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    <path fillRule="evenodd" clipRule="evenodd" d="M16.807 6.04252V6.04252C16.2374 5.04898 14.9764 4.70902 13.9908 5.28275C13.1335 5.78076 12.062 5.15763 12.062 4.1608C12.062 3.01415 11.1386 2.08398 10.0001 2.08398V2.08398C8.8617 2.08398 7.93821 3.01415 7.93821 4.1608C7.93821 5.15763 6.8668 5.78076 6.01032 5.28275C5.0239 4.70902 3.76289 5.04898 3.19326 6.04252C2.62446 7.03607 2.96198 8.30619 3.9484 8.87911C4.80488 9.37794 4.80488 10.6234 3.9484 11.1222C2.96198 11.6959 2.62446 12.9661 3.19326 13.9588C3.76289 14.9523 5.0239 15.2923 6.0095 14.7194H6.01032C6.8668 14.2205 7.93821 14.8437 7.93821 15.8405V15.8405C7.93821 16.9872 8.8617 17.9173 10.0001 17.9173V17.9173C11.1386 17.9173 12.062 16.9872 12.062 15.8405V15.8405C12.062 14.8437 13.1335 14.2205 13.9908 14.7194C14.9764 15.2923 16.2374 14.9523 16.807 13.9588C17.3766 12.9661 17.0383 11.6959 16.0527 11.1222H16.0519C15.1954 10.6234 15.1954 9.37794 16.0527 8.87911C17.0383 8.30619 17.3766 7.03607 16.807 6.04252Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
-/** Help Center tab. */
+/** Help Center tab – inherits link color (active + hover). */
 export const DashHelpCenterIcon = ({ className = "w-5 h-5" }) => (
   <svg className={className} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-    <path opacity="0.4" d="M13.283 10.3444H13.2905" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    <path opacity="0.4" d="M9.94221 10.3444H9.94971" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    <path opacity="0.4" d="M6.60139 10.3444H6.60889" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    <path fillRule="evenodd" clipRule="evenodd" d="M15.8929 15.8909C13.3469 18.438 9.57499 18.9883 6.48891 17.561C6.03333 17.3776 3.0846 18.1942 2.44478 17.5552C1.80495 16.9152 2.62232 13.9661 2.43891 13.5105C1.01103 10.4248 1.56208 6.65152 4.10883 4.10526C7.35988 0.852932 12.6418 0.852932 15.8929 4.10526C19.1506 7.36262 19.1439 12.6394 15.8929 15.8909Z" stroke="#AEAEAE" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    <path opacity="0.4" d="M13.283 10.3444H13.2905" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path opacity="0.4" d="M9.94221 10.3444H9.94971" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path opacity="0.4" d="M6.60139 10.3444H6.60889" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path fillRule="evenodd" clipRule="evenodd" d="M15.8929 15.8909C13.3469 18.438 9.57499 18.9883 6.48891 17.561C6.03333 17.3776 3.0846 18.1942 2.44478 17.5552C1.80495 16.9152 2.62232 13.9661 2.43891 13.5105C1.01103 10.4248 1.56208 6.65152 4.10883 4.10526C7.35988 0.852932 12.6418 0.852932 15.8929 4.10526C19.1506 7.36262 19.1439 12.6394 15.8929 15.8909Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
@@ -278,3 +278,11 @@ export const CloseIcon = ({ className = "w-6 h-6" }) => (
     <path d="M6 6L18 18" stroke="#45464E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
+
+export const PaperIcon = ({ className = "w-5 h-5" }) => (
+  <svg className={className} viewBox="0 0 43 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path opacity="0.4" d="M38.272 17.5525C37.1433 17.5525 35.6481 17.5275 33.7866 17.5275C29.2468 17.5275 25.5139 13.77 25.5139 9.1875V1.1475C25.5139 0.515 25.0089 0 24.3826 0H11.1591C4.98791 0 0 5.065 0 11.2725V38.21C0 44.7225 5.22555 50 11.6739 50H31.3657C37.5146 50 42.5 44.9675 42.5 38.755V18.6775C42.5 18.0425 41.9975 17.53 41.3687 17.5325C40.3118 17.54 39.0444 17.5525 38.272 17.5525" fill="#BEC0CA" />
+    <path opacity="0.4" d="M31.4597 1.41745C30.7122 0.639948 29.4072 1.17495 29.4072 2.25245V8.84495C29.4072 11.6099 31.6847 13.8849 34.4497 13.8849C36.1922 13.9049 38.6122 13.9099 40.6672 13.9049C41.7197 13.9024 42.2547 12.6449 41.5247 11.8849C38.8872 9.14245 34.1647 4.22745 31.4597 1.41745" fill="#BEC0CA" />
+    <path d="M27.2959 32.2314C28.3231 32.2317 29.158 33.0666 29.1582 34.0938C29.1582 35.1211 28.3232 35.9539 27.2959 35.9541H13.6855C12.658 35.9541 11.8252 35.1213 11.8252 34.0938C11.8254 33.0664 12.6582 32.2314 13.6855 32.2314H27.2959ZM22.1475 19.7461C23.1749 19.7461 24.0097 20.581 24.0098 21.6084C24.0098 22.6359 23.175 23.4688 22.1475 23.4688H13.6855C12.658 23.4688 11.8252 22.6359 11.8252 21.6084C11.8253 20.581 12.6581 19.7461 13.6855 19.7461H22.1475Z" fill="#BEC0CA" />
+  </svg>
+)

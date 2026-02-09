@@ -16,7 +16,7 @@ const TAB_INACTIVE = 'text-[#6C737F] hover:text-[#6E43B9]';
 const TABS = [
   { to: '/dashboard/all-reviewers', label: 'All Reviewers', Icon: DashAllReviewersIcon, end: true },
   { to: '/dashboard/library', label: 'My Library', Icon: DashMyLibraryIcon, end: true },
-  { to: '/dashboard/settings', label: 'Account Settings', Icon: DashSettingsIcon, end: true },
+  { to: '/dashboard/settings', label: 'Account Settings', Icon: DashSettingsIcon, end: false },
   { to: '/dashboard/help', label: 'Help Center', Icon: DashHelpCenterIcon, end: true },
 ];
 
@@ -54,19 +54,12 @@ function DashNav() {
           return `${base} ${active ? TAB_ACTIVE : TAB_INACTIVE}`;
         }}
       >
-        {({ isActive }) => {
-          const active = getTabActive(label, isActive);
-          return (
-            <>
-              {label === 'All Reviewers' ? (
-                <DashAllReviewersIcon className="w-5 h-5 shrink-0" active={active} />
-              ) : (
-                <Icon className="w-5 h-5 shrink-0" />
-              )}
-              <span>{label}</span>
-            </>
-          );
-        }}
+        {() => (
+          <>
+            <Icon className="w-5 h-5 shrink-0" />
+            <span>{label}</span>
+          </>
+        )}
       </NavLink>
     );
   };
