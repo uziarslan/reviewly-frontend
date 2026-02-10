@@ -61,8 +61,16 @@ const UpdateSubscription = () => {
             <p className="font-inter text-[14px] text-[#6C737F] mb-4">
               Ready to unlock all Reviewly reviewers and mock exams?
             </p>
-            {/* Empty area - add Google Form iframe/embed here */}
-            <div />
+            <iframe
+              title="Reviewly Subscription Form"
+              src="https://docs.google.com/forms/d/e/1FAIpQLSdjAt_XKMwL5HwYMdYWmuSPg-ORsSA20ttJ0gdudtQYrvjMPw/viewform?embedded=true"
+              frameBorder="0"
+              marginHeight="0"
+              marginWidth="0"
+              className="w-full h-[1200px] block"
+            >
+              Loading…
+            </iframe>
           </div>
         </div>
 
