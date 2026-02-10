@@ -57,10 +57,6 @@ const UpdateSubscription = () => {
             data-aos-duration="500"
             data-aos-delay="200"
           >
-            <h3 className="font-inter font-semibold text-[16px] text-[#45464E] mb-2">Reviewly Subscription Form</h3>
-            <p className="font-inter text-[14px] text-[#6C737F] mb-4">
-              Ready to unlock all Reviewly reviewers and mock exams?
-            </p>
             <iframe
               title="Reviewly Subscription Form"
               src="https://docs.google.com/forms/d/e/1FAIpQLSdjAt_XKMwL5HwYMdYWmuSPg-ORsSA20ttJ0gdudtQYrvjMPw/viewform?embedded=true"
