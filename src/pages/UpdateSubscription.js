@@ -52,7 +52,7 @@ const UpdateSubscription = () => {
 
           {/* Google Form Area - Empty placeholder for embed */}
           <div
-            className="bg-white rounded-[12px] py-[40px] px-[29px] mb-[24px] min-h-[1360px]"
+            className="bg-white rounded-[12px] py-6 px-3 md:py-[40px] md:px-[29px] mb-[24px]"
             data-aos="fade-up"
             data-aos-duration="500"
             data-aos-delay="200"
@@ -63,7 +63,7 @@ const UpdateSubscription = () => {
               frameBorder="0"
               marginHeight="0"
               marginWidth="0"
-              className="w-full h-[1200px] block"
+              className="w-full h-[1360px] block"
             >
               Loading…
             </iframe>
@@ -89,8 +89,8 @@ const UpdateSubscription = () => {
           </p>
           <PlanCards />
         </section>
-      </main>
-    </div>
+      </main >
+    </div >
   );
 };
 
