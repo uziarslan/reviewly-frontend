@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import AOS from 'aos';
 import Header from '../components/Header';
@@ -22,11 +22,20 @@ import whyImg7 from '../Assets/why7.png';
 import whyImg8 from '../Assets/why8.png';
 import whyImg9 from '../Assets/why9.png';
 import whyImg10 from '../Assets/why10.png';
-import { CURRENT_REVIEWERS, REVIEWER_LOGO_MAP, COMING_SOON_EXAMS } from '../data/reviewers';
+import { REVIEWER_LOGO_MAP, COMING_SOON_EXAMS } from '../data/reviewers';
+import { reviewerAPI } from '../services/api';
 
 const Home = () => {
+  const [reviewers, setReviewers] = useState([]);
+
   useEffect(() => {
     AOS.refresh();
+  }, []);
+
+  useEffect(() => {
+    reviewerAPI.getAll()
+      .then((res) => { if (res.success) setReviewers(res.data); })
+      .catch(() => {});
   }, []);
 
   return (
@@ -195,33 +204,41 @@ const Home = () => {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[24px] justify-items-center mb-4 sm:mb-6 lg:mb-[32px]">
-              {CURRENT_REVIEWERS.filter((card) => card.status === 'published').map((card, index) => {
-                const logoSrc = REVIEWER_LOGO_MAP[card.logo.filename] ?? card.logo.path;
-                const { details } = card;
+              {reviewers.map((card, index) => {
+                const logoSrc = card.logo?.filename && REVIEWER_LOGO_MAP[card.logo.filename]
+                  ? REVIEWER_LOGO_MAP[card.logo.filename]
+                  : (card.logo?.path ?? null);
+                const details = card.details || {};
                 return (
                   <div
-                    key={card.slug}
+                    key={card._id}
                     className="w-full max-w-[410.67px] min-w-0 bg-white rounded-[12px] p-[24px] text-left shadow-[0px_2px_4px_0px_#00000026]"
                     data-aos="fade-up"
                     data-aos-duration="500"
                     data-aos-delay={100 + index * 50}
                   >
-                    <img src={logoSrc} alt="" className="w-[48px] h-[48px] mb-[16px]" />
+                    {logoSrc ? (
+                      <img src={logoSrc} alt="" className="w-[48px] h-[48px] mb-[16px]" />
+                    ) : (
+                      <div className="w-[48px] h-[48px] rounded bg-[#6E43B9] flex items-center justify-center text-white font-inter font-bold text-xs mb-[16px]">
+                        CSE
+                      </div>
+                    )}
                     <h3 className="font-inter text-[#45464E] font-medium text-[16px] mb-[16px]">
                       {card.title}
                     </h3>
                     <p className="font-inter text-[#64748B] text-[15px] leading-[20px] mb-[16px] font-regular">
-                      <span className="font-semibold">{card.description.short}</span>
+                      <span className="font-semibold">{card.description?.short ?? ''}</span>
                       <br />
-                      {card.description.full}
+                      {card.description?.full ?? ''}
                     </p>
                     <div className="flex flex-wrap items-center gap-[5px] text-sm text-[#0F172A]">
                       <span className="inline-flex items-center gap-1.5 font-inter font-normal not-italic text-[14px] text-[#45464E] mb-0">
-                        📝 {details.items}
+                        📝 {details.items ?? (card.examDetails?.itemsCount ? `${card.examDetails.itemsCount} items` : '—')}
                       </span>
                       <span className="text-[#45464E] font-inter font-normal not-italic text-[14px]">•</span>
                       <span className="inline-flex items-center gap-1.5 font-inter font-normal not-italic text-[14px] text-[#45464E] mb-0">
-                        ⏱️ {details.duration}
+                        ⏱️ {details.duration ?? '—'}
                       </span>
                       {details.passingRate != null && (
                         <>

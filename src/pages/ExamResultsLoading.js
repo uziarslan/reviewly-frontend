@@ -2,75 +2,78 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import AOS from 'aos';
 import DashNav from '../components/DashNav';
-import { getReviewerById, REVIEWER_LOGO_MAP } from '../data/reviewers';
+import { REVIEWER_LOGO_MAP } from '../data/reviewers';
 import { BookmarkOutlineIcon, LockIcon } from '../components/Icons';
-
-/** Set to true for PASSED layout, false for FAILED layout. */
-const MOCK_PASSED = false;
-
-/** Mock result data – replace with API later. */
-const MOCK_RESULT = {
-  takenAt: 'July 18, 2025 | 7:35 PM PST',
-  duration: '3 hours 10 minutes',
-  totalItems: 170,
-  passed: MOCK_PASSED,
-  // FAILED: 121 score, 71.18%; PASSED: 148 score, 87.06%
-  correct: MOCK_PASSED ? 148 : 121,
-  percentage: MOCK_PASSED ? 87.06 : 71.18,
-  passingThreshold: 80,
-  passingScore: 136,
-  breakdown: MOCK_PASSED
-    ? [
-      { subject: 'General Information', items: 20, correct: 19, incorrect: 1, unanswered: 0, score: 90 },
-      { subject: 'Numerical Ability', items: 35, correct: 30, incorrect: 5, unanswered: 0, score: 85.71 },
-      { subject: 'Analytical Ability / Logic', items: 35, correct: 31, incorrect: 4, unanswered: 0, score: 88.57 },
-      { subject: 'Verbal Ability', items: 40, correct: 36, incorrect: 4, unanswered: 0, score: 90 },
-      { subject: 'Clerical Ability', items: 40, correct: 32, incorrect: 8, unanswered: 0, score: 80 },
-    ]
-    : [
-      { subject: 'General Information', items: 20, correct: 18, incorrect: 2, unanswered: 0, score: 90 },
-      { subject: 'Numerical Ability', items: 35, correct: 22, incorrect: 13, unanswered: 0, score: 62.86 },
-      { subject: 'Analytical Ability / Logic', items: 35, correct: 28, incorrect: 7, unanswered: 0, score: 80 },
-      { subject: 'Verbal Ability', items: 40, correct: 32, incorrect: 8, unanswered: 0, score: 80 },
-      { subject: 'Clerical Ability', items: 40, correct: 21, incorrect: 19, unanswered: 0, score: 52.5 },
-    ],
-  strengths: MOCK_PASSED
-    ? [
-      'Philippine Constitution (General Information)',
-      'Verbal Ability (Grammar & Vocabulary)',
-      'Logical Reasoning & Pattern Analysis (Analytical Ability)',
-    ]
-    : ['Philippine Constitution', 'Grammar and Correct Usage', 'Filing & Alphabetizing'],
-  improvements: MOCK_PASSED
-    ? ['Clerical Ability (Data Checking)', 'Numerical Ability (Time, Distance, Work Problems)']
-    : ['Word Problems', 'Number Series', 'Syllogisms', 'Reading Comprehension'],
-};
-
-/** Suggested practice exams (Numerical, Analytical, Verbal). */
-const SUGGESTED_EXAM_IDS = [6, 4, 3];
+import { examAPI, reviewerAPI } from '../services/api';
 
 const ExamResultsLoading = () => {
-  const { id } = useParams();
+  const { attemptId } = useParams();
   const navigate = useNavigate();
-  const reviewer = id ? getReviewerById(id) : null;
-  const exam = reviewer?.examDetails;
+  const [attempt, setAttempt] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [showResults, setShowResults] = useState(false);
+  const [suggestedReviewers, setSuggestedReviewers] = useState([]);
 
   useEffect(() => {
     AOS.refresh();
-  }, [id]);
+  }, [attempt]);
 
+  // Fetch attempt result
   useEffect(() => {
+    if (!attemptId) { setLoading(false); return; }
+    let cancelled = false;
+    async function fetchResult() {
+      try {
+        const res = await examAPI.getResult(attemptId);
+        if (cancelled) return;
+        if (res.success) {
+          setAttempt(res.data);
+          // Fetch suggested practice reviewers
+          try {
+            const revRes = await reviewerAPI.getAll();
+            if (!cancelled && revRes.success) {
+              // Suggest up to 3 practice-type reviewers (excluding current)
+              const suggestions = revRes.data
+                .filter((r) => r.type === 'practice' && r._id !== res.data.reviewer?._id)
+                .slice(0, 3);
+              setSuggestedReviewers(suggestions);
+            }
+          } catch (_) {}
+        }
+      } catch (err) {
+        console.error('Failed to load results:', err);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    fetchResult();
+    return () => { cancelled = true; };
+  }, [attemptId]);
+
+  // Show loading animation for 5 seconds then display results
+  useEffect(() => {
+    if (loading) return;
     const t = setTimeout(() => setShowResults(true), 5000);
     return () => clearTimeout(t);
-  }, []);
+  }, [loading]);
 
-  if (!reviewer || !exam) {
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#F5F4FF]">
+        <DashNav />
+        <main className="max-w-[1440px] mx-auto px-6 sm:px-8 lg:px-20 py-8 flex items-center justify-center">
+          <div className="w-[48px] h-[48px] rounded-full border-[4px] border-[#6E43B9] border-t-transparent animate-spin" />
+        </main>
+      </div>
+    );
+  }
+
+  if (!attempt) {
     return (
       <div className="min-h-screen bg-[#F5F4FF]">
         <DashNav />
         <main className="max-w-[1440px] mx-auto px-6 sm:px-8 lg:px-20 py-8">
-          <p className="font-inter text-[#45464E]">Exam not found.</p>
+          <p className="font-inter text-[#45464E]">Results not found.</p>
           <Link
             to="/dashboard/all-reviewers"
             className="font-inter text-[#6E43B9] hover:underline mt-4 inline-block"
@@ -82,14 +85,38 @@ const ExamResultsLoading = () => {
     );
   }
 
-  const { title } = reviewer;
-  const totalCorrect = MOCK_RESULT.breakdown.reduce((s, r) => s + r.correct, 0);
-  const totalIncorrect = MOCK_RESULT.breakdown.reduce((s, r) => s + r.incorrect, 0);
-  const totalUnanswered = MOCK_RESULT.breakdown.reduce((s, r) => s + r.unanswered, 0);
-  const overallPercentage = MOCK_RESULT.totalItems
-    ? ((totalCorrect / MOCK_RESULT.totalItems) * 100).toFixed(2)
-    : '0.00';
-  const suggestedReviewers = SUGGESTED_EXAM_IDS.map((rid) => getReviewerById(rid)).filter(Boolean);
+  const title = attempt.reviewer?.title || 'Exam';
+  const result = attempt.result || {};
+  const breakdown = result.sectionScores || [];
+  const totalCorrect = result.correct || 0;
+  const totalIncorrect = result.incorrect || 0;
+  const totalUnanswered = result.unanswered || 0;
+  const overallPercentage = result.percentage != null ? result.percentage.toFixed(2) : '0.00';
+  const passingThreshold = attempt.reviewer?.examConfig?.passingThreshold || 80;
+  const passingScore = result.passingScore || Math.ceil((passingThreshold / 100) * (result.totalItems || 0));
+  const passed = result.passed;
+  const strengths = result.strengths || [];
+  const improvements = result.improvements || [];
+  const aiSummary = result.aiSummary || null;
+
+  // Format date
+  const takenAt = attempt.submittedAt
+    ? new Date(attempt.submittedAt).toLocaleString('en-US', {
+        year: 'numeric', month: 'long', day: 'numeric',
+        hour: 'numeric', minute: '2-digit', timeZoneName: 'short',
+      })
+    : '—';
+
+  // Calculate duration
+  const durationMs = attempt.submittedAt && attempt.startedAt
+    ? new Date(attempt.submittedAt) - new Date(attempt.startedAt)
+    : 0;
+  const durationMin = Math.floor(durationMs / 60000);
+  const durationH = Math.floor(durationMin / 60);
+  const durationM = durationMin % 60;
+  const duration = durationH > 0
+    ? `${durationH} hour${durationH !== 1 ? 's' : ''} ${durationM} minute${durationM !== 1 ? 's' : ''}`
+    : `${durationM} minute${durationM !== 1 ? 's' : ''}`;
 
   if (!showResults) {
     return (
@@ -175,10 +202,10 @@ const ExamResultsLoading = () => {
             Result: Civil Service Exam - Professional Level
           </h2>
           <p className="font-inter font-normal text-[16px] text-[#45464E] text-center mb-[4px]">
-            Mock Exam Taken On: {MOCK_RESULT.takenAt}
+            Mock Exam Taken On: {takenAt}
           </p>
           <p className="font-inter font-normal text-[16px] text-[#45464E] text-center mb-[24px]">
-            Exam Duration: {MOCK_RESULT.duration} (or [Your Actual Time Taken] if submitted early)
+            Exam Duration: {duration}
           </p>
 
           {/* OVERALL PERFORMANCE */}
@@ -206,28 +233,28 @@ const ExamResultsLoading = () => {
               <tbody>
                 <tr className="bg-[#FAF9FF]">
                   <td className="py-3 px-2 text-[#45464E] border-t border-l border-[#B0B0B0]">
-                    {MOCK_RESULT.totalItems}
+                    {result.totalItems}
                   </td>
                   <td className="py-3 px-2 text-[#45464E] border-t border-l border-[#B0B0B0]">
-                    {MOCK_RESULT.correct}
+                    {totalCorrect}
                   </td>
                   <td className="py-3 px-2 text-[#45464E] border-t border-l border-[#B0B0B0]">
-                    {MOCK_RESULT.percentage}%
+                    {overallPercentage}%
                   </td>
                   <td
-                    className={`py-3 px-2 border-t border-l border-[#B0B0B0] ${MOCK_RESULT.passed ? 'text-[#06A561]' : 'text-[#F0142F]'
+                    className={`py-3 px-2 border-t border-l border-[#B0B0B0] ${passed ? 'text-[#06A561]' : 'text-[#F0142F]'
                       } font-inter font-bold text-[16px]`}
                   >
-                    {MOCK_RESULT.passed ? 'PASSED' : 'FAILED'}
+                    {passed ? 'PASSED' : 'FAILED'}
                   </td>
                 </tr>
               </tbody>
             </table>
           </div>
           <p className="font-inter font-normal text-[12px] text-[#45464E] text-center mb-[24px]">
-            {MOCK_RESULT.passed
-              ? `You surpassed the ${MOCK_RESULT.passingThreshold}% passing rate with ${MOCK_RESULT.correct}/${MOCK_RESULT.totalItems} correct answers! Excellent work! 🎉`
-              : `Remember: You need at least ${MOCK_RESULT.passingThreshold}% or ${MOCK_RESULT.passingScore}/${MOCK_RESULT.totalItems} correct answers to pass the CSE Professional Level.`}
+            {passed
+              ? `You surpassed the ${passingThreshold}% passing rate with ${totalCorrect}/${result.totalItems} correct answers! Excellent work! 🎉`
+              : `Remember: You need at least ${passingThreshold}% or ${passingScore}/${result.totalItems} correct answers to pass.`}
           </p>
 
           {/* DETAILED PERFORMANCE BREAKDOWN */}
@@ -247,10 +274,10 @@ const ExamResultsLoading = () => {
                 </tr>
               </thead>
               <tbody>
-                {MOCK_RESULT.breakdown.map((row, i) => (
+                {breakdown.map((row, i) => (
                   <tr key={i} className="bg-[#FAF9FF]">
-                    <td className="py-3 px-3 text-[#45464E] border-t border-l border-[#B0B0B0]">{row.subject}</td>
-                    <td className="py-3 px-3 text-[#45464E] border-t border-l border-[#B0B0B0]">{row.items}</td>
+                    <td className="py-3 px-3 text-[#45464E] border-t border-l border-[#B0B0B0]">{row.section}</td>
+                    <td className="py-3 px-3 text-[#45464E] border-t border-l border-[#B0B0B0]">{row.totalItems}</td>
                     <td className="py-3 px-3 text-[#45464E] border-t border-l border-[#B0B0B0]">{row.correct}</td>
                     <td className="py-3 px-3 text-[#45464E] border-t border-l border-[#B0B0B0]">{row.incorrect}</td>
                     <td className="py-3 px-3 text-[#45464E] border-t border-l border-[#B0B0B0]">{row.unanswered}</td>
@@ -259,12 +286,12 @@ const ExamResultsLoading = () => {
                 ))}
                 <tr className="font-inter font-bold text-[14px] bg-[#FAF9FF]">
                   <td className="py-3 px-3 text-[#45464E] border-t border-l border-[#B0B0B0]">TOTAL</td>
-                  <td className="py-3 px-3 text-[#45464E] border-t border-l border-[#B0B0B0]">{MOCK_RESULT.totalItems}</td>
+                  <td className="py-3 px-3 text-[#45464E] border-t border-l border-[#B0B0B0]">{result.totalItems}</td>
                   <td className="py-3 px-3 text-[#45464E] border-t border-l border-[#B0B0B0]">{totalCorrect}</td>
                   <td className="py-3 px-3 text-[#45464E] border-t border-l border-[#B0B0B0]">{totalIncorrect}</td>
                   <td className="py-3 px-3 text-[#45464E] border-t border-l border-[#B0B0B0]">{totalUnanswered}</td>
                   <td
-                    className={`py-3 px-3 font-bold border-t border-l border-[#B0B0B0] ${MOCK_RESULT.passed ? 'text-[#22C55E]' : 'text-[#DC2626]'}`}
+                    className={`py-3 px-3 font-bold border-t border-l border-[#B0B0B0] ${passed ? 'text-[#22C55E]' : 'text-[#DC2626]'}`}
                   >
                     {overallPercentage}%
                   </td>
@@ -280,25 +307,30 @@ const ExamResultsLoading = () => {
           <p className="font-inter font-regular text-[16px] text-[#45464E] text-center mb-6">
             (Based on your performance and our AI&apos;s insights)
           </p>
+          {aiSummary && (
+            <p className="font-inter font-normal text-[16px] text-[#45464E] text-center mb-6 max-w-[820px] mx-auto">
+              {aiSummary}
+            </p>
+          )}
           <div className="flex flex-col gap-[24px] mb-[32px] max-w-[800px] mx-auto">
             <div>
               <h4 className="font-inter font-normal text-[16px] text-[#45464E] mb-3">
-                {MOCK_RESULT.passed ? '🚀 Your Superpowers (Areas You Excelled In!)' : '💪 Your Strengths (Mastered Areas):'}
+                {passed ? '🚀 Your Superpowers (Areas You Excelled In!)' : '💪 Your Strengths (Mastered Areas):'}
               </h4>
               <ul className="list-disc list-inside font-inter font-normal text-[16px] text-[#45464E] space-y-2 pl-4">
-                {MOCK_RESULT.strengths.map((s, i) => (
+                {strengths.map((s, i) => (
                   <li key={i}>{s}</li>
                 ))}
               </ul>
             </div>
             <div>
               <h4 className="font-inter font-normal text-[16px] text-[#45464E] mb-3">
-                {MOCK_RESULT.passed
+                {passed
                   ? '💪 Areas for Further Mastery (Keep Sharpening Your Edge!)'
                   : '⚠️ Areas for Improvement (Focus Next!):'}
               </h4>
               <ul className="list-disc list-inside font-inter font-normal text-[16px] text-[#45464E] space-y-2 pl-4">
-                {MOCK_RESULT.improvements.map((s, i) => (
+                {improvements.map((s, i) => (
                   <li key={i}>{s}</li>
                 ))}
               </ul>
@@ -316,7 +348,7 @@ const ExamResultsLoading = () => {
             </button>
             <button
               type="button"
-              onClick={() => navigate(`/dashboard/exam/${id}/review`)}
+              onClick={() => navigate(`/dashboard/review/${attemptId}`)}
               className="font-inter font-bold text-[14px] text-[#421A83] py-[11.5px] px-4 rounded-[8px] bg-[#FFC92A] hover:opacity-95 transition-opacity"
             >
               Review My Answers
@@ -325,18 +357,20 @@ const ExamResultsLoading = () => {
         </section>
 
         {/* Suggested Practice Exams */}
+        {suggestedReviewers.length > 0 && (
+        <>
         <h3 className="font-inter font-bold text-[14px] text-[#45464E] uppercase tracking-wide mt-10 mb-6 text-left">
           Suggested Practice Exams
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-[24px] justify-items-center">
           {suggestedReviewers.map((card, index) => {
-            const logoSrc = card.logo && REVIEWER_LOGO_MAP[card.logo.filename] != null
+            const logoSrc = card.logo?.filename && REVIEWER_LOGO_MAP[card.logo.filename]
               ? REVIEWER_LOGO_MAP[card.logo.filename]
               : (card.logo?.path ?? null);
             const details = card.details || {};
             return (
               <div
-                key={card.id}
+                key={card._id}
                 className="w-full max-w-[410.67px] min-w-0 bg-white rounded-[12px] p-[24px] text-left shadow-[0px_2px_4px_0px_#00000026] flex flex-col"
                 data-aos="fade-up"
                 data-aos-duration="500"
@@ -410,7 +444,7 @@ const ExamResultsLoading = () => {
                 ) : (
                   <button
                     type="button"
-                    onClick={() => navigate(`/dashboard/exam/${card.id}`)}
+                    onClick={() => navigate(`/dashboard/exam/${card._id}`)}
                     className="max-w-[106px] font-inter font-semibold text-[#421A83] text-[14px] sm:text-[16px] py-3 rounded-[8px] bg-[#FFC92A] hover:opacity-95 transition-opacity"
                   >
                     Take Exam
@@ -420,6 +454,8 @@ const ExamResultsLoading = () => {
             );
           })}
         </div>
+        </>
+        )}
       </main>
     </div>
   );

@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Link, NavLink } from 'react-router-dom';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import logo from '../Assets/logo.png';
+import { useAuth } from '../context/AuthContext';
 
 const navLinkClass = ({ isActive }) =>
   `font-sans text-sm font-semibold px-3 py-2 border-b-[3px] transition-colors block ${
@@ -16,6 +17,31 @@ const Header = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [headerVisible, setHeaderVisible] = useState(true);
   const lastScrollY = useRef(0);
+  const { loginWithGoogle } = useAuth();
+  const navigate = useNavigate();
+
+  const handleGoogleLogin = useCallback(() => {
+    const clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
+    if (!clientId || !window.google) {
+      console.error('Google client not loaded or REACT_APP_GOOGLE_CLIENT_ID missing');
+      return;
+    }
+
+    window.google.accounts.id.initialize({
+      client_id: clientId,
+      callback: async (response) => {
+        try {
+          await loginWithGoogle(response.credential);
+          navigate('/dashboard/all-reviewers');
+        } catch (err) {
+          console.error('Google login failed:', err);
+        }
+      },
+    });
+
+    // Use popup mode
+    window.google.accounts.id.prompt();
+  }, [loginWithGoogle, navigate]);
 
   useEffect(() => {
     if (drawerOpen) {
@@ -67,7 +93,7 @@ const Header = () => {
 
             {/* Desktop Login + Mobile Burger */}
             <div className="flex items-center gap-4">
-              <button className="hidden md:flex items-center justify-center space-x-2 w-[157px] h-[52px] border-2 border-[#6137A8] rounded-lg hover:border-purple-700 transition-colors">
+              <button onClick={handleGoogleLogin} className="hidden md:flex items-center justify-center space-x-2 w-[157px] h-[52px] border-2 border-[#6137A8] rounded-lg hover:border-purple-700 transition-colors">
                 <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
                   <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
@@ -131,7 +157,7 @@ const Header = () => {
           <NavLink to="/contact" className={navLinkClass} onClick={() => setDrawerOpen(false)}>Contact Us</NavLink>
         </nav>
         <div className="p-6 mt-auto border-t border-gray-100 bg-white">
-          <button className="flex items-center justify-center space-x-2 w-full h-[52px] border-2 border-[#6137A8] rounded-lg hover:border-purple-700 transition-colors">
+          <button onClick={handleGoogleLogin} className="flex items-center justify-center space-x-2 w-full h-[52px] border-2 border-[#6137A8] rounded-lg hover:border-purple-700 transition-colors">
             <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
               <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />

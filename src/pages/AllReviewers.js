@@ -1,60 +1,104 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import AOS from 'aos';
 import DashNav from '../components/DashNav';
-import { CURRENT_REVIEWERS, REVIEWER_LOGO_MAP } from '../data/reviewers';
+import { REVIEWER_LOGO_MAP } from '../data/reviewers';
 import { BookmarkFilledIcon, BookmarkOutlineIcon, SearchIcon, LockIcon } from '../components/Icons';
-
-const LIBRARY_STORAGE_KEY = 'reviewly_library_ids';
-
-function getStoredLibraryIds() {
-  try {
-    const s = localStorage.getItem(LIBRARY_STORAGE_KEY);
-    if (s) {
-      const a = JSON.parse(s);
-      if (Array.isArray(a)) return new Set(a.map(Number).filter(Boolean));
-    }
-  } catch (_) {}
-  return new Set([1]);
-}
-
-function setStoredLibraryIds(ids) {
-  try {
-    localStorage.setItem(LIBRARY_STORAGE_KEY, JSON.stringify([...ids]));
-  } catch (_) {}
-}
+import { reviewerAPI, libraryAPI } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 const AllReviewers = () => {
   const navigate = useNavigate();
+  const { isAuthenticated, user } = useAuth();
   const [search, setSearch] = useState('');
-  const [libraryIds, setLibraryIds] = useState(getStoredLibraryIds);
+  const [reviewers, setReviewers] = useState([]);
+  const [libraryIds, setLibraryIds] = useState(new Set());
+  const [loading, setLoading] = useState(true);
+  const [togglingIds, setTogglingIds] = useState(new Set());
+
+  // Fetch reviewers and library on mount
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchData() {
+      try {
+        const [revRes, libRes] = await Promise.all([
+          reviewerAPI.getAll(),
+          isAuthenticated ? libraryAPI.get() : Promise.resolve({ success: true, data: [] }),
+        ]);
+        if (cancelled) return;
+        if (revRes.success) setReviewers(revRes.data);
+        if (libRes.success) {
+          setLibraryIds(new Set(libRes.data.map((r) => r._id)));
+        }
+      } catch (err) {
+        console.error('Failed to load reviewers:', err);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    fetchData();
+    return () => { cancelled = true; };
+  }, [isAuthenticated]);
 
   useEffect(() => {
     AOS.refresh();
-  }, []);
+  }, [reviewers]);
 
   const filtered = useMemo(() => {
-    const list = CURRENT_REVIEWERS.filter((card) => card.status === 'published');
-    if (!search.trim()) return list;
+    if (!search.trim()) return reviewers;
     const q = search.trim().toLowerCase();
-    return list.filter(
+    return reviewers.filter(
       (card) =>
         card.title.toLowerCase().includes(q) ||
         (card.type && String(card.type).toLowerCase().includes(q))
     );
-  }, [search]);
+  }, [search, reviewers]);
 
-  useEffect(() => {
-    setStoredLibraryIds(libraryIds);
-  }, [libraryIds]);
-
-  const toggleLibrary = (id) => {
+  const toggleLibrary = useCallback(async (id) => {
+    if (togglingIds.has(id)) return;
+    setTogglingIds((prev) => new Set(prev).add(id));
+    const inLibrary = libraryIds.has(id);
+    // Optimistic update
     setLibraryIds((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
+      if (inLibrary) next.delete(id);
       else next.add(id);
       return next;
     });
+    try {
+      if (inLibrary) {
+        await libraryAPI.remove(id);
+      } else {
+        await libraryAPI.add(id);
+      }
+    } catch (err) {
+      // Revert on error
+      console.error('Library toggle failed:', err);
+      setLibraryIds((prev) => {
+        const next = new Set(prev);
+        if (inLibrary) next.add(id);
+        else next.delete(id);
+        return next;
+      });
+    } finally {
+      setTogglingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }
+  }, [libraryIds, togglingIds]);
+
+  /** Check if user can access a reviewer based on subscription */
+  const canAccessReviewer = (reviewer) => {
+    // Free reviewers are always accessible
+    if (reviewer.access === 'free') return true;
+    
+    // Premium reviewers require authentication and paid subscription
+    if (!isAuthenticated) return false;
+    
+    const userPlan = user?.subscription?.plan || 'free';
+    return ['weekly', 'monthly', 'quarterly'].includes(userPlan);
   };
 
   return (
@@ -83,25 +127,38 @@ const AllReviewers = () => {
           </div>
         </div>
 
+        {loading ? (
+          <div className="flex items-center justify-center py-16">
+            <div className="w-[48px] h-[48px] rounded-full border-[4px] border-[#6E43B9] border-t-transparent animate-spin" />
+          </div>
+        ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-[24px] justify-items-center">
           {filtered.map((card, index) => {
-            const logoSrc = REVIEWER_LOGO_MAP[card.logo.filename] ?? card.logo.path;
-            const { details } = card;
-            const inLibrary = libraryIds.has(card.id);
+            const logoSrc = card.logo?.filename && REVIEWER_LOGO_MAP[card.logo.filename]
+              ? REVIEWER_LOGO_MAP[card.logo.filename]
+              : (card.logo?.path ?? null);
+            const details = card.details || {};
+            const inLibrary = libraryIds.has(card._id);
             return (
               <div
-                key={card.slug}
+                key={card._id}
                 className="w-full max-w-[410.67px] min-w-0 bg-white rounded-[12px] p-[24px] text-left shadow-[0px_2px_4px_0px_#00000026] flex flex-col"
                 data-aos="fade-up"
                 data-aos-duration="500"
                 data-aos-delay={100 + index * 50}
               >
                 <div className="flex items-start justify-between gap-2 mb-4">
-                  <img src={logoSrc} alt="" className="w-[40px] h-[40px] shrink-0 object-cover" />
+                  {logoSrc ? (
+                    <img src={logoSrc} alt="" className="w-[40px] h-[40px] shrink-0 object-cover" />
+                  ) : (
+                    <div className="w-[40px] h-[40px] rounded bg-[#6E43B9] flex items-center justify-center text-white font-inter font-bold text-xs shrink-0">
+                      CSE
+                    </div>
+                  )}
                   <div className="relative group">
                     <button
                       type="button"
-                      onClick={() => toggleLibrary(card.id)}
+                      onClick={() => toggleLibrary(card._id)}
                       className={`p-[7px] rounded-[4px] w-[40px] h-[40px] ${inLibrary ? 'bg-[#7D52CC1A]' : 'bg-[#F4F4F4]'
                         } transition-colors flex items-center justify-center`}
                       aria-label={inLibrary ? 'Remove from library' : 'Add to library'}
@@ -124,17 +181,17 @@ const AllReviewers = () => {
                   {card.title}
                 </h2>
                 <p className="font-inter text-[#64748B] text-[15px] leading-[20px] mb-4 font-normal flex-1">
-                  <span className="font-semibold">{card.description.short}</span>
+                  <span className="font-semibold">{card.description?.short ?? ''}</span>
                   <br />
-                  {card.description.full}
+                  {card.description?.full ?? ''}
                 </p>
                 <div className="flex flex-wrap items-center gap-[5px] text-sm text-[#0F172A] mb-4">
                   <span className="inline-flex items-center gap-1.5 font-inter font-normal not-italic text-[14px] text-[#45464E]">
-                    📝 {details.items}
+                    📝 {details.items ?? (card.examDetails?.itemsCount ? `${card.examDetails.itemsCount} items` : '—')}
                   </span>
                   <span className="text-[#45464E] font-inter font-normal not-italic text-[14px]">•</span>
                   <span className="inline-flex items-center gap-1.5 font-inter font-normal not-italic text-[14px] text-[#45464E]">
-                    ⏱️ {details.duration}
+                    ⏱️ {details.duration ?? '—'}
                   </span>
                   {details.passingRate != null && (
                     <>
@@ -153,18 +210,37 @@ const AllReviewers = () => {
                     </>
                   )}
                 </div>
-                {card.access === 'premium' ? (
-                  <button
-                    type="button"
-                    className="w-[205px] font-inter font-semibold text-[#421A83] text-[14px] sm:text-[16px] py-3 rounded-[8px] bg-[#FFC92A] hover:opacity-95 transition-opacity flex items-center justify-center gap-2"
-                  >
-                    <LockIcon className="w-[18px] h-[21px] shrink-0" />
-                    Upgrade to Premium
-                  </button>
+                {!canAccessReviewer(card) ? (
+                  <div className="flex flex-col items-start gap-2">
+                    <button
+                      type="button"
+                      disabled
+                      className="max-w-[106px] font-inter font-semibold text-[#999999] text-[14px] sm:text-[16px] py-3 rounded-[8px] bg-[#F0F0F0] cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                      <LockIcon className="w-[18px] h-[21px] shrink-0" />
+                      Locked
+                    </button>
+                    {!isAuthenticated && (
+                      <p className="font-inter font-normal text-[12px] text-[#6C737F]">
+                        <Link to="/" className="text-[#6E43B9] font-semibold hover:underline">
+                          Sign in
+                        </Link>
+                        {' '}to access
+                      </p>
+                    )}
+                    {isAuthenticated && (
+                      <p className="font-inter font-normal text-[12px] text-[#6C737F]">
+                        <Link to="/dashboard/settings/update-subscription" className="text-[#6E43B9] font-semibold hover:underline">
+                          Upgrade plan
+                        </Link>
+                        {' '}to access
+                      </p>
+                    )}
+                  </div>
                 ) : (
                   <button
                     type="button"
-                    onClick={() => navigate(`/dashboard/exam/${card.id}`)}
+                    onClick={() => navigate(`/dashboard/exam/${card._id}`)}
                     className="max-w-[106px] font-inter font-semibold text-[#421A83] text-[14px] sm:text-[16px] py-3 rounded-[8px] bg-[#FFC92A] hover:opacity-95 transition-opacity"
                   >
                     Take Exam
@@ -174,6 +250,7 @@ const AllReviewers = () => {
             );
           })}
         </div>
+        )}
       </main>
     </div>
   );

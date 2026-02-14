@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import logo from '../Assets/logo.png';
+import { useAuth } from '../context/AuthContext';
 import {
   DashAllReviewersIcon,
   DashMyLibraryIcon,
@@ -22,8 +23,19 @@ const TABS = [
 
 function DashNav() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const isExamDetailsPage = location.pathname.startsWith('/dashboard/exam/');
   const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/');
+  };
+
+  const initials = user
+    ? `${(user.firstName || '')[0] || ''}${(user.lastName || '')[0] || ''}`.toUpperCase()
+    : '??';
 
   useEffect(() => {
     if (drawerOpen) {
@@ -85,13 +97,26 @@ function DashNav() {
               </svg>
             </button>
             {/* Profile - desktop only (mobile: shown inside drawer) */}
-            <button
-              type="button"
-              aria-label="Profile"
-              className="hidden md:flex w-10 h-10 rounded-full border-2 border-[#6E43B9]/30 bg-gray-100 items-center justify-center overflow-hidden shrink-0"
-            >
-              <span className="text-lg text-[#6E43B9]">👤</span>
-            </button>
+            <div className="hidden md:flex items-center gap-3">
+              <button
+                type="button"
+                aria-label="Profile"
+                className="w-10 h-10 rounded-full border-2 border-[#6E43B9]/30 bg-gray-100 flex items-center justify-center overflow-hidden shrink-0"
+              >
+                {user?.profilePic ? (
+                  <img src={user.profilePic} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                ) : (
+                  <span className="text-sm font-semibold text-[#6E43B9]">{initials}</span>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="font-inter font-medium text-sm text-[#6C737F] hover:text-[#6E43B9] transition-colors"
+              >
+                Logout
+              </button>
+            </div>
           </div>
 
           {/* Bottom tabs - desktop only */}
@@ -136,12 +161,27 @@ function DashNav() {
           {TABS.map((tab) => renderTab(tab, true))}
         </nav>
         <div className="p-4 mt-auto border-t border-[#F2F4F7]">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 rounded-full border-2 border-[#6E43B9]/30 bg-gray-100 flex items-center justify-center overflow-hidden shrink-0">
+              {user?.profilePic ? (
+                <img src={user.profilePic} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+              ) : (
+                <span className="text-sm font-semibold text-[#6E43B9]">{initials}</span>
+              )}
+            </div>
+            <div className="min-w-0">
+              <p className="font-inter text-sm font-semibold text-[#0F172A] truncate">
+                {user?.firstName} {user?.lastName}
+              </p>
+              <p className="font-inter text-xs text-[#6C737F] truncate">{user?.email}</p>
+            </div>
+          </div>
           <button
             type="button"
-            aria-label="Profile"
-            className="w-10 h-10 rounded-full border-2 border-[#6E43B9]/30 bg-gray-100 flex items-center justify-center overflow-hidden"
+            onClick={handleLogout}
+            className="w-full font-inter font-medium text-sm text-[#6C737F] hover:text-[#6E43B9] py-2 border border-[#CFD3D4] rounded-lg transition-colors"
           >
-            <span className="text-lg text-[#6E43B9]">👤</span>
+            Logout
           </button>
         </div>
       </div>

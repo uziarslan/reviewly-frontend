@@ -3,15 +3,36 @@ import { Link } from 'react-router-dom';
 import AOS from 'aos';
 import DashNav from '../components/DashNav';
 import FloatingField from '../components/FloatingField';
+import { useAuth } from '../context/AuthContext';
 
 const AccountSettings = () => {
-  const [firstName, setFirstName] = useState('Jahz');
-  const [lastName, setLastName] = useState('Rojas');
-  const [marketingEmails, setMarketingEmails] = useState(true);
+  const { user, updateUser } = useAuth();
+  const [firstName, setFirstName] = useState(user?.firstName || '');
+  const [lastName, setLastName] = useState(user?.lastName || '');
+  const [marketingEmails, setMarketingEmails] = useState(user?.marketingEmails ?? true);
 
   useEffect(() => {
     AOS.refresh();
   }, []);
+
+  // Sync if user loads late
+  useEffect(() => {
+    if (user) {
+      setFirstName(user.firstName || '');
+      setLastName(user.lastName || '');
+      setMarketingEmails(user.marketingEmails ?? true);
+    }
+  }, [user]);
+
+  const handleSave = async () => {
+    try {
+      await updateUser({ firstName, lastName, marketingEmails });
+    } catch (err) {
+      console.error('Failed to update profile:', err);
+    }
+  };
+
+  const initials = `${(firstName || '')[0] || ''}${(lastName || '')[0] || ''}`.toUpperCase();
 
   return (
     <div className="min-h-screen bg-[#F5F4FF]">
@@ -36,8 +57,12 @@ const AccountSettings = () => {
           <section className="p-6 sm:p-8">
             <div className='flex flex-col gap-[24px] mb-6'>
               <h2 className="font-inter font-semibold text-[16px] text-[#45464E]">General</h2>
-              <div className="w-[64px] h-[64px] rounded-full bg-[#ECE8F3] border-2 border-[#A18DC3] flex items-center justify-center shrink-0">
-                <span className="font-inter font-semibold text-[32px] text-[#431C86]">JR</span>
+              <div className="w-[64px] h-[64px] rounded-full bg-[#ECE8F3] border-2 border-[#A18DC3] flex items-center justify-center shrink-0 overflow-hidden">
+                {user?.profilePic ? (
+                  <img src={user.profilePic} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                ) : (
+                  <span className="font-inter font-semibold text-[32px] text-[#431C86]">{initials}</span>
+                )}
               </div>
             </div>
             <div className="flex flex-col sm:flex-row sm:items-start gap-6">
@@ -45,7 +70,7 @@ const AccountSettings = () => {
                 <div>
                   <p className="font-inter font-medium text-[14px] text-[#45464E] mb-1">Email address</p>
                   <p className="font-inter font-normal text-[14px] text-[#45464E]">
-                    You're signed in using your Google account:{" "}<span className="font-inter font-semibold text-[14px] text-[#0F172A] mt-0.5">jahz@reviewly.ph</span>
+                    You're signed in using your Google account:{" "}<span className="font-inter font-semibold text-[14px] text-[#0F172A] mt-0.5">{user?.email || ''}</span>
                   </p>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-10 max-w-[560px]">
@@ -66,6 +91,13 @@ const AccountSettings = () => {
                     />
                   </div>
                 </div>
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  className="mt-4 font-inter font-semibold text-[14px] text-[#421A83] py-2.5 px-6 rounded-[8px] bg-[#FFC92A] hover:opacity-95 transition-opacity"
+                >
+                  Save Changes
+                </button>
               </div>
             </div>
           </section>
@@ -76,11 +108,49 @@ const AccountSettings = () => {
             <h2 className="font-inter font-semibold text-[16px] text-[#45464E] mb-4">Subscription</h2>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
-                <p className="font-inter font-normal text-[14px] text-[#45464E]">
-                  You currently have <span className="font-semibold text-[#0F172A]">Premium Monthly</span> access until{' '}
-                  <span className="font-semibold text-[#0F172A]">February 29, 2026.</span>
-                </p>
-                <p className="font-inter font-normal text-[14px] text-[#45464E] mt-2">Thanks for supporting Reviewly! 💜</p>
+                {(() => {
+                  const plan = user?.subscription?.plan || 'free';
+                  const expiresAt = user?.subscription?.expiresAt;
+                  const planLabels = { free: 'Free', weekly: 'Weekly', monthly: 'Monthly', quarterly: 'Quarterly' };
+                  const label = planLabels[plan] || plan;
+                  const isActive = plan !== 'free' && expiresAt && new Date(expiresAt) > new Date();
+                  const formattedDate = expiresAt
+                    ? new Date(expiresAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+                    : null;
+
+                  if (plan === 'free') {
+                    return (
+                      <>
+                        <p className="font-inter font-normal text-[14px] text-[#45464E]">
+                          You're currently on the <span className="font-semibold text-[#0F172A]">Free</span> plan.
+                        </p>
+                        <p className="font-inter font-normal text-[14px] text-[#45464E] mt-2">Upgrade to unlock premium reviewers! 🚀</p>
+                      </>
+                    );
+                  }
+
+                  if (isActive) {
+                    return (
+                      <>
+                        <p className="font-inter font-normal text-[14px] text-[#45464E]">
+                          You currently have <span className="font-semibold text-[#0F172A]">{label}</span> access until{' '}
+                          <span className="font-semibold text-[#0F172A]">{formattedDate}.</span>
+                        </p>
+                        <p className="font-inter font-normal text-[14px] text-[#45464E] mt-2">Thanks for supporting Reviewly! 💜</p>
+                      </>
+                    );
+                  }
+
+                  return (
+                    <>
+                      <p className="font-inter font-normal text-[14px] text-[#45464E]">
+                        Your <span className="font-semibold text-[#0F172A]">{label}</span> subscription expired on{' '}
+                        <span className="font-semibold text-[#0F172A]">{formattedDate}.</span>
+                      </p>
+                      <p className="font-inter font-normal text-[14px] text-[#45464E] mt-2">Renew to keep your access! 🔄</p>
+                    </>
+                  );
+                })()}
               </div>
               <Link
                 to="/dashboard/settings/update-subscription"

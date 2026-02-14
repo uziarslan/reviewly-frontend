@@ -1,57 +1,74 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import DashNav from '../components/DashNav';
-import { getReviewerById } from '../data/reviewers';
-
-/** Mock: same question/options/explanation for all – replace with API per-question data later. */
-const MOCK_QUESTION = {
-  text: 'Which sentence is grammatically correct?',
-  options: [
-    'Each of the employees are required to attend the meeting.',
-    'Each of the employees is required to attend the meeting.',
-    'Each employees is required to attend the meeting.',
-    'Each employee are required to attend the meeting.',
-  ],
-  correctIndex: 1,
-  explanation:
-    "Correct Answer: B — 'Each' is singular, so it takes the singular verb 'is.'\n\nWhy A is incorrect: Uses plural verb 'are' with singular subject 'each.'\nWhy C is incorrect: 'Each' must be followed by a singular noun, not 'employees.'\nWhy D is incorrect: 'Employee' is singular but verb 'are' is plural.",
-  tip: "Words like 'each,' 'everyone,' and 'anyone' ALWAYS take singular verbs. Instant grammar win!",
-};
-
-/** Mock result: 121 correct, 49 incorrect (match ExamResultsLoading failed scenario). */
-const MOCK_CORRECT_COUNT = 121;
-const MOCK_TOTAL = 170;
-const MOCK_PASSED = MOCK_CORRECT_COUNT >= 136;
-const MOCK_PERCENTAGE = ((MOCK_CORRECT_COUNT / MOCK_TOTAL) * 100).toFixed(2);
-const MOCK_PASSING_SCORE = 136;
-
-/** Build per-question review data: first MOCK_CORRECT_COUNT correct, rest incorrect. */
-function buildReviewAnswers() {
-  const list = [];
-  for (let i = 0; i < MOCK_TOTAL; i++) {
-    const correctIndex = MOCK_QUESTION.correctIndex;
-    const isCorrect = i < MOCK_CORRECT_COUNT;
-    const userAnswerIndex = isCorrect ? correctIndex : (correctIndex + 1) % 4;
-    list.push({ correctIndex, userAnswerIndex, isCorrect });
-  }
-  return list;
-}
-
-const REVIEW_ANSWERS = buildReviewAnswers();
+import { examAPI } from '../services/api';
 
 function ExamReview() {
-  const { id } = useParams();
-  const reviewer = id ? getReviewerById(id) : null;
-  const exam = reviewer?.examDetails;
-  const totalQuestions = exam?.itemsCount ?? MOCK_TOTAL;
-
+  const { attemptId } = useParams();
+  const [reviewData, setReviewData] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    if (!attemptId) { setLoading(false); return; }
+    let cancelled = false;
+    examAPI.getReview(attemptId)
+      .then((res) => {
+        if (!cancelled && res.success) setReviewData(res.data);
+      })
+      .catch((err) => console.error('Failed to load review:', err))
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [attemptId]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#F5F4FF]">
+        <DashNav />
+        <main className="max-w-[1440px] mx-auto px-6 sm:px-8 lg:px-20 py-8 flex items-center justify-center">
+          <div className="w-[48px] h-[48px] rounded-full border-[4px] border-[#6E43B9] border-t-transparent animate-spin" />
+        </main>
+      </div>
+    );
+  }
+
+  if (!reviewData || !reviewData.questions?.length) {
+    return (
+      <div className="min-h-screen bg-[#F5F4FF]">
+        <DashNav />
+        <main className="max-w-[1440px] mx-auto px-6 sm:px-8 lg:px-20 py-8">
+          <p className="font-inter text-[#45464E]">Review not found.</p>
+          <Link to="/dashboard/all-reviewers" className="font-inter text-[#6E43B9] hover:underline mt-4 inline-block">
+            Back to All Reviewers
+          </Link>
+        </main>
+      </div>
+    );
+  }
+
+  const questions = reviewData.questions;
+  const result = reviewData.result || {};
+  const reviewer = reviewData.reviewer || {};
+  const totalQuestions = questions.length;
   const questionNumber = currentIndex + 1;
-  const currentAnswer = REVIEW_ANSWERS[currentIndex] ?? {
-    correctIndex: 0,
-    userAnswerIndex: 0,
-    isCorrect: true,
-  };
+  const currentQ = questions[currentIndex];
+
+  const optionLabels = ['A', 'B', 'C', 'D'];
+  const correctLetter = currentQ.correctAnswer;
+  const selectedLetter = currentQ.selectedAnswer;
+  const isCorrectAnswer = currentQ.isCorrect;
+
+  // Build explanation text
+  const explanation = isCorrectAnswer
+    ? currentQ.explanationCorrect || `Correct Answer: ${correctLetter}`
+    : currentQ.explanationWrong || `The correct answer is ${correctLetter}.`;
+  const tip = currentQ.reviewlyTip;
+
+  const totalCorrect = result.correct || 0;
+  const totalItems = result.totalItems || totalQuestions;
+  const percentage = result.percentage != null ? result.percentage.toFixed(2) : '0.00';
+  const passed = result.passed;
+  const passingScore = result.passingScore || 0;
 
   const handlePrev = () => {
     if (currentIndex > 0) setCurrentIndex((i) => i - 1);
@@ -65,22 +82,8 @@ function ExamReview() {
     setCurrentIndex(Math.max(0, Math.min(num - 1, totalQuestions - 1)));
   };
 
-  if (!reviewer || !exam) {
-    return (
-      <div className="min-h-screen bg-[#F5F4FF]">
-        <DashNav />
-        <main className="max-w-[1440px] mx-auto px-6 sm:px-8 lg:px-20 py-8">
-          <p className="font-inter text-[#45464E]">Exam not found.</p>
-          <Link to="/dashboard/all-reviewers" className="font-inter text-[#6E43B9] hover:underline mt-4 inline-block">
-            Back to All Reviewers
-          </Link>
-        </main>
-      </div>
-    );
-  }
-
   const correctSet = new Set(
-    REVIEW_ANSWERS.map((a, i) => (a.isCorrect ? i + 1 : null)).filter(Boolean)
+    questions.map((q, i) => (q.isCorrect ? i + 1 : null)).filter(Boolean)
   );
 
   return (
@@ -102,18 +105,19 @@ function ExamReview() {
         <h1 className="font-inter font-medium text-[#45464E] text-[20px] mb-[24px]">{reviewer.title}</h1>
 
         <div className="flex flex-col lg:flex-row gap-8 lg:gap-[24px] items-start">
-          {/* Left: Question card (same structure as Exam.js) */}
+          {/* Left: Question card */}
           <div className="order-1 w-full lg:w-auto lg:flex-1 lg:min-w-0 bg-[#FFFFFF] p-[24px] rounded-[12px]">
             <div key={currentIndex} className="animate-question-change">
               <p className="font-inter font-medium text-[#0F172A] text-base mb-6">
-                {questionNumber}. {MOCK_QUESTION.text}
+                {questionNumber}. {currentQ.questionText}
               </p>
               <div className="space-y-4 mb-6">
-                {MOCK_QUESTION.options.map((option, idx) => {
-                  const isCorrectOption = idx === currentAnswer.correctIndex;
-                  const isUserChoice = idx === currentAnswer.userAnswerIndex;
+                {[currentQ.choiceA, currentQ.choiceB, currentQ.choiceC, currentQ.choiceD].map((option, idx) => {
+                  const letter = optionLabels[idx];
+                  const isCorrectOption = letter === correctLetter;
+                  const isUserChoice = letter === selectedLetter;
                   const showCheck = isCorrectOption;
-                  const showX = !currentAnswer.isCorrect && isUserChoice && !isCorrectOption;
+                  const showX = !isCorrectAnswer && isUserChoice && !isCorrectOption;
                   return (
                     <div
                       key={idx}
@@ -135,33 +139,24 @@ function ExamReview() {
                 })}
               </div>
 
-              {/* Correct Answer / Feedback box – green if correct, pink if incorrect */}
+              {/* Correct Answer / Feedback box */}
               <div
-                className={`rounded-[8px] py-3 px-[15px] mb-4 ${currentAnswer.isCorrect ? 'bg-[#DAF9EC80]' : 'bg-[#FDE7EA]'
+                className={`rounded-[8px] py-3 px-[15px] mb-4 ${isCorrectAnswer ? 'bg-[#DAF9EC80]' : 'bg-[#FDE7EA]'
                   }`}
               >
                 <p className="font-inter text-[14px] text-[#45464E] whitespace-pre-line">
-                  {MOCK_QUESTION.explanation.includes(' — ') ? (
-                    <>
-                      <span className="font-bold text-[#53545C]">
-                        {MOCK_QUESTION.explanation.split(' — ', 1)[0]}
-                      </span>
-                      <span className="font-normal">
-                        {' — ' + MOCK_QUESTION.explanation.split(' — ').slice(1).join(' — ')}
-                      </span>
-                    </>
-                  ) : (
-                    MOCK_QUESTION.explanation
-                  )}
+                  {explanation}
                 </p>
               </div>
 
               {/* Reviewly Tip */}
+              {tip && (
               <div className="rounded-[8px] py-3 px-[15px] mb-8 bg-[#FFC92A1A]">
                 <p className="font-inter text-[14px] text-[#53545C]">
-                  💡 <span className="font-bold">Reviewly Tip:</span> {MOCK_QUESTION.tip}
+                  💡 <span className="font-bold">Reviewly Tip:</span> {tip}
                 </p>
               </div>
+              )}
             </div>
 
             <div className="flex flex-wrap items-center justify-end gap-2 pt-4 border-t border-[#F2F4F7]">
@@ -191,19 +186,21 @@ function ExamReview() {
                 Overall Performance
               </h2>
               <p className="font-inter font-normal text-[16px] text-[#45464E] mb-0">
-                Your Score: {MOCK_CORRECT_COUNT} / {MOCK_TOTAL}
+                Your Score: {totalCorrect} / {totalItems}
               </p>
               <p className="font-inter font-normal text-[16px] text-[#45464E] mb-[15px]">
-                Percentage: {MOCK_PERCENTAGE}%
+                Percentage: {percentage}%
               </p>
               <p className="font-inter text-[16px] text-[#45464E] mb-0">
                 <span className="font-semibold">Status: </span>
-                <span className={`font-bold ${MOCK_PASSED ? 'text-[#06A561]' : 'text-[#F0142F]'}`}>
-                  {MOCK_PASSED ? 'PASSED! 🎉' : 'FAILED'}
+                <span className={`font-bold ${passed ? 'text-[#06A561]' : 'text-[#F0142F]'}`}>
+                  {passed ? 'PASSED! 🎉' : 'FAILED'}
                 </span>
               </p>
               <p className="font-inter font-normal text-[12px] text-[#45464E] mb-[15px]">
-                Remember: You need at least 80% or {MOCK_PASSING_SCORE}/{MOCK_TOTAL} correct answers to pass the CSE Professional Level.
+                {passingScore > 0
+                  ? `You need at least ${passingScore}/${totalItems} correct answers to pass.`
+                  : ''}
               </p>
               <div className="flex items-center gap-4 mb-[15px]">
                 <div className="flex items-center gap-2">

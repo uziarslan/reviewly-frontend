@@ -2,44 +2,57 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AOS from 'aos';
 import DashNav from '../components/DashNav';
-import { CURRENT_REVIEWERS, REVIEWER_LOGO_MAP } from '../data/reviewers';
+import { REVIEWER_LOGO_MAP } from '../data/reviewers';
 import { BookmarkFilledIcon, SearchIcon, LockIcon, PaperIcon } from '../components/Icons';
-
-const LIBRARY_STORAGE_KEY = 'reviewly_library_ids';
-
-function getStoredLibraryIds() {
-  try {
-    const s = localStorage.getItem(LIBRARY_STORAGE_KEY);
-    if (s) {
-      const a = JSON.parse(s);
-      if (Array.isArray(a)) return new Set(a.map(Number).filter(Boolean));
-    }
-  } catch (_) { }
-  return new Set([1]);
-}
-
-function setStoredLibraryIds(ids) {
-  try {
-    localStorage.setItem(LIBRARY_STORAGE_KEY, JSON.stringify([...ids]));
-  } catch (_) { }
-}
-
-/** Mock: card id 1 shows as in progress at 50% for "Resume Exam" + progress bar. */
-const MOCK_IN_PROGRESS_ID = 1;
-const MOCK_PROGRESS_PERCENT = 50;
+import { libraryAPI, examAPI } from '../services/api';
 
 const MyLibrary = () => {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
-  const [libraryIds, setLibraryIds] = useState(getStoredLibraryIds);
+  const [libraryCards, setLibraryCards] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [inProgressMap, setInProgressMap] = useState({}); // { reviewerId: { attemptId, answeredCount, totalQuestions, progressPercent } }
+
+  // Fetch library and in-progress attempts on mount
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchData() {
+      try {
+        const [libRes, histRes] = await Promise.all([
+          libraryAPI.get(),
+          examAPI.getUserHistory(),
+        ]);
+        if (cancelled) return;
+        if (libRes.success) setLibraryCards(libRes.data);
+        if (histRes.success) {
+          // Build map of in-progress attempts with real progress data
+          const ipMap = {};
+          histRes.data.forEach((attempt) => {
+            if (attempt.status === 'in_progress') {
+              const revId = attempt.reviewer?._id || attempt.reviewer;
+              ipMap[revId] = {
+                attemptId: attempt._id,
+                answeredCount: attempt.progress?.answeredCount || 0,
+                totalQuestions: attempt.progress?.totalQuestions || 0,
+                progressPercent: attempt.progress?.progressPercent || 0,
+              };
+            }
+          });
+          setInProgressMap(ipMap);
+        }
+      } catch (err) {
+        console.error('Failed to load library:', err);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    fetchData();
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     AOS.refresh();
-  }, []);
-
-  const libraryCards = useMemo(() => {
-    return CURRENT_REVIEWERS.filter((card) => card.status === 'published' && libraryIds.has(card.id));
-  }, [libraryIds]);
+  }, [libraryCards]);
 
   const filtered = useMemo(() => {
     if (!search.trim()) return libraryCards;
@@ -51,13 +64,19 @@ const MyLibrary = () => {
     );
   }, [libraryCards, search]);
 
-  const removeFromLibrary = (id) => {
-    setLibraryIds((prev) => {
-      const next = new Set(prev);
-      next.delete(id);
-      setStoredLibraryIds(next);
-      return next;
-    });
+  const removeFromLibrary = async (id) => {
+    // Optimistic removal
+    setLibraryCards((prev) => prev.filter((c) => c._id !== id));
+    try {
+      await libraryAPI.remove(id);
+    } catch (err) {
+      console.error('Remove failed:', err);
+      // Re-fetch on error
+      try {
+        const res = await libraryAPI.get();
+        if (res.success) setLibraryCards(res.data);
+      } catch (_) {}
+    }
   };
 
   return (
@@ -86,7 +105,11 @@ const MyLibrary = () => {
           </div>
         </div>
 
-        {filtered.length === 0 ? (
+        {loading ? (
+          <div className="flex items-center justify-center py-16">
+            <div className="w-[48px] h-[48px] rounded-full border-[4px] border-[#6E43B9] border-t-transparent animate-spin" />
+          </div>
+        ) : filtered.length === 0 ? (
           <div
             className="flex flex-col items-center justify-center py-16 text-center"
             data-aos="fade-up"
@@ -106,23 +129,32 @@ const MyLibrary = () => {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-[24px] justify-items-center">
             {filtered.map((card, index) => {
-              const logoSrc = REVIEWER_LOGO_MAP[card.logo.filename] ?? card.logo.path;
-              const { details } = card;
-              const inProgress = card.id === MOCK_IN_PROGRESS_ID;
+              const logoSrc = card.logo?.filename && REVIEWER_LOGO_MAP[card.logo.filename]
+                ? REVIEWER_LOGO_MAP[card.logo.filename]
+                : (card.logo?.path ?? null);
+              const details = card.details || {};
+              const inProgressData = inProgressMap[card._id];
+              const inProgress = !!inProgressData;
               return (
                 <div
-                  key={card.slug}
+                  key={card._id}
                   className="w-full max-w-[410.67px] min-w-0 bg-white rounded-[12px] p-[24px] text-left shadow-[0px_2px_4px_0px_#00000026] flex flex-col"
                   data-aos="fade-up"
                   data-aos-duration="500"
                   data-aos-delay={100 + index * 50}
                 >
                   <div className="flex items-start justify-between gap-2 mb-4">
-                    <img src={logoSrc} alt="" className="w-[40px] h-[40px] shrink-0 object-cover" />
+                    {logoSrc ? (
+                      <img src={logoSrc} alt="" className="w-[40px] h-[40px] shrink-0 object-cover" />
+                    ) : (
+                      <div className="w-[40px] h-[40px] rounded bg-[#6E43B9] flex items-center justify-center text-white font-inter font-bold text-xs shrink-0">
+                        CSE
+                      </div>
+                    )}
                     <div className="relative group">
                       <button
                         type="button"
-                        onClick={() => removeFromLibrary(card.id)}
+                        onClick={() => removeFromLibrary(card._id)}
                         className="p-[7px] rounded-[4px] w-[40px] h-[40px] bg-[#7D52CC1A] transition-colors flex items-center justify-center"
                         aria-label="Remove from library"
                       >
@@ -140,17 +172,17 @@ const MyLibrary = () => {
                     {card.title}
                   </h2>
                   <p className="font-inter text-[#64748B] text-[15px] leading-[20px] mb-4 font-normal flex-1">
-                    <span className="font-semibold">{card.description.short}</span>
+                    <span className="font-semibold">{card.description?.short ?? ''}</span>
                     <br />
-                    {card.description.full}
+                    {card.description?.full ?? ''}
                   </p>
                   <div className="flex flex-wrap items-center gap-[5px] text-sm text-[#0F172A] mb-4">
                     <span className="inline-flex items-center gap-1.5 font-inter font-normal not-italic text-[14px] text-[#45464E]">
-                      📝 {details.items}
+                      📝 {details.items ?? (card.examDetails?.itemsCount ? `${card.examDetails.itemsCount} items` : '—')}
                     </span>
                     <span className="text-[#45464E] font-inter font-normal not-italic text-[14px]">•</span>
                     <span className="inline-flex items-center gap-1.5 font-inter font-normal not-italic text-[14px] text-[#45464E]">
-                      ⏱️ {details.duration}
+                      ⏱️ {details.duration ?? '—'}
                     </span>
                     {details.passingRate != null && (
                       <>
@@ -181,20 +213,20 @@ const MyLibrary = () => {
                     <div className="flex items-start justify-start gap-6 w-full">
                       <button
                         type="button"
-                        onClick={() => navigate(`/dashboard/exam/${card.id}`)}
+                        onClick={() => navigate(`/dashboard/library/${card._id}`)}
                         className="font-inter font-semibold text-[#421A83] text-[14px] sm:text-[16px] py-3 px-4 rounded-[8px] bg-[#FFC92A] hover:opacity-95 transition-opacity shrink-0"
                       >
                         Resume Exam
                       </button>
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between font-inter font-normal text-[10px] text-[#45464E] mb-1">
-                          <span>Progress</span>
-                          <span>{MOCK_PROGRESS_PERCENT}%</span>
+                          <span>In Progress</span>
+                          <span>{inProgressData.progressPercent}%</span>
                         </div>
                         <div className="h-2 w-full rounded-[20px] bg-[#D9D9D9] overflow-hidden">
                           <div
-                            className="h-full rounded-[20px] bg-[#FFC92A] transition-[width]"
-                            style={{ width: `${MOCK_PROGRESS_PERCENT}%` }}
+                            className="h-full rounded-[20px] bg-[#FFC92A] transition-all duration-300"
+                            style={{ width: `${inProgressData.progressPercent}%` }}
                           />
                         </div>
                       </div>
@@ -202,7 +234,7 @@ const MyLibrary = () => {
                   ) : (
                     <button
                       type="button"
-                      onClick={() => navigate(`/dashboard/exam/${card.id}`)}
+                      onClick={() => navigate(`/dashboard/library/${card._id}`)}
                       className="max-w-[106px] font-inter font-semibold text-[#421A83] text-[14px] sm:text-[16px] py-3 rounded-[8px] bg-[#FFC92A] hover:opacity-95 transition-opacity"
                     >
                       Take Exam

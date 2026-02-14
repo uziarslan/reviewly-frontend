@@ -1,119 +1,144 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import DashNav from '../components/DashNav';
 import { ExamTimeInfoIcon } from '../components/Icons';
 import Modal from '../components/Modal';
-import { getReviewerById } from '../data/reviewers';
+import { examAPI, reviewerAPI } from '../services/api';
 import timeUpImage from '../Assets/timeup.png';
 
-// Mock first question – replace with API/data later
-const MOCK_QUESTION = {
-  id: 1,
-  text: 'Which sentence is grammatically correct?',
-  options: [
-    'Each of the employees are required to attend the meeting.',
-    'Each of the employees is required to attend the meeting.',
-    'Each employees is required to attend the meeting.',
-    'Each employee are required to attend the meeting.',
-  ],
-};
-
-const STORAGE_KEY_PREFIX = 'examEndTime_';
-
-/** Parse "HH:MM:SS" or "HH:MM" to total milliseconds; returns 0 for "No time limit" or invalid. */
-function parseTimeToMs(timeStr) {
-  if (!timeStr || typeof timeStr !== 'string' || timeStr.toLowerCase().includes('no time')) return 0;
-  const parts = timeStr.trim().split(':').map(Number);
-  if (parts.some(Number.isNaN)) return 0;
-  const [h = 0, m = 0, s = 0] = parts;
-  return (h * 3600 + m * 60 + s) * 1000;
-}
-
-/** Format milliseconds as "HH:MM:SS" (non-negative). */
-function msToTimeStr(ms) {
-  if (ms <= 0) return '00:00:00';
-  const totalSeconds = Math.floor(ms / 1000);
-  const h = Math.floor(totalSeconds / 3600);
-  const m = Math.floor((totalSeconds % 3600) / 60);
-  const s = totalSeconds % 60;
+/** Format seconds as "HH:MM:SS" (non-negative). */
+function secondsToTimeStr(totalSec) {
+  if (totalSec <= 0) return '00:00:00';
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
   return [h, m, s].map((n) => String(n).padStart(2, '0')).join(':');
 }
 
 function Exam() {
-  const { id } = useParams();
+  const { id } = useParams(); // reviewer id
   const navigate = useNavigate();
-  const reviewer = id ? getReviewerById(id) : null;
-  const exam = reviewer?.examDetails;
-  const totalQuestions = exam?.itemsCount ?? 170;
 
+  // Exam data from API
+  const [attemptId, setAttemptId] = useState(null);
+  const [reviewer, setReviewer] = useState(null);
+  const [questions, setQuestions] = useState([]);
+  const [totalQuestions, setTotalQuestions] = useState(0);
+  const [loadingExam, setLoadingExam] = useState(true);
+  const [errorMsg, setErrorMsg] = useState(null);
+
+  // Exam state
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState(null);
   const [answered, setAnswered] = useState(new Set());
-  const [timeLeft, setTimeLeft] = useState('03:00:00');
+  const [answers, setAnswers] = useState({}); // { index: 'A'|'B'|'C'|'D' }
+  const [remainingSeconds, setRemainingSeconds] = useState(null);
+  const [timeLeft, setTimeLeft] = useState('00:00:00');
   const [showPauseModal, setShowPauseModal] = useState(false);
   const [showResetModal, setShowResetModal] = useState(false);
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [timeUp, setTimeUp] = useState(false);
-  const [timerResetKey, setTimerResetKey] = useState(0);
   const [showReloadWarningModal, setShowReloadWarningModal] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
-  // Exam is frozen when time's up or when the initial reload modal is open (clock not ticking)
-  const examFrozen = timeUp || showReloadWarningModal;
+  const endTimeRef = useRef(null);
+  const timerRef = useRef(null);
 
-  // Persist end time in sessionStorage so refresh does not reset the timer.
-  // Timer does not start until the user dismisses the reload warning modal (first load only).
-  // On refresh, stored end time exists so the clock runs immediately and does not wait.
+  // Exam is frozen when time's up or when the initial reload modal is open
+  const examFrozen = timeUp || showReloadWarningModal || loadingExam;
+
+  // Start or resume exam on mount
   useEffect(() => {
-    if (!exam || !id) return;
-    const key = `${STORAGE_KEY_PREFIX}${id}`;
-    const durationMs = parseTimeToMs(exam.timeFormatted);
-    let endTime = null;
-    const stored = sessionStorage.getItem(key);
-    if (stored) {
-      const parsed = Number(stored);
-      if (!Number.isNaN(parsed)) endTime = parsed;
+    let cancelled = false;
+    async function loadExam() {
+      try {
+        // Fetch reviewer info for display
+        const [examRes, revRes] = await Promise.all([
+          examAPI.start(id),
+          reviewerAPI.getById(id),
+        ]);
+        if (cancelled) return;
+
+        if (revRes.success) setReviewer(revRes.data);
+
+        if (examRes.success) {
+          const data = examRes.data;
+          setAttemptId(data.attemptId);
+          setQuestions(data.questions);
+          setTotalQuestions(data.totalQuestions);
+          setCurrentIndex(data.currentIndex || 0);
+          setRemainingSeconds(data.remainingSeconds);
+
+          // Restore answered state
+          const answeredSet = new Set();
+          const answersMap = {};
+          if (data.answeredIndices) {
+            data.answeredIndices.forEach((i) => answeredSet.add(i + 1));
+          }
+          // Restore previously selected answers if resuming
+          if (data.userAnswers) {
+            Object.entries(data.userAnswers).forEach(([idx, answer]) => {
+              answersMap[parseInt(idx)] = answer;
+            });
+          }
+          setAnswered(answeredSet);
+          setAnswers(answersMap);
+          // Pre-select the option for current question if resuming
+          if (data.userAnswers && data.userAnswers[data.currentIndex || 0]) {
+            const currentAnswer = data.userAnswers[data.currentIndex || 0];
+            setSelectedOption(['A', 'B', 'C', 'D'].indexOf(currentAnswer));
+          }
+
+          // Set time display
+          if (data.remainingSeconds != null && data.remainingSeconds > 0) {
+            setTimeLeft(secondsToTimeStr(data.remainingSeconds));
+          }
+        }
+      } catch (err) {
+        if (!cancelled) setErrorMsg(err.message || 'Failed to start exam');
+      } finally {
+        if (!cancelled) setLoadingExam(false);
+      }
     }
-    // First load with no stored time: wait for user to click "Got it" before starting the timer
-    if (endTime == null && showReloadWarningModal && durationMs > 0) {
-      setTimeLeft(exam.timeFormatted || '00:00:00');
-      return;
+    loadExam();
+    return () => { cancelled = true; };
+  }, [id]);
+
+  // Timer logic – starts after reload warning is dismissed
+  useEffect(() => {
+    if (loadingExam || showReloadWarningModal || timeUp) return;
+    if (remainingSeconds == null || remainingSeconds <= 0) return;
+
+    // Set end time from remaining seconds
+    if (!endTimeRef.current) {
+      endTimeRef.current = Date.now() + remainingSeconds * 1000;
     }
-    if (endTime == null && durationMs > 0) {
-      endTime = Date.now() + durationMs;
-      sessionStorage.setItem(key, String(endTime));
-    }
-    if (endTime == null || durationMs === 0) {
-      setTimeLeft(exam.timeFormatted || '00:00:00');
-      return;
-    }
+
     const tick = () => {
-      const remaining = endTime - Date.now();
-      setTimeLeft(msToTimeStr(remaining));
+      const remaining = Math.max(0, Math.ceil((endTimeRef.current - Date.now()) / 1000));
+      setTimeLeft(secondsToTimeStr(remaining));
       if (remaining <= 0) {
         setTimeUp(true);
+        // Auto-submit on time up
+        if (attemptId) {
+          examAPI.submit(attemptId).catch(() => {});
+        }
         return true;
       }
       return false;
     };
+
     if (tick()) return;
-    const interval = setInterval(() => {
-      if (tick()) clearInterval(interval);
+    timerRef.current = setInterval(() => {
+      if (tick()) clearInterval(timerRef.current);
     }, 1000);
-    return () => clearInterval(interval);
-  }, [id, exam, timerResetKey, showReloadWarningModal]);
 
-  // Explicitly do not show the browser's "Leave site?" dialog. We use our custom modal on load instead.
-  // A beforeunload handler only shows the native dialog if it calls preventDefault() or sets returnValue.
-  useEffect(() => {
-    const handleBeforeUnload = () => {
-      // Do nothing: do not call preventDefault(), do not set returnValue.
-      // This ensures the native reload/close prompt is never shown.
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
     };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, []);
+  }, [loadingExam, showReloadWarningModal, timeUp, remainingSeconds, attemptId]);
 
-  // When time's up, close any other modals so only the Time's Up modal is shown
+  // When time's up, close any other modals
   useEffect(() => {
     if (timeUp) {
       setShowPauseModal(false);
@@ -122,26 +147,52 @@ function Exam() {
     }
   }, [timeUp]);
 
-  const handleOptionChange = (optionIndex) => {
+  const currentQuestion = questions[currentIndex];
+  const optionLabels = ['A', 'B', 'C', 'D'];
+
+  const handleOptionChange = useCallback((optionIndex) => {
     if (examFrozen) return;
+    const letter = optionLabels[optionIndex];
     setSelectedOption(optionIndex);
     setAnswered((prev) => new Set(prev).add(currentIndex + 1));
-  };
+    setAnswers((prev) => ({ ...prev, [currentIndex]: letter }));
 
-  const handleResetExam = () => {
-    if (examFrozen) return;
-    setCurrentIndex(0);
-    setSelectedOption(null);
-    setAnswered(new Set());
-    if (id) sessionStorage.removeItem(`${STORAGE_KEY_PREFIX}${id}`);
-    setTimerResetKey((k) => k + 1);
-    setShowResetModal(false);
-  };
+    // Save answer to backend (fire and forget)
+    if (attemptId) {
+      examAPI.saveAnswer(attemptId, currentIndex, letter).catch((err) =>
+        console.error('Failed to save answer:', err)
+      );
+    }
+  }, [examFrozen, currentIndex, attemptId]);
 
   const handleNext = () => {
     if (examFrozen) return;
-    if (currentIndex < totalQuestions - 1) setCurrentIndex((i) => i + 1);
-    setSelectedOption(null);
+    if (currentIndex < totalQuestions - 1) {
+      setCurrentIndex((i) => i + 1);
+      // Restore previously selected answer for next question
+      const nextIdx = currentIndex + 1;
+      const prevAnswer = answers[nextIdx];
+      setSelectedOption(prevAnswer ? optionLabels.indexOf(prevAnswer) : null);
+    }
+  };
+
+  const handlePrev = () => {
+    if (examFrozen) return;
+    if (currentIndex > 0) {
+      setCurrentIndex((i) => i - 1);
+      // Restore previously selected answer
+      const prevIdx = currentIndex - 1;
+      const prevAnswer = answers[prevIdx];
+      setSelectedOption(prevAnswer ? optionLabels.indexOf(prevAnswer) : null);
+    }
+  };
+
+  const goToQuestion = (num) => {
+    if (examFrozen) return;
+    const idx = num - 1;
+    setCurrentIndex(idx);
+    const prevAnswer = answers[idx];
+    setSelectedOption(prevAnswer ? optionLabels.indexOf(prevAnswer) : null);
   };
 
   const isLastQuestion = currentIndex === totalQuestions - 1;
@@ -151,7 +202,7 @@ function Exam() {
     else handleNext();
   };
 
-  /** Format "HH:MM:SS" as human-readable time left for the submit modal. */
+  /** Format time left for modal display. */
   const formatTimeLeftForModal = () => {
     const parts = timeLeft.trim().split(':').map(Number);
     if (parts.length < 2 || parts.some(Number.isNaN)) return timeLeft;
@@ -161,35 +212,95 @@ function Exam() {
     return `${s} second${s !== 1 ? 's' : ''}`;
   };
 
-  const handleConfirmSubmit = () => {
-    if (examFrozen) return;
-    if (id) sessionStorage.removeItem(`${STORAGE_KEY_PREFIX}${id}`);
-    setShowSubmitModal(false);
-    navigate(`/dashboard/exam/${id}`);
+  const getRemainingSecondsNow = () => {
+    if (!endTimeRef.current) return remainingSeconds || 0;
+    return Math.max(0, Math.ceil((endTimeRef.current - Date.now()) / 1000));
+  };
+
+  const handlePauseAndExit = async () => {
+    if (!attemptId) return;
+    try {
+      await examAPI.pause(attemptId, getRemainingSecondsNow(), currentIndex);
+    } catch (err) {
+      console.error('Pause failed:', err);
+    }
+    setShowPauseModal(false);
+    navigate(`/dashboard/library/${id}`);
+  };
+
+  const handleResetExam = async () => {
+    if (examFrozen || !attemptId) return;
+    // Submit current attempt and start fresh
+    try {
+      await examAPI.submit(attemptId);
+    } catch (_) {}
+    // Start a new attempt
+    setLoadingExam(true);
+    endTimeRef.current = null;
+    try {
+      const examRes = await examAPI.start(id);
+      if (examRes.success) {
+        const data = examRes.data;
+        setAttemptId(data.attemptId);
+        setQuestions(data.questions);
+        setTotalQuestions(data.totalQuestions);
+        setCurrentIndex(0);
+        setRemainingSeconds(data.remainingSeconds);
+        setSelectedOption(null);
+        setAnswered(new Set());
+        setAnswers({});
+        setTimeUp(false);
+        if (data.remainingSeconds != null && data.remainingSeconds > 0) {
+          setTimeLeft(secondsToTimeStr(data.remainingSeconds));
+        }
+      }
+    } catch (err) {
+      setErrorMsg('Failed to reset exam');
+    } finally {
+      setLoadingExam(false);
+    }
+    setShowResetModal(false);
+  };
+
+  const handleConfirmSubmit = async () => {
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      const res = await examAPI.submit(attemptId);
+      if (res.success) {
+        setShowSubmitModal(false);
+        navigate(`/dashboard/results/${attemptId}`);
+      }
+    } catch (err) {
+      console.error('Submit failed:', err);
+      setErrorMsg('Failed to submit exam');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleViewResults = () => {
-    if (!id) return;
-    navigate(`/dashboard/exam/${id}/results`);
+    if (!attemptId) return;
+    navigate(`/dashboard/results/${attemptId}`);
   };
 
-  const handlePrev = () => {
-    if (examFrozen) return;
-    if (currentIndex > 0) setCurrentIndex((i) => i - 1);
-    setSelectedOption(null);
-  };
+  if (loadingExam) {
+    return (
+      <div className="min-h-screen bg-[#F5F4FF]">
+        <DashNav />
+        <main className="max-w-[1440px] mx-auto px-6 sm:px-8 lg:px-20 py-8 flex items-center justify-center">
+          <div className="w-[48px] h-[48px] rounded-full border-[4px] border-[#6E43B9] border-t-transparent animate-spin" />
+        </main>
+      </div>
+    );
+  }
 
-  const goToQuestion = (num) => {
-    if (examFrozen) return;
-    setCurrentIndex(num - 1);
-  };
-
-  if (!reviewer || !exam) {
+  if (errorMsg || !reviewer || questions.length === 0) {
     return (
       <div className="min-h-screen bg-[#F5F4FF]">
         <DashNav />
         <main className="max-w-[1440px] mx-auto px-6 sm:px-8 lg:px-20 py-8">
-          <p className="font-inter text-[#45464E]">Exam not found.</p>
+          <p className="font-inter text-[#45464E]">{errorMsg || 'Exam not found.'}</p>
           <Link to="/dashboard/all-reviewers" className="font-inter text-[#6E43B9] hover:underline mt-4 inline-block">
             Back to All Reviewers
           </Link>
@@ -242,7 +353,7 @@ function Exam() {
               type="button"
               onClick={() => {
                 setShowPauseModal(false);
-                navigate(`/dashboard/exam/${id}`);
+                handlePauseAndExit();
               }}
               className="font-inter font-bold text-[14px] text-[#421A83] py-[11.5px] px-6 rounded-[8px] bg-[#FACC15] hover:opacity-90 transition-opacity"
             >
@@ -310,9 +421,10 @@ function Exam() {
             <button
               type="button"
               onClick={handleConfirmSubmit}
-              className="font-inter font-bold text-[14px] text-[#421A83] py-[11.5px] px-6 rounded-[8px] bg-[#FACC15] hover:opacity-90 transition-opacity"
+              disabled={submitting}
+              className="font-inter font-bold text-[14px] text-[#421A83] py-[11.5px] px-6 rounded-[8px] bg-[#FACC15] hover:opacity-90 transition-opacity disabled:opacity-50"
             >
-              Submit Exam
+              {submitting ? 'Submitting...' : 'Submit Exam'}
             </button>
           </>
         }
@@ -383,10 +495,10 @@ function Exam() {
           <div className="order-1 w-full lg:w-auto lg:flex-1 lg:min-w-0 bg-[#FFFFFF] p-[24px] rounded-[12px]" data-aos="fade-up" data-aos-duration="400" data-aos-delay="50">
             <div key={currentIndex} className="animate-question-change">
               <p className="font-inter font-medium text-[#0F172A] text-base mb-6">
-                {questionNumber}. {MOCK_QUESTION.text}
+                {questionNumber}. {currentQuestion?.questionText}
               </p>
               <div className="space-y-4 mb-8">
-                {MOCK_QUESTION.options.map((option, idx) => (
+                {[currentQuestion?.choiceA, currentQuestion?.choiceB, currentQuestion?.choiceC, currentQuestion?.choiceD].map((option, idx) => (
                   <label
                     key={idx}
                     className={`flex items-start gap-3 font-inter text-[16px] text-[#45464E] ${examFrozen ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}

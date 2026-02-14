@@ -1,19 +1,44 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import AOS from 'aos';
 import DashNav from '../components/DashNav';
-import { getReviewerById } from '../data/reviewers';
+import { reviewerAPI } from '../services/api';
 import { ExamNotesLightningIcon } from '../components/Icons';
 
 const ExamDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const reviewer = id ? getReviewerById(id) : null;
+  const [reviewer, setReviewer] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!id) { setLoading(false); return; }
+    let cancelled = false;
+    reviewerAPI.getById(id)
+      .then((res) => {
+        if (!cancelled && res.success) setReviewer(res.data);
+      })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [id]);
+
   const exam = reviewer?.examDetails;
 
   useEffect(() => {
     AOS.refresh();
-  }, [id]);
+  }, [reviewer]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white">
+        <DashNav />
+        <main className="max-w-[1440px] mx-auto px-6 sm:px-8 lg:px-20 py-8 flex items-center justify-center">
+          <div className="w-[48px] h-[48px] rounded-full border-[4px] border-[#6E43B9] border-t-transparent animate-spin" />
+        </main>
+      </div>
+    );
+  }
 
   if (!reviewer || !exam) {
     return (
