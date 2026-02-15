@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation } from 'react-router-dom';
 import DashNav from '../components/DashNav';
 import { examAPI } from '../services/api';
 
 function ExamReview() {
   const { attemptId } = useParams();
+  const location = useLocation();
+  const fromLibrary = new URLSearchParams(location.search).get('from') === 'library';
   const [reviewData, setReviewData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -38,8 +40,11 @@ function ExamReview() {
         <DashNav />
         <main className="max-w-[1440px] mx-auto px-6 sm:px-8 lg:px-20 py-8">
           <p className="font-inter text-[#45464E]">Review not found.</p>
-          <Link to="/dashboard/all-reviewers" className="font-inter text-[#6E43B9] hover:underline mt-4 inline-block">
-            Back to All Reviewers
+          <Link
+            to={fromLibrary ? '/dashboard/library' : '/dashboard/all-reviewers'}
+            className="font-inter text-[#6E43B9] hover:underline mt-4 inline-block"
+          >
+            Back to {fromLibrary ? 'My Library' : 'All Reviewers'}
           </Link>
         </main>
       </div>
@@ -93,10 +98,10 @@ function ExamReview() {
         {/* Breadcrumbs */}
         <nav className="mb-[24px]" aria-label="Breadcrumb">
           <Link
-            to="/dashboard/all-reviewers"
+            to={fromLibrary ? '/dashboard/library' : '/dashboard/all-reviewers'}
             className="text-[#45464E] font-inter font-normal text-[14px] hover:text-[#6E43B9] transition-colors"
           >
-            All Reviewers
+            {fromLibrary ? 'My Library' : 'All Reviewers'}
           </Link>
           <span className="mx-2">›</span>
           <span className="text-[#6E43B9] font-inter font-normal text-[14px]">{reviewer.title}</span>

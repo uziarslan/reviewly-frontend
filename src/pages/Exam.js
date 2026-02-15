@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import DashNav from '../components/DashNav';
 import { ExamTimeInfoIcon } from '../components/Icons';
 import Modal from '../components/Modal';
@@ -20,6 +20,8 @@ const OPTION_LABELS = ['A', 'B', 'C', 'D'];
 function Exam() {
   const { id } = useParams(); // reviewer id
   const navigate = useNavigate();
+  const location = useLocation();
+  const fromLibrary = new URLSearchParams(location.search).get('from') === 'library';
 
   // Exam data from API
   const [attemptId, setAttemptId] = useState(null);
@@ -226,7 +228,7 @@ function Exam() {
       console.error('Pause failed:', err);
     }
     setShowPauseModal(false);
-    navigate(`/dashboard/exam/${id}?from=library`);
+    navigate(`/dashboard/exam/${id}${fromLibrary ? '?from=library' : ''}`);
   };
 
   const handleResetExam = async () => {
@@ -270,7 +272,7 @@ function Exam() {
       const res = await examAPI.submit(attemptId);
       if (res.success) {
         setShowSubmitModal(false);
-        navigate(`/dashboard/results/${attemptId}`);
+        navigate(`/dashboard/results/${attemptId}${fromLibrary ? '?from=library' : ''}`);
       }
     } catch (err) {
       console.error('Submit failed:', err);
@@ -282,7 +284,7 @@ function Exam() {
 
   const handleViewResults = () => {
     if (!attemptId) return;
-    navigate(`/dashboard/results/${attemptId}`);
+    navigate(`/dashboard/results/${attemptId}${fromLibrary ? '?from=library' : ''}`);
   };
 
   if (loadingExam) {
@@ -302,8 +304,11 @@ function Exam() {
         <DashNav />
         <main className="max-w-[1440px] mx-auto px-6 sm:px-8 lg:px-20 py-8">
           <p className="font-inter text-[#45464E]">{errorMsg || 'Exam not found.'}</p>
-          <Link to="/dashboard/all-reviewers" className="font-inter text-[#6E43B9] hover:underline mt-4 inline-block">
-            Back to All Reviewers
+          <Link
+            to={fromLibrary ? '/dashboard/library' : '/dashboard/all-reviewers'}
+            className="font-inter text-[#6E43B9] hover:underline mt-4 inline-block"
+          >
+            Back to {fromLibrary ? 'My Library' : 'All Reviewers'}
           </Link>
         </main>
       </div>
@@ -480,10 +485,10 @@ function Exam() {
         {/* Breadcrumbs */}
         <nav className="mb-[24px]" aria-label="Breadcrumb" data-aos="fade-up" data-aos-duration="400" data-aos-delay="0">
           <Link
-            to="/dashboard/all-reviewers"
+            to={fromLibrary ? '/dashboard/library' : '/dashboard/all-reviewers'}
             className="text-[#45464E] font-inter font-normal text-[14px] hover:text-[#6E43B9] transition-colors"
           >
-            All Reviewers
+            {fromLibrary ? 'My Library' : 'All Reviewers'}
           </Link>
           <span className="mx-2">›</span>
           <span className="text-[#6E43B9] font-inter font-normal text-[14px]">{reviewer.title}</span>

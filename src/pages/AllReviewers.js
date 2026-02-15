@@ -5,7 +5,7 @@ import DashNav from '../components/DashNav';
 import { REVIEWER_LOGO_MAP } from '../data/reviewers';
 import { BookmarkFilledIcon, BookmarkOutlineIcon, SearchIcon, LockIcon } from '../components/Icons';
 import ReviewerCardSkeleton from '../components/ReviewerCardSkeleton';
-import { reviewerAPI, libraryAPI } from '../services/api';
+import { reviewerAPI, libraryAPI, examAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { canAccessReviewer } from '../utils/subscription';
 
@@ -17,20 +17,38 @@ const AllReviewers = () => {
   const [libraryIds, setLibraryIds] = useState(new Set());
   const [loading, setLoading] = useState(true);
   const [togglingIds, setTogglingIds] = useState(new Set());
+  const [inProgressMap, setInProgressMap] = useState({}); // { reviewerId: { attemptId, answeredCount, totalQuestions, progressPercent } }
 
   // Fetch reviewers and library on mount
   useEffect(() => {
     let cancelled = false;
     async function fetchData() {
       try {
-        const [revRes, libRes] = await Promise.all([
+        const [revRes, libRes, histRes] = await Promise.all([
           reviewerAPI.getAll(),
           isAuthenticated ? libraryAPI.get() : Promise.resolve({ success: true, data: [] }),
+          isAuthenticated ? examAPI.getUserHistory() : Promise.resolve({ success: true, data: [] }),
         ]);
         if (cancelled) return;
         if (revRes.success) setReviewers(revRes.data);
         if (libRes.success) {
           setLibraryIds(new Set(libRes.data.map((r) => r._id)));
+        }
+        if (histRes.success) {
+          // Build map of in-progress attempts with real progress data
+          const ipMap = {};
+          histRes.data.forEach((attempt) => {
+            if (attempt.status === 'in_progress') {
+              const revId = String(attempt.reviewer?._id || attempt.reviewer);
+              ipMap[revId] = {
+                attemptId: attempt._id,
+                answeredCount: attempt.progress?.answeredCount || 0,
+                totalQuestions: attempt.progress?.totalQuestions || 0,
+                progressPercent: attempt.progress?.progressPercent || 0,
+              };
+            }
+          });
+          setInProgressMap(ipMap);
         }
       } catch (err) {
         console.error('Failed to load reviewers:', err);
@@ -133,6 +151,8 @@ const AllReviewers = () => {
                 : (card.logo?.path ?? null);
               const details = card.details || {};
               const inLibrary = libraryIds.has(card._id);
+              const inProgressData = inProgressMap[String(card._id)];
+              const inProgress = !!inProgressData;
               return (
                 <div
                   key={card._id}
@@ -221,6 +241,28 @@ const AllReviewers = () => {
                           {' '}to access
                         </p>
                       )}
+                    </div>
+                  ) : inProgress ? (
+                    <div className="flex items-start justify-start gap-6 w-full">
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/dashboard/exam/${card._id}`)}
+                        className="font-inter font-semibold text-[#421A83] text-[14px] sm:text-[16px] py-3 px-4 rounded-[8px] bg-[#FFC92A] hover:opacity-95 transition-opacity shrink-0"
+                      >
+                        Resume Exam
+                      </button>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between font-inter font-normal text-[10px] text-[#45464E] mb-1">
+                          <span>In Progress</span>
+                          <span>{inProgressData.progressPercent}%</span>
+                        </div>
+                        <div className="h-2 w-full rounded-[20px] bg-[#D9D9D9] overflow-hidden">
+                          <div
+                            className="h-full rounded-[20px] bg-[#FFC92A] transition-all duration-300"
+                            style={{ width: `${inProgressData.progressPercent}%` }}
+                          />
+                        </div>
+                      </div>
                     </div>
                   ) : (
                     <button

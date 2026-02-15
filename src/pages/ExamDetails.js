@@ -13,6 +13,7 @@ const ExamDetails = () => {
   const [reviewer, setReviewer] = useState(null);
   const [loading, setLoading] = useState(true);
   const [inProgressData, setInProgressData] = useState(null); // { attemptId, answeredCount, totalQuestions, progressPercent }
+  const [completedData, setCompletedData] = useState(null); // { attemptId, correct, totalItems, passed }
 
   useEffect(() => {
     if (!id) { setLoading(false); return; }
@@ -26,21 +27,32 @@ const ExamDetails = () => {
         if (cancelled) return;
         if (revRes.success) setReviewer(revRes.data);
         if (histRes.success) {
-          // Same logic as MyLibrary: build map by reviewer id, last occurrence wins (oldest when sorted -1)
+          // Build map by reviewer id for both in_progress and completed attempts
           const ipMap = {};
+          const completedMap = {};
           histRes.data.forEach((attempt) => {
+            const revId = String(attempt.reviewer?._id || attempt.reviewer);
             if (attempt.status === 'in_progress') {
-              const revId = String(attempt.reviewer?._id || attempt.reviewer);
               ipMap[revId] = {
                 attemptId: attempt._id,
                 answeredCount: attempt.progress?.answeredCount || 0,
                 totalQuestions: attempt.progress?.totalQuestions || 0,
                 progressPercent: attempt.progress?.progressPercent || 0,
+                remainingSeconds: attempt.remainingSeconds ?? null,
+              };
+            } else if (attempt.status === 'submitted' || attempt.status === 'timed_out') {
+              completedMap[revId] = {
+                attemptId: attempt._id,
+                correct: attempt.result?.correct || 0,
+                totalItems: attempt.result?.totalItems || 0,
+                passed: attempt.result?.passed || false,
               };
             }
           });
-          const data = ipMap[String(id)];
-          if (data) setInProgressData(data);
+          const ipData = ipMap[String(id)];
+          const completedDataResult = completedMap[String(id)];
+          if (ipData) setInProgressData(ipData);
+          if (completedDataResult) setCompletedData(completedDataResult);
         }
       } catch (err) {
         // ignore
@@ -53,6 +65,15 @@ const ExamDetails = () => {
   }, [id]);
 
   const exam = reviewer?.examDetails;
+
+  /** Format seconds into digital time format (HH:MM:SS). */
+  const formatRemainingTime = (seconds) => {
+    if (!seconds || seconds <= 0) return '00:00:00';
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    return [h, m, s].map((n) => String(n).padStart(2, '0')).join(':');
+  };
 
   useEffect(() => {
     AOS.refresh();
@@ -138,16 +159,30 @@ const ExamDetails = () => {
             >
               <div className="flex flex-wrap items-center gap-4 sm:gap-[96px] font-inter text-sm">
                 <span className="font-inter font-medium text-[14px] text-[#45464E]">
-                  Time:<br />
-                  <strong className="font-inter font-medium text-[18px] text-[#421A83]">{exam.timeFormatted}</strong>
+                  {inProgressData ? 'Remaining Time' : 'Time'}:<br />
+                  <strong className="font-inter font-medium text-[18px] text-[#421A83]">
+                    {inProgressData && inProgressData.remainingSeconds != null
+                      ? formatRemainingTime(inProgressData.remainingSeconds)
+                      : exam.timeFormatted}
+                  </strong>
                 </span>
                 <span className="font-inter font-medium text-[14px] text-[#45464E]">
-                  No. of items:<br />
-                  <strong className="font-inter font-medium text-[18px] text-[#421A83]">{exam.itemsCount}</strong>
+                  {completedData ? 'Previous Score' : 'No. of items'}:<br />
+                  <strong className="font-inter font-medium text-[18px] text-[#421A83]">
+                    {completedData
+                      ? `${completedData.correct}/${completedData.totalItems}`
+                      : inProgressData
+                      ? `${inProgressData.answeredCount}/${inProgressData.totalQuestions}`
+                      : exam.itemsCount}
+                  </strong>
                 </span>
                 <div className="font-inter font-medium text-[14px] text-[#45464E]">
-                  Progress:<br />
-                  {inProgressData ? (
+                  {completedData ? 'Status' : 'Progress'}:<br />
+                  {completedData ? (
+                    <strong className="font-inter font-medium text-[18px] text-[#421A83]">
+                      {completedData.passed ? 'PASSED! 🎉' : 'FAILED'}
+                    </strong>
+                  ) : inProgressData ? (
                     <div className="mt-1 w-full min-w-[120px] max-w-[200px]">
                       <div className="flex justify-between font-inter font-normal text-[10px] text-[#45464E] mb-1">
                         <span>In Progress</span>
@@ -166,13 +201,32 @@ const ExamDetails = () => {
                 </div>
               </div>
               <div className="w-full sm:w-auto shrink-0">
-                <button
-                  type="button"
-                  onClick={() => navigate(`/dashboard/exam/${id}/start${fromLibrary ? '?from=library' : ''}`)}
-                  className={`font-inter font-bold text-[16px] text-[#421A83] py-[10.5px] px-8 rounded-[8px] w-full sm:w-auto bg-[#FFC92A] hover:opacity-95 transition-opacity ${!inProgressData ? 'sm:max-w-[150px]' : ''}`}
-                >
-                  {inProgressData ? 'Resume Exam' : 'Start Exam'}
-                </button>
+                {completedData ? (
+                  <div className="flex flex-wrap gap-3 w-full sm:w-auto">
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/dashboard/exam/${id}/start${fromLibrary ? '?from=library' : ''}`)}
+                      className="font-inter font-bold text-[16px] text-[#421A83] py-[10.5px] px-8 rounded-[8px] bg-[#FFC92A] hover:opacity-95 transition-opacity flex-1 sm:flex-initial"
+                    >
+                      Retake Exam
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/dashboard/review/${completedData.attemptId}${fromLibrary ? '?from=library' : ''}`)}
+                      className="font-inter font-bold text-[16px] text-[#421A83] py-[10.5px] px-8 rounded-[8px] bg-[#FFC92A] hover:opacity-95 transition-opacity flex-1 sm:flex-initial"
+                    >
+                      Review Answers
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/dashboard/exam/${id}/start${fromLibrary ? '?from=library' : ''}`)}
+                    className={`font-inter font-bold text-[16px] text-[#421A83] py-[10.5px] px-8 rounded-[8px] w-full sm:w-auto bg-[#FFC92A] hover:opacity-95 transition-opacity ${!inProgressData ? 'sm:max-w-[150px]' : ''}`}
+                  >
+                    {inProgressData ? 'Resume Exam' : 'Start Exam'}
+                  </button>
+                )}
               </div>
             </div>
 

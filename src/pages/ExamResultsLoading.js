@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import AOS from 'aos';
 import DashNav from '../components/DashNav';
 import { REVIEWER_LOGO_MAP } from '../data/reviewers';
@@ -11,6 +11,8 @@ import { canAccessReviewer } from '../utils/subscription';
 const ExamResultsLoading = () => {
   const { attemptId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const fromLibrary = new URLSearchParams(location.search).get('from') === 'library';
   const { isAuthenticated, user } = useAuth();
   const [attempt, setAttempt] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -80,10 +82,10 @@ const ExamResultsLoading = () => {
         <main className="max-w-[1440px] mx-auto px-6 sm:px-8 lg:px-20 py-8">
           <p className="font-inter text-[#45464E]">Results not found.</p>
           <Link
-            to="/dashboard/all-reviewers"
+            to={fromLibrary ? '/dashboard/library' : '/dashboard/all-reviewers'}
             className="font-inter text-[#6E43B9] hover:underline mt-4 inline-block"
           >
-            Back to All Reviewers
+            Back to {fromLibrary ? 'My Library' : 'All Reviewers'}
           </Link>
         </main>
       </div>
@@ -136,10 +138,10 @@ const ExamResultsLoading = () => {
             data-aos-delay="0"
           >
             <Link
-              to="/dashboard/all-reviewers"
+              to={fromLibrary ? '/dashboard/library' : '/dashboard/all-reviewers'}
               className="text-[#45464E] font-inter font-normal not-italic text-[14px] hover:text-[#6E43B9] transition-colors"
             >
-              All Reviewers
+              {fromLibrary ? 'My Library' : 'All Reviewers'}
             </Link>
             <span className="mx-2">›</span>
             <span className="text-[#6E43B9] font-inter font-normal not-italic text-[14px]">{title}</span>
@@ -190,10 +192,10 @@ const ExamResultsLoading = () => {
       <main className="max-w-[1440px] mx-auto px-6 sm:px-8 lg:px-20 pt-[24px] pb-[40px]">
         <nav className="mb-[24px]" aria-label="Breadcrumb">
           <Link
-            to="/dashboard/all-reviewers"
+            to={fromLibrary ? '/dashboard/library' : '/dashboard/all-reviewers'}
             className="text-[#45464E] font-inter font-normal not-italic text-[14px] hover:text-[#6E43B9] transition-colors"
           >
-            All Reviewers
+            {fromLibrary ? 'My Library' : 'All Reviewers'}
           </Link>
           <span className="mx-2">›</span>
           <span className="text-[#6E43B9] font-inter font-normal not-italic text-[14px]">{title}</span>
@@ -346,14 +348,14 @@ const ExamResultsLoading = () => {
           <div className="flex flex-wrap justify-center gap-4">
             <button
               type="button"
-              onClick={() => navigate('/dashboard/all-reviewers')}
+              onClick={() => navigate(fromLibrary ? '/dashboard/library' : '/dashboard/all-reviewers')}
               className="font-inter font-normal text-[14px] text-[#6E43B9] py-[11.5px] px-4 rounded-[8px] border-[1px] border-[#6E43B9] bg-white hover:bg-gray-50 transition-colors"
             >
               Go back to Dashboard
             </button>
             <button
               type="button"
-              onClick={() => navigate(`/dashboard/review/${attemptId}`)}
+              onClick={() => navigate(`/dashboard/review/${attemptId}${fromLibrary ? '?from=library' : ''}`)}
               className="font-inter font-bold text-[14px] text-[#421A83] py-[11.5px] px-4 rounded-[8px] bg-[#FFC92A] hover:opacity-95 transition-opacity"
             >
               Review My Answers
