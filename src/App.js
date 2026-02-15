@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import ScrollToTop from './components/ScrollToTop';
 import ProtectedRoute from './components/ProtectedRoute';
+import PasswordGate from './components/PasswordGate';
 import Home from './pages/Home';
 import Pricing from './pages/Pricing';
 import FAQ from './pages/FAQ';
@@ -27,9 +28,10 @@ function App() {
   }, []);
 
   return (
-    <Router>
-      <ScrollToTop />
-      <Routes>
+    <PasswordGate>
+      <Router>
+        <ScrollToTop />
+        <Routes>
         {/* Public routes */}
         <Route path="/" element={<Home />} />
         <Route path="/pricing" element={<Pricing />} />
@@ -49,8 +51,9 @@ function App() {
         <Route path="/dashboard/results/:attemptId" element={<ProtectedRoute><ExamResultsLoading /></ProtectedRoute>} />
         <Route path="/dashboard/review/:attemptId" element={<ProtectedRoute><ExamReview /></ProtectedRoute>} />
         <Route path="/dashboard/exam/:id" element={<ProtectedRoute><ExamDetails /></ProtectedRoute>} />
-      </Routes>
-    </Router>
+        </Routes>
+      </Router>
+    </PasswordGate>
   );
 }
 
