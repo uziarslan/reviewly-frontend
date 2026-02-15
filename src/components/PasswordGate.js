@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 const STORAGE_KEY = 'reviewly_access_unlocked';
-const PASSWORD = 'bra@inyb3sh!';
+const PASSWORD = 'EarlyAccessCSE';
 
 /**
  * Password gate for the frontend. Once the correct code is entered,
