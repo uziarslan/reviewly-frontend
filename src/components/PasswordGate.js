@@ -70,10 +70,6 @@ function PasswordGate({ children }) {
           >
             Unlock
           </button>
-          <p className="font-inter text-xs text-[#9CA3AF] mt-4">
-            To reset the gate, run in DevTools:{' '}
-            <code className="bg-gray-100 px-1 rounded">localStorage.removeItem('{STORAGE_KEY}')</code>
-          </p>
         </form>
       </div>
     );
