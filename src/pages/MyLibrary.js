@@ -1,13 +1,17 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import AOS from 'aos';
 import DashNav from '../components/DashNav';
 import { REVIEWER_LOGO_MAP } from '../data/reviewers';
 import { BookmarkFilledIcon, SearchIcon, LockIcon, PaperIcon } from '../components/Icons';
+import EmptyStateSkeleton from '../components/EmptyStateSkeleton';
 import { libraryAPI, examAPI } from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import { canAccessReviewer } from '../utils/subscription';
 
 const MyLibrary = () => {
   const navigate = useNavigate();
+  const { isAuthenticated, user } = useAuth();
   const [search, setSearch] = useState('');
   const [libraryCards, setLibraryCards] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -29,7 +33,7 @@ const MyLibrary = () => {
           const ipMap = {};
           histRes.data.forEach((attempt) => {
             if (attempt.status === 'in_progress') {
-              const revId = attempt.reviewer?._id || attempt.reviewer;
+              const revId = String(attempt.reviewer?._id || attempt.reviewer);
               ipMap[revId] = {
                 attemptId: attempt._id,
                 answeredCount: attempt.progress?.answeredCount || 0,
@@ -64,6 +68,8 @@ const MyLibrary = () => {
     );
   }, [libraryCards, search]);
 
+  const checkAccess = (reviewer) => canAccessReviewer(reviewer, { isAuthenticated, user });
+
   const removeFromLibrary = async (id) => {
     // Optimistic removal
     setLibraryCards((prev) => prev.filter((c) => c._id !== id));
@@ -75,7 +81,7 @@ const MyLibrary = () => {
       try {
         const res = await libraryAPI.get();
         if (res.success) setLibraryCards(res.data);
-      } catch (_) {}
+      } catch (_) { }
     }
   };
 
@@ -106,16 +112,9 @@ const MyLibrary = () => {
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-16">
-            <div className="w-[48px] h-[48px] rounded-full border-[4px] border-[#6E43B9] border-t-transparent animate-spin" />
-          </div>
+          <EmptyStateSkeleton />
         ) : filtered.length === 0 ? (
-          <div
-            className="flex flex-col items-center justify-center py-16 text-center"
-            data-aos="fade-up"
-            data-aos-duration="500"
-            data-aos-delay="100"
-          >
+          <div className="flex flex-col items-center justify-center py-16 text-center">
             <div className="w-[140px] h-[140px] border-[1px] border-[#E1E2E9] rounded-full bg-[#F4F5FA] flex items-center justify-center mb-[40px]">
               <PaperIcon className="w-[60px] h-[60px] text-[#9CA3AF]" />
             </div>
@@ -133,7 +132,7 @@ const MyLibrary = () => {
                 ? REVIEWER_LOGO_MAP[card.logo.filename]
                 : (card.logo?.path ?? null);
               const details = card.details || {};
-              const inProgressData = inProgressMap[card._id];
+              const inProgressData = inProgressMap[String(card._id)];
               const inProgress = !!inProgressData;
               return (
                 <div
@@ -201,19 +200,29 @@ const MyLibrary = () => {
                       </>
                     )}
                   </div>
-                  {card.access === 'premium' ? (
-                    <button
-                      type="button"
-                      className="w-[205px] font-inter font-semibold text-[#421A83] text-[14px] sm:text-[16px] py-3 rounded-[8px] bg-[#FFC92A] hover:opacity-95 transition-opacity flex items-center justify-center gap-2"
-                    >
-                      <LockIcon className="w-[18px] h-[21px] shrink-0" />
-                      Upgrade to Premium
-                    </button>
+                  {!checkAccess(card) ? (
+                    <div className="flex flex-col items-start gap-2">
+                      <button
+                        type="button"
+                        className="w-[205px] font-inter font-semibold text-[#421A83] text-[14px] sm:text-[16px] py-3 rounded-[8px] bg-[#FFC92A] hover:opacity-95 transition-opacity flex items-center justify-center gap-2"
+                      >
+                        <LockIcon className="w-[18px] h-[21px] shrink-0" />
+                        Upgrade to Premium
+                      </button>
+                      {!isAuthenticated && (
+                        <p className="font-inter font-normal text-[12px] text-[#6C737F]">
+                          <Link to="/" className="text-[#6E43B9] font-semibold hover:underline">
+                            Sign in
+                          </Link>
+                          {' '}to access
+                        </p>
+                      )}
+                    </div>
                   ) : inProgress ? (
                     <div className="flex items-start justify-start gap-6 w-full">
                       <button
                         type="button"
-                        onClick={() => navigate(`/dashboard/library/${card._id}`)}
+                        onClick={() => navigate(`/dashboard/exam/${card._id}?from=library`)}
                         className="font-inter font-semibold text-[#421A83] text-[14px] sm:text-[16px] py-3 px-4 rounded-[8px] bg-[#FFC92A] hover:opacity-95 transition-opacity shrink-0"
                       >
                         Resume Exam
@@ -234,7 +243,7 @@ const MyLibrary = () => {
                   ) : (
                     <button
                       type="button"
-                      onClick={() => navigate(`/dashboard/library/${card._id}`)}
+                      onClick={() => navigate(`/dashboard/exam/${card._id}?from=library`)}
                       className="max-w-[106px] font-inter font-semibold text-[#421A83] text-[14px] sm:text-[16px] py-3 rounded-[8px] bg-[#FFC92A] hover:opacity-95 transition-opacity"
                     >
                       Take Exam

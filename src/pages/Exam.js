@@ -15,6 +15,8 @@ function secondsToTimeStr(totalSec) {
   return [h, m, s].map((n) => String(n).padStart(2, '0')).join(':');
 }
 
+const OPTION_LABELS = ['A', 'B', 'C', 'D'];
+
 function Exam() {
   const { id } = useParams(); // reviewer id
   const navigate = useNavigate();
@@ -148,11 +150,10 @@ function Exam() {
   }, [timeUp]);
 
   const currentQuestion = questions[currentIndex];
-  const optionLabels = ['A', 'B', 'C', 'D'];
 
   const handleOptionChange = useCallback((optionIndex) => {
     if (examFrozen) return;
-    const letter = optionLabels[optionIndex];
+    const letter = OPTION_LABELS[optionIndex];
     setSelectedOption(optionIndex);
     setAnswered((prev) => new Set(prev).add(currentIndex + 1));
     setAnswers((prev) => ({ ...prev, [currentIndex]: letter }));
@@ -172,7 +173,7 @@ function Exam() {
       // Restore previously selected answer for next question
       const nextIdx = currentIndex + 1;
       const prevAnswer = answers[nextIdx];
-      setSelectedOption(prevAnswer ? optionLabels.indexOf(prevAnswer) : null);
+      setSelectedOption(prevAnswer ? OPTION_LABELS.indexOf(prevAnswer) : null);
     }
   };
 
@@ -183,7 +184,7 @@ function Exam() {
       // Restore previously selected answer
       const prevIdx = currentIndex - 1;
       const prevAnswer = answers[prevIdx];
-      setSelectedOption(prevAnswer ? optionLabels.indexOf(prevAnswer) : null);
+      setSelectedOption(prevAnswer ? OPTION_LABELS.indexOf(prevAnswer) : null);
     }
   };
 
@@ -192,7 +193,7 @@ function Exam() {
     const idx = num - 1;
     setCurrentIndex(idx);
     const prevAnswer = answers[idx];
-    setSelectedOption(prevAnswer ? optionLabels.indexOf(prevAnswer) : null);
+    setSelectedOption(prevAnswer ? OPTION_LABELS.indexOf(prevAnswer) : null);
   };
 
   const isLastQuestion = currentIndex === totalQuestions - 1;
@@ -225,7 +226,7 @@ function Exam() {
       console.error('Pause failed:', err);
     }
     setShowPauseModal(false);
-    navigate(`/dashboard/library/${id}`);
+    navigate(`/dashboard/exam/${id}?from=library`);
   };
 
   const handleResetExam = async () => {

@@ -4,8 +4,10 @@ import AOS from 'aos';
 import DashNav from '../components/DashNav';
 import { REVIEWER_LOGO_MAP } from '../data/reviewers';
 import { BookmarkFilledIcon, BookmarkOutlineIcon, SearchIcon, LockIcon } from '../components/Icons';
+import ReviewerCardSkeleton from '../components/ReviewerCardSkeleton';
 import { reviewerAPI, libraryAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { canAccessReviewer } from '../utils/subscription';
 
 const AllReviewers = () => {
   const navigate = useNavigate();
@@ -89,17 +91,7 @@ const AllReviewers = () => {
     }
   }, [libraryIds, togglingIds]);
 
-  /** Check if user can access a reviewer based on subscription */
-  const canAccessReviewer = (reviewer) => {
-    // Free reviewers are always accessible
-    if (reviewer.access === 'free') return true;
-    
-    // Premium reviewers require authentication and paid subscription
-    if (!isAuthenticated) return false;
-    
-    const userPlan = user?.subscription?.plan || 'free';
-    return ['weekly', 'monthly', 'quarterly'].includes(userPlan);
-  };
+  const checkAccess = (reviewer) => canAccessReviewer(reviewer, { isAuthenticated, user });
 
   return (
     <div className="min-h-screen bg-[#F5F4FF]">
@@ -128,128 +120,121 @@ const AllReviewers = () => {
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-16">
-            <div className="w-[48px] h-[48px] rounded-full border-[4px] border-[#6E43B9] border-t-transparent animate-spin" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-[24px] justify-items-center">
+            {[...Array(6)].map((_, i) => (
+              <ReviewerCardSkeleton key={i} />
+            ))}
           </div>
         ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-[24px] justify-items-center">
-          {filtered.map((card, index) => {
-            const logoSrc = card.logo?.filename && REVIEWER_LOGO_MAP[card.logo.filename]
-              ? REVIEWER_LOGO_MAP[card.logo.filename]
-              : (card.logo?.path ?? null);
-            const details = card.details || {};
-            const inLibrary = libraryIds.has(card._id);
-            return (
-              <div
-                key={card._id}
-                className="w-full max-w-[410.67px] min-w-0 bg-white rounded-[12px] p-[24px] text-left shadow-[0px_2px_4px_0px_#00000026] flex flex-col"
-                data-aos="fade-up"
-                data-aos-duration="500"
-                data-aos-delay={100 + index * 50}
-              >
-                <div className="flex items-start justify-between gap-2 mb-4">
-                  {logoSrc ? (
-                    <img src={logoSrc} alt="" className="w-[40px] h-[40px] shrink-0 object-cover" />
-                  ) : (
-                    <div className="w-[40px] h-[40px] rounded bg-[#6E43B9] flex items-center justify-center text-white font-inter font-bold text-xs shrink-0">
-                      CSE
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-[24px] justify-items-center">
+            {filtered.map((card, index) => {
+              const logoSrc = card.logo?.filename && REVIEWER_LOGO_MAP[card.logo.filename]
+                ? REVIEWER_LOGO_MAP[card.logo.filename]
+                : (card.logo?.path ?? null);
+              const details = card.details || {};
+              const inLibrary = libraryIds.has(card._id);
+              return (
+                <div
+                  key={card._id}
+                  className="w-full max-w-[410.67px] min-w-0 bg-white rounded-[12px] p-[24px] text-left shadow-[0px_2px_4px_0px_#00000026] flex flex-col"
+                  data-aos="fade-up"
+                  data-aos-duration="500"
+                  data-aos-delay={100 + index * 50}
+                >
+                  <div className="flex items-start justify-between gap-2 mb-4">
+                    {logoSrc ? (
+                      <img src={logoSrc} alt="" className="w-[40px] h-[40px] shrink-0 object-cover" />
+                    ) : (
+                      <div className="w-[40px] h-[40px] rounded bg-[#6E43B9] flex items-center justify-center text-white font-inter font-bold text-xs shrink-0">
+                        CSE
+                      </div>
+                    )}
+                    <div className="relative group">
+                      <button
+                        type="button"
+                        onClick={() => toggleLibrary(card._id)}
+                        className={`p-[7px] rounded-[4px] w-[40px] h-[40px] ${inLibrary ? 'bg-[#7D52CC1A]' : 'bg-[#F4F4F4]'
+                          } transition-colors flex items-center justify-center`}
+                        aria-label={inLibrary ? 'Remove from library' : 'Add to library'}
+                      >
+                        {inLibrary ? (
+                          <BookmarkFilledIcon className="w-[25px] h-[25px]" />
+                        ) : (
+                          <BookmarkOutlineIcon className="w-[25px] h-[25px]" />
+                        )}
+                      </button>
+                      <span
+                        role="tooltip"
+                        className="absolute left-1/2 -translate-x-1/2 top-full mt-2 py-1 px-2 font-inter font-medium text-[10px] text-white bg-[#616161E5] rounded-[4px] pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 align-middle"
+                      >
+                        {inLibrary ? 'Remove from library' : 'Add to library'}
+                      </span>
                     </div>
-                  )}
-                  <div className="relative group">
-                    <button
-                      type="button"
-                      onClick={() => toggleLibrary(card._id)}
-                      className={`p-[7px] rounded-[4px] w-[40px] h-[40px] ${inLibrary ? 'bg-[#7D52CC1A]' : 'bg-[#F4F4F4]'
-                        } transition-colors flex items-center justify-center`}
-                      aria-label={inLibrary ? 'Remove from library' : 'Add to library'}
-                    >
-                      {inLibrary ? (
-                        <BookmarkFilledIcon className="w-[25px] h-[25px]" />
-                      ) : (
-                        <BookmarkOutlineIcon className="w-[25px] h-[25px]" />
-                      )}
-                    </button>
-                    <span
-                      role="tooltip"
-                      className="absolute left-1/2 -translate-x-1/2 top-full mt-2 py-1 px-2 font-inter font-medium text-[10px] text-white bg-[#616161E5] rounded-[4px] pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 align-middle"
-                    >
-                      {inLibrary ? 'Remove from library' : 'Add to library'}
+                  </div>
+                  <h2 className="font-inter text-[#45464E] font-semibold text-[16px] mb-3">
+                    {card.title}
+                  </h2>
+                  <p className="font-inter text-[#64748B] text-[15px] leading-[20px] mb-4 font-normal flex-1">
+                    <span className="font-semibold">{card.description?.short ?? ''}</span>
+                    <br />
+                    {card.description?.full ?? ''}
+                  </p>
+                  <div className="flex flex-wrap items-center gap-[5px] text-sm text-[#0F172A] mb-4">
+                    <span className="inline-flex items-center gap-1.5 font-inter font-normal not-italic text-[14px] text-[#45464E]">
+                      📝 {details.items ?? (card.examDetails?.itemsCount ? `${card.examDetails.itemsCount} items` : '—')}
                     </span>
+                    <span className="text-[#45464E] font-inter font-normal not-italic text-[14px]">•</span>
+                    <span className="inline-flex items-center gap-1.5 font-inter font-normal not-italic text-[14px] text-[#45464E]">
+                      ⏱️ {details.duration ?? '—'}
+                    </span>
+                    {details.passingRate != null && (
+                      <>
+                        <span className="text-[#45464E] font-inter font-normal not-italic text-[14px]">•</span>
+                        <span className="inline-flex items-center gap-1.5 font-inter font-normal not-italic text-[14px] text-[#45464E]">
+                          🎯 Passing rate: {details.passingRate}
+                        </span>
+                      </>
+                    )}
+                    {details.accessLevel != null && (
+                      <>
+                        <span className="text-[#45464E] font-inter font-normal not-italic text-[14px]">•</span>
+                        <span className="inline-flex items-center gap-1.5 font-inter font-normal not-italic text-[14px] text-[#45464E]">
+                          📘 {details.accessLevel}
+                        </span>
+                      </>
+                    )}
                   </div>
-                </div>
-                <h2 className="font-inter text-[#45464E] font-semibold text-[16px] mb-3">
-                  {card.title}
-                </h2>
-                <p className="font-inter text-[#64748B] text-[15px] leading-[20px] mb-4 font-normal flex-1">
-                  <span className="font-semibold">{card.description?.short ?? ''}</span>
-                  <br />
-                  {card.description?.full ?? ''}
-                </p>
-                <div className="flex flex-wrap items-center gap-[5px] text-sm text-[#0F172A] mb-4">
-                  <span className="inline-flex items-center gap-1.5 font-inter font-normal not-italic text-[14px] text-[#45464E]">
-                    📝 {details.items ?? (card.examDetails?.itemsCount ? `${card.examDetails.itemsCount} items` : '—')}
-                  </span>
-                  <span className="text-[#45464E] font-inter font-normal not-italic text-[14px]">•</span>
-                  <span className="inline-flex items-center gap-1.5 font-inter font-normal not-italic text-[14px] text-[#45464E]">
-                    ⏱️ {details.duration ?? '—'}
-                  </span>
-                  {details.passingRate != null && (
-                    <>
-                      <span className="text-[#45464E] font-inter font-normal not-italic text-[14px]">•</span>
-                      <span className="inline-flex items-center gap-1.5 font-inter font-normal not-italic text-[14px] text-[#45464E]">
-                        🎯 Passing rate: {details.passingRate}
-                      </span>
-                    </>
-                  )}
-                  {details.accessLevel != null && (
-                    <>
-                      <span className="text-[#45464E] font-inter font-normal not-italic text-[14px]">•</span>
-                      <span className="inline-flex items-center gap-1.5 font-inter font-normal not-italic text-[14px] text-[#45464E]">
-                        📘 {details.accessLevel}
-                      </span>
-                    </>
-                  )}
-                </div>
-                {!canAccessReviewer(card) ? (
-                  <div className="flex flex-col items-start gap-2">
+                  {!checkAccess(card) ? (
+                    <div className="flex flex-col items-start gap-2">
+                      <button
+                        type="button"
+                        className="w-[205px] font-inter font-semibold text-[#421A83] text-[14px] sm:text-[16px] py-3 rounded-[8px] bg-[#FFC92A] hover:opacity-95 transition-opacity flex items-center justify-center gap-2"
+                      >
+                        <LockIcon className="w-[18px] h-[21px] shrink-0" />
+                        Upgrade to Premium
+                      </button>
+                      {!isAuthenticated && (
+                        <p className="font-inter font-normal text-[12px] text-[#6C737F]">
+                          <Link to="/" className="text-[#6E43B9] font-semibold hover:underline">
+                            Sign in
+                          </Link>
+                          {' '}to access
+                        </p>
+                      )}
+                    </div>
+                  ) : (
                     <button
                       type="button"
-                      disabled
-                      className="max-w-[106px] font-inter font-semibold text-[#999999] text-[14px] sm:text-[16px] py-3 rounded-[8px] bg-[#F0F0F0] cursor-not-allowed flex items-center justify-center gap-2"
+                      onClick={() => navigate(`/dashboard/exam/${card._id}`)}
+                      className="max-w-[106px] font-inter font-semibold text-[#421A83] text-[14px] sm:text-[16px] py-3 rounded-[8px] bg-[#FFC92A] hover:opacity-95 transition-opacity"
                     >
-                      <LockIcon className="w-[18px] h-[21px] shrink-0" />
-                      Locked
+                      Take Exam
                     </button>
-                    {!isAuthenticated && (
-                      <p className="font-inter font-normal text-[12px] text-[#6C737F]">
-                        <Link to="/" className="text-[#6E43B9] font-semibold hover:underline">
-                          Sign in
-                        </Link>
-                        {' '}to access
-                      </p>
-                    )}
-                    {isAuthenticated && (
-                      <p className="font-inter font-normal text-[12px] text-[#6C737F]">
-                        <Link to="/dashboard/settings/update-subscription" className="text-[#6E43B9] font-semibold hover:underline">
-                          Upgrade plan
-                        </Link>
-                        {' '}to access
-                      </p>
-                    )}
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => navigate(`/dashboard/exam/${card._id}`)}
-                    className="max-w-[106px] font-inter font-semibold text-[#421A83] text-[14px] sm:text-[16px] py-3 rounded-[8px] bg-[#FFC92A] hover:opacity-95 transition-opacity"
-                  >
-                    Take Exam
-                  </button>
-                )}
-              </div>
-            );
-          })}
-        </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         )}
       </main>
     </div>

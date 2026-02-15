@@ -54,8 +54,8 @@ function ExamReview() {
   const currentQ = questions[currentIndex];
 
   const optionLabels = ['A', 'B', 'C', 'D'];
-  const correctLetter = currentQ.correctAnswer;
-  const selectedLetter = currentQ.selectedAnswer;
+  const correctLetter = (currentQ.correctAnswer || '').toString().toUpperCase().trim();
+  const selectedLetter = (currentQ.selectedAnswer || '').toString().toUpperCase().trim();
   const isCorrectAnswer = currentQ.isCorrect;
 
   // Build explanation text
@@ -124,12 +124,12 @@ function ExamReview() {
                       className="flex items-start gap-3 font-inter text-[16px] text-[#45464E]"
                     >
                       <span
-                        className={`mt-1 w-5 h-5 flex items-center justify-center shrink-0 rounded-full border bg-white border-[#B0B0B0]${
+                        className={`mt-1 w-5 h-5 flex items-center justify-center shrink-0 rounded-full bg-white ${
                           showCheck
-                            ? ' border-[6px] border-[#06A561]'
+                            ? 'border-[6px] border-[#06A561]'
                             : showX
-                              ? ' border-[6px] border-[#F0142F]'
-                              : ''
+                              ? 'border-[6px] border-[#F0142F]'
+                              : 'border border-[#B0B0B0]'
                         }`}
                         aria-hidden="true"
                       />

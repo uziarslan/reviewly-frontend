@@ -1,25 +1,54 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import AOS from 'aos';
 import DashNav from '../components/DashNav';
-import { reviewerAPI } from '../services/api';
+import { reviewerAPI, examAPI } from '../services/api';
 import { ExamNotesLightningIcon } from '../components/Icons';
 
 const ExamDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const fromLibrary = new URLSearchParams(location.search).get('from') === 'library';
   const [reviewer, setReviewer] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [inProgressData, setInProgressData] = useState(null); // { attemptId, answeredCount, totalQuestions, progressPercent }
 
   useEffect(() => {
     if (!id) { setLoading(false); return; }
     let cancelled = false;
-    reviewerAPI.getById(id)
-      .then((res) => {
-        if (!cancelled && res.success) setReviewer(res.data);
-      })
-      .catch(() => {})
-      .finally(() => { if (!cancelled) setLoading(false); });
+    async function fetchData() {
+      try {
+        const [revRes, histRes] = await Promise.all([
+          reviewerAPI.getById(id),
+          examAPI.getUserHistory(),
+        ]);
+        if (cancelled) return;
+        if (revRes.success) setReviewer(revRes.data);
+        if (histRes.success) {
+          // Same logic as MyLibrary: build map by reviewer id, last occurrence wins (oldest when sorted -1)
+          const ipMap = {};
+          histRes.data.forEach((attempt) => {
+            if (attempt.status === 'in_progress') {
+              const revId = String(attempt.reviewer?._id || attempt.reviewer);
+              ipMap[revId] = {
+                attemptId: attempt._id,
+                answeredCount: attempt.progress?.answeredCount || 0,
+                totalQuestions: attempt.progress?.totalQuestions || 0,
+                progressPercent: attempt.progress?.progressPercent || 0,
+              };
+            }
+          });
+          const data = ipMap[String(id)];
+          if (data) setInProgressData(data);
+        }
+      } catch (err) {
+        // ignore
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    fetchData();
     return () => { cancelled = true; };
   }, [id]);
 
@@ -46,8 +75,11 @@ const ExamDetails = () => {
         <DashNav />
         <main className="max-w-[1440px] mx-auto px-6 sm:px-8 lg:px-20 py-8">
           <p className="font-inter text-[#45464E]">Exam not found.</p>
-          <Link to="/dashboard/all-reviewers" className="font-inter text-[#6E43B9] hover:underline mt-4 inline-block">
-            Back to All Reviewers
+          <Link
+            to={fromLibrary ? '/dashboard/library' : '/dashboard/all-reviewers'}
+            className="font-inter text-[#6E43B9] hover:underline mt-4 inline-block"
+          >
+            Back to {fromLibrary ? 'My Library' : 'All Reviewers'}
           </Link>
         </main>
       </div>
@@ -63,10 +95,10 @@ const ExamDetails = () => {
         {/* Breadcrumbs */}
         <nav className="mb-[24px]" aria-label="Breadcrumb">
           <Link
-            to="/dashboard/all-reviewers"
+            to={fromLibrary ? '/dashboard/library' : '/dashboard/all-reviewers'}
             className="text-[#45464E] font-inter font-normal not-italic text-[14px] hover:text-[#6E43B9] transition-colors"
           >
-            All Reviewers
+            {fromLibrary ? 'My Library' : 'All Reviewers'}
           </Link>
           <span className="mx-2">›</span>
           <span className="text-[#6E43B9] font-inter font-normal not-italic text-[14px]">{title}</span>
@@ -97,7 +129,7 @@ const ExamDetails = () => {
               {title}
             </h1>
 
-            {/* Metrics + Start Exam button */}
+            {/* Metrics + Start/Resume Exam button */}
             <div
               className="flex flex-wrap items-center justify-between gap-4 sm:gap-0 mb-[24px]"
               data-aos="fade-up"
@@ -113,18 +145,35 @@ const ExamDetails = () => {
                   No. of items:<br />
                   <strong className="font-inter font-medium text-[18px] text-[#421A83]">{exam.itemsCount}</strong>
                 </span>
-                <span className="font-inter font-medium text-[14px] text-[#45464E]">
+                <div className="font-inter font-medium text-[14px] text-[#45464E]">
                   Progress:<br />
-                  <strong className="font-inter font-medium text-[18px] text-[#421A83]">{exam.progress}</strong>
-                </span>
+                  {inProgressData ? (
+                    <div className="mt-1 w-full min-w-[120px] max-w-[200px]">
+                      <div className="flex justify-between font-inter font-normal text-[10px] text-[#45464E] mb-1">
+                        <span>In Progress</span>
+                        <span>{inProgressData.progressPercent}%</span>
+                      </div>
+                      <div className="h-2 w-full rounded-[20px] bg-[#D9D9D9] overflow-hidden">
+                        <div
+                          className="h-full rounded-[20px] bg-[#FFC92A] transition-all duration-300"
+                          style={{ width: `${inProgressData.progressPercent}%` }}
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <strong className="font-inter font-medium text-[18px] text-[#421A83]">{exam.progress}</strong>
+                  )}
+                </div>
               </div>
-              <button
-                type="button"
-                onClick={() => navigate(`/dashboard/exam/${id}/start`)}
-                className="font-inter font-bold text-[16px] text-[#421A83] py-[10.5px] px-8 rounded-[8px] w-full sm:w-auto sm:max-w-[150px] bg-[#FFC92A] hover:opacity-95 transition-opacity shrink-0"
-              >
-                Start Exam
-              </button>
+              <div className="w-full sm:w-auto shrink-0">
+                <button
+                  type="button"
+                  onClick={() => navigate(`/dashboard/exam/${id}/start${fromLibrary ? '?from=library' : ''}`)}
+                  className={`font-inter font-bold text-[16px] text-[#421A83] py-[10.5px] px-8 rounded-[8px] w-full sm:w-auto bg-[#FFC92A] hover:opacity-95 transition-opacity ${!inProgressData ? 'sm:max-w-[150px]' : ''}`}
+                >
+                  {inProgressData ? 'Resume Exam' : 'Start Exam'}
+                </button>
+              </div>
             </div>
 
             {/* Coverage / Subjects */}

@@ -14,7 +14,6 @@ import AccountSettings from './pages/AccountSettings';
 import UpdateSubscription from './pages/UpdateSubscription';
 import HelpCenter from './pages/HelpCenter';
 import ExamDetails from './pages/ExamDetails';
-import LibraryExamDetails from './pages/LibraryExamDetails';
 import Exam from './pages/Exam';
 import ExamResultsLoading from './pages/ExamResultsLoading';
 import ExamReview from './pages/ExamReview';
@@ -43,7 +42,6 @@ function App() {
         <Route path="/dashboard" element={<ProtectedRoute><Navigate to="/dashboard/all-reviewers" replace /></ProtectedRoute>} />
         <Route path="/dashboard/all-reviewers" element={<ProtectedRoute><AllReviewers /></ProtectedRoute>} />
         <Route path="/dashboard/library" element={<ProtectedRoute><MyLibrary /></ProtectedRoute>} />
-        <Route path="/dashboard/library/:id" element={<ProtectedRoute><LibraryExamDetails /></ProtectedRoute>} />
         <Route path="/dashboard/settings" element={<ProtectedRoute><AccountSettings /></ProtectedRoute>} />
         <Route path="/dashboard/settings/update-subscription" element={<ProtectedRoute><UpdateSubscription /></ProtectedRoute>} />
         <Route path="/dashboard/help" element={<ProtectedRoute><HelpCenter /></ProtectedRoute>} />

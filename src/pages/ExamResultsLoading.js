@@ -5,10 +5,13 @@ import DashNav from '../components/DashNav';
 import { REVIEWER_LOGO_MAP } from '../data/reviewers';
 import { BookmarkOutlineIcon, LockIcon } from '../components/Icons';
 import { examAPI, reviewerAPI } from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import { canAccessReviewer } from '../utils/subscription';
 
 const ExamResultsLoading = () => {
   const { attemptId } = useParams();
   const navigate = useNavigate();
+  const { isAuthenticated, user } = useAuth();
   const [attempt, setAttempt] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showResults, setShowResults] = useState(false);
@@ -49,6 +52,8 @@ const ExamResultsLoading = () => {
     fetchResult();
     return () => { cancelled = true; };
   }, [attemptId]);
+
+  const checkAccess = (reviewer) => canAccessReviewer(reviewer, { isAuthenticated, user });
 
   // Show loading animation for 5 seconds then display results
   useEffect(() => {
@@ -433,14 +438,24 @@ const ExamResultsLoading = () => {
                     </>
                   )}
                 </div>
-                {card.access === 'premium' ? (
-                  <button
-                    type="button"
-                    className="w-[205px] font-inter font-semibold text-[#421A83] text-[14px] sm:text-[16px] py-3 rounded-[8px] bg-[#FFC92A] hover:opacity-95 transition-opacity flex items-center justify-center gap-2"
-                  >
-                    <LockIcon className="w-[18px] h-[21px] shrink-0" />
-                    Upgrade to Premium
-                  </button>
+                {!checkAccess(card) ? (
+                  <div className="flex flex-col items-start gap-2">
+                    <button
+                      type="button"
+                      className="w-[205px] font-inter font-semibold text-[#421A83] text-[14px] sm:text-[16px] py-3 rounded-[8px] bg-[#FFC92A] hover:opacity-95 transition-opacity flex items-center justify-center gap-2"
+                    >
+                      <LockIcon className="w-[18px] h-[21px] shrink-0" />
+                      Upgrade to Premium
+                    </button>
+                    {!isAuthenticated && (
+                      <p className="font-inter font-normal text-[12px] text-[#6C737F]">
+                        <Link to="/" className="text-[#6E43B9] font-semibold hover:underline">
+                          Sign in
+                        </Link>
+                        {' '}to access
+                      </p>
+                    )}
+                  </div>
                 ) : (
                   <button
                     type="button"

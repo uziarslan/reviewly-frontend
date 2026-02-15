@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import logo from '../Assets/logo.png';
 import { useAuth } from '../context/AuthContext';
@@ -26,7 +26,10 @@ function DashNav() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const isExamDetailsPage = location.pathname.startsWith('/dashboard/exam/');
+  const fromLibrary = isExamDetailsPage && new URLSearchParams(location.search).get('from') === 'library';
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const profileRef = useRef(null);
 
   const handleLogout = async () => {
     await logout();
@@ -48,8 +51,19 @@ function DashNav() {
     };
   }, [drawerOpen]);
 
-  const getTabActive = (label, isActive) =>
-    label === 'All Reviewers' ? (isActive || isExamDetailsPage) : isActive;
+  useEffect(() => {
+    const fn = (e) => {
+      if (profileRef.current && !profileRef.current.contains(e.target)) setProfileOpen(false);
+    };
+    document.addEventListener('click', fn);
+    return () => document.removeEventListener('click', fn);
+  }, []);
+
+  const getTabActive = (label, isActive) => {
+    if (label === 'All Reviewers') return isActive || (isExamDetailsPage && !fromLibrary);
+    if (label === 'My Library') return isActive || (isExamDetailsPage && fromLibrary);
+    return isActive;
+  };
 
   const renderTab = (tab, isDrawer = false) => {
     const { to, label, Icon, end } = tab;
@@ -97,11 +111,13 @@ function DashNav() {
               </svg>
             </button>
             {/* Profile - desktop only (mobile: shown inside drawer) */}
-            <div className="hidden md:flex items-center gap-3">
+            <div className="hidden md:block relative" ref={profileRef}>
               <button
                 type="button"
                 aria-label="Profile"
-                className="w-10 h-10 rounded-full border-2 border-[#6E43B9]/30 bg-gray-100 flex items-center justify-center overflow-hidden shrink-0"
+                aria-expanded={profileOpen}
+                onClick={() => setProfileOpen((o) => !o)}
+                className="w-10 h-10 rounded-full border-2 border-[#6E43B9]/30 bg-gray-100 flex items-center justify-center overflow-hidden shrink-0 hover:ring-2 hover:ring-[#6E43B9]/20 transition-shadow"
               >
                 {user?.profilePic ? (
                   <img src={user.profilePic} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
@@ -109,13 +125,20 @@ function DashNav() {
                   <span className="text-sm font-semibold text-[#6E43B9]">{initials}</span>
                 )}
               </button>
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="font-inter font-medium text-sm text-[#6C737F] hover:text-[#6E43B9] transition-colors"
-              >
-                Logout
-              </button>
+              {profileOpen && (
+                <div className="absolute right-0 top-full mt-2 w-64 py-2 bg-white rounded-lg shadow-lg border border-[#E5E7EB] z-50">
+                  <p className="px-4 py-2 font-inter text-sm text-[#6C737F] truncate" title={user?.email}>
+                    {user?.email || '—'}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => { setProfileOpen(false); handleLogout(); }}
+                    className="w-full px-4 py-2 font-inter font-medium text-sm text-red-600 hover:bg-red-50 text-left transition-colors"
+                  >
+                    Logout
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
@@ -169,7 +192,7 @@ function DashNav() {
                 <span className="text-sm font-semibold text-[#6E43B9]">{initials}</span>
               )}
             </div>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="font-inter text-sm font-semibold text-[#0F172A] truncate">
                 {user?.firstName} {user?.lastName}
               </p>
@@ -178,8 +201,8 @@ function DashNav() {
           </div>
           <button
             type="button"
-            onClick={handleLogout}
-            className="w-full font-inter font-medium text-sm text-[#6C737F] hover:text-[#6E43B9] py-2 border border-[#CFD3D4] rounded-lg transition-colors"
+            onClick={() => { setDrawerOpen(false); handleLogout(); }}
+            className="w-full font-inter font-medium text-sm text-red-600 hover:bg-red-50 py-2 border border-red-200 rounded-lg transition-colors"
           >
             Logout
           </button>
