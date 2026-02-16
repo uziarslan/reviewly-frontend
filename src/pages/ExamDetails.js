@@ -6,6 +6,7 @@ import { reviewerAPI, examAPI } from '../services/api';
 import { ExamNotesLightningIcon } from '../components/Icons';
 import { TextWithNewlines } from '../utils/text';
 import ExamDetailsSkeleton from '../components/skeletons/ExamDetailsSkeleton';
+import { BANNER_IMAGE_MAP } from '../data/reviewers';
 
 const ExamDetails = () => {
   const { id } = useParams();
@@ -127,8 +128,9 @@ const ExamDetails = () => {
               data-aos="fade-up"
               data-aos-duration="500"
             >
+              {console.log(exam.bannerImage)}
               {exam.bannerImage ? (
-                <img src={exam.bannerImage} alt="" className="w-full h-full object-cover rounded-[12px]" />
+                <img src={BANNER_IMAGE_MAP[exam.bannerImage]} alt="" className="w-full h-full object-cover object-center rounded-[12px]" />
               ) : (
                 <span className="font-inter text-[#6E43B9]/60 text-sm">Banner image placeholder</span>
               )}

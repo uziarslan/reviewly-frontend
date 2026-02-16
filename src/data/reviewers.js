@@ -1,4 +1,12 @@
 import cseLogo from '../Assets/cselogo.png';
+import professional from '../Assets/professional.png';
+import subprofessional from '../Assets/subprofessional.png';
+import verbal from '../Assets/verbal.png';
+import analytical from '../Assets/analytical.png';
+import clerical from '../Assets/clerical.png';
+import numerical from '../Assets/numerical.png';
+import general from '../Assets/general.png';
+import demo from '../Assets/demo.png';
 
 /**
  * Map logo filename (from API) to bundled asset.
@@ -7,6 +15,16 @@ export const REVIEWER_LOGO_MAP = {
   'cselogo.png': cseLogo,
 };
 
+export const BANNER_IMAGE_MAP = {
+  'professional.png': professional,
+  'subprofessional.png': subprofessional,
+  'verbal.png': verbal,
+  'analytical.png': analytical,
+  'clerical.png': clerical,
+  'numerical.png': numerical,
+  'general.png': general,
+  'demo.png': demo,
+};
 /**
  * Shared important notes for exam details (CSE). Used across reviewers.
  */
