@@ -6,6 +6,7 @@ import { REVIEWER_LOGO_MAP } from '../data/reviewers';
 import { BookmarkOutlineIcon, LockIcon } from '../components/Icons';
 import { examAPI, reviewerAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import ExamResultsLoadingSkeleton from '../components/skeletons/ExamResultsLoadingSkeleton';
 import { canAccessReviewer } from '../utils/subscription';
 
 const ExamResultsLoading = () => {
@@ -43,7 +44,7 @@ const ExamResultsLoading = () => {
                 .slice(0, 3);
               setSuggestedReviewers(suggestions);
             }
-          } catch (_) {}
+          } catch (_) { }
         }
       } catch (err) {
         console.error('Failed to load results:', err);
@@ -64,16 +65,7 @@ const ExamResultsLoading = () => {
     return () => clearTimeout(t);
   }, [loading]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#F5F4FF]">
-        <DashNav />
-        <main className="max-w-[1440px] mx-auto px-6 sm:px-8 lg:px-20 py-8 flex items-center justify-center">
-          <div className="w-[48px] h-[48px] rounded-full border-[4px] border-[#6E43B9] border-t-transparent animate-spin" />
-        </main>
-      </div>
-    );
-  }
+  if (loading) return <ExamResultsLoadingSkeleton />;
 
   if (!attempt) {
     return (
@@ -109,9 +101,9 @@ const ExamResultsLoading = () => {
   // Format date
   const takenAt = attempt.submittedAt
     ? new Date(attempt.submittedAt).toLocaleString('en-US', {
-        year: 'numeric', month: 'long', day: 'numeric',
-        hour: 'numeric', minute: '2-digit', timeZoneName: 'short',
-      })
+      year: 'numeric', month: 'long', day: 'numeric',
+      hour: 'numeric', minute: '2-digit', timeZoneName: 'short',
+    })
     : '—';
 
   // Calculate duration
@@ -365,113 +357,113 @@ const ExamResultsLoading = () => {
 
         {/* Suggested Practice Exams */}
         {suggestedReviewers.length > 0 && (
-        <>
-        <h3 className="font-inter font-bold text-[14px] text-[#45464E] uppercase tracking-wide mt-10 mb-6 text-left">
-          Suggested Practice Exams
-        </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-[24px] justify-items-center">
-          {suggestedReviewers.map((card, index) => {
-            const logoSrc = card.logo?.filename && REVIEWER_LOGO_MAP[card.logo.filename]
-              ? REVIEWER_LOGO_MAP[card.logo.filename]
-              : (card.logo?.path ?? null);
-            const details = card.details || {};
-            return (
-              <div
-                key={card._id}
-                className="w-full max-w-[410.67px] min-w-0 bg-white rounded-[12px] p-[24px] text-left shadow-[0px_2px_4px_0px_#00000026] flex flex-col"
-                data-aos="fade-up"
-                data-aos-duration="500"
-                data-aos-delay={100 + index * 50}
-              >
-                <div className="flex items-start justify-between gap-2 mb-4">
-                  {logoSrc ? (
-                    <img src={logoSrc} alt="" className="w-[40px] h-[40px] shrink-0 object-cover" />
-                  ) : (
-                    <div className="w-[40px] h-[40px] rounded bg-[#6E43B9] flex items-center justify-center text-white font-inter font-bold text-xs shrink-0">
-                      CSE
+          <>
+            <h3 className="font-inter font-bold text-[14px] text-[#45464E] uppercase tracking-wide mt-10 mb-6 text-left">
+              Suggested Practice Exams
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-[24px] justify-items-center">
+              {suggestedReviewers.map((card, index) => {
+                const logoSrc = card.logo?.filename && REVIEWER_LOGO_MAP[card.logo.filename]
+                  ? REVIEWER_LOGO_MAP[card.logo.filename]
+                  : (card.logo?.path ?? null);
+                const details = card.details || {};
+                return (
+                  <div
+                    key={card._id}
+                    className="w-full max-w-[410.67px] min-w-0 bg-white rounded-[12px] p-[24px] text-left shadow-[0px_2px_4px_0px_#00000026] flex flex-col"
+                    data-aos="fade-up"
+                    data-aos-duration="500"
+                    data-aos-delay={100 + index * 50}
+                  >
+                    <div className="flex items-start justify-between gap-2 mb-4">
+                      {logoSrc ? (
+                        <img src={logoSrc} alt="" className="w-[40px] h-[40px] shrink-0 object-cover" />
+                      ) : (
+                        <div className="w-[40px] h-[40px] rounded bg-[#6E43B9] flex items-center justify-center text-white font-inter font-bold text-xs shrink-0">
+                          CSE
+                        </div>
+                      )}
+                      <div className="relative group">
+                        <button
+                          type="button"
+                          aria-label="Add to library"
+                          className="p-[7px] rounded-[4px] w-[40px] h-[40px] bg-[#F4F4F4] transition-colors flex items-center justify-center hover:bg-[#E5E7EB]"
+                        >
+                          <BookmarkOutlineIcon className="w-[25px] h-[25px]" />
+                        </button>
+                        <span
+                          role="tooltip"
+                          className="absolute left-1/2 -translate-x-1/2 top-full mt-2 py-1 px-2 font-inter font-medium text-[10px] text-white bg-[#616161E5] rounded-[4px] pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10"
+                        >
+                          Add to library
+                        </span>
+                      </div>
                     </div>
-                  )}
-                  <div className="relative group">
-                    <button
-                      type="button"
-                      aria-label="Add to library"
-                      className="p-[7px] rounded-[4px] w-[40px] h-[40px] bg-[#F4F4F4] transition-colors flex items-center justify-center hover:bg-[#E5E7EB]"
-                    >
-                      <BookmarkOutlineIcon className="w-[25px] h-[25px]" />
-                    </button>
-                    <span
-                      role="tooltip"
-                      className="absolute left-1/2 -translate-x-1/2 top-full mt-2 py-1 px-2 font-inter font-medium text-[10px] text-white bg-[#616161E5] rounded-[4px] pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10"
-                    >
-                      Add to library
-                    </span>
-                  </div>
-                </div>
-                <h2 className="font-inter text-[#45464E] font-semibold text-[16px] mb-3">
-                  {card.title}
-                </h2>
-                <p className="font-inter text-[#64748B] text-[15px] leading-[20px] mb-4 font-normal flex-1">
-                  <span className="font-semibold">{card.description?.short ?? ''}</span>
-                  <br />
-                  {card.description?.full ?? ''}
-                </p>
-                <div className="flex flex-wrap items-center gap-[5px] text-sm text-[#0F172A] mb-4">
-                  <span className="inline-flex items-center gap-1.5 font-inter font-normal not-italic text-[14px] text-[#45464E]">
-                    📝 {details.items ?? (card.examDetails?.itemsCount ? `${card.examDetails.itemsCount} items` : '—')}
-                  </span>
-                  <span className="text-[#45464E] font-inter font-normal not-italic text-[14px]">•</span>
-                  <span className="inline-flex items-center gap-1.5 font-inter font-normal not-italic text-[14px] text-[#45464E]">
-                    ⏱️ {details.duration ?? '—'}
-                  </span>
-                  {details.passingRate != null && (
-                    <>
+                    <h2 className="font-inter text-[#45464E] font-semibold text-[16px] mb-3">
+                      {card.title}
+                    </h2>
+                    <p className="font-inter text-[#64748B] text-[15px] leading-[20px] mb-4 font-normal flex-1">
+                      <span className="font-semibold">{card.description?.short ?? ''}</span>
+                      <br />
+                      {card.description?.full ?? ''}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-[5px] text-sm text-[#0F172A] mb-4">
+                      <span className="inline-flex items-center gap-1.5 font-inter font-normal not-italic text-[14px] text-[#45464E]">
+                        📝 {details.items ?? (card.examDetails?.itemsCount ? `${card.examDetails.itemsCount} items` : '—')}
+                      </span>
                       <span className="text-[#45464E] font-inter font-normal not-italic text-[14px]">•</span>
                       <span className="inline-flex items-center gap-1.5 font-inter font-normal not-italic text-[14px] text-[#45464E]">
-                        🎯 Passing rate: {details.passingRate}
+                        ⏱️ {details.duration ?? '—'}
                       </span>
-                    </>
-                  )}
-                  {details.accessLevel != null && (
-                    <>
-                      <span className="text-[#45464E] font-inter font-normal not-italic text-[14px]">•</span>
-                      <span className="inline-flex items-center gap-1.5 font-inter font-normal not-italic text-[14px] text-[#45464E]">
-                        📘 {details.accessLevel}
-                      </span>
-                    </>
-                  )}
-                </div>
-                {!checkAccess(card) ? (
-                  <div className="flex flex-col items-start gap-2">
-                    <button
-                      type="button"
-                      className="w-[205px] font-inter font-semibold text-[#421A83] text-[14px] sm:text-[16px] py-3 rounded-[8px] bg-[#FFC92A] hover:opacity-95 transition-opacity flex items-center justify-center gap-2"
-                    >
-                      <LockIcon className="w-[18px] h-[21px] shrink-0" />
-                      Upgrade to Premium
-                    </button>
-                    {!isAuthenticated && (
-                      <p className="font-inter font-normal text-[12px] text-[#6C737F]">
-                        <Link to="/" className="text-[#6E43B9] font-semibold hover:underline">
-                          Sign in
-                        </Link>
-                        {' '}to access
-                      </p>
+                      {details.passingRate != null && (
+                        <>
+                          <span className="text-[#45464E] font-inter font-normal not-italic text-[14px]">•</span>
+                          <span className="inline-flex items-center gap-1.5 font-inter font-normal not-italic text-[14px] text-[#45464E]">
+                            🎯 Passing rate: {details.passingRate}
+                          </span>
+                        </>
+                      )}
+                      {details.accessLevel != null && (
+                        <>
+                          <span className="text-[#45464E] font-inter font-normal not-italic text-[14px]">•</span>
+                          <span className="inline-flex items-center gap-1.5 font-inter font-normal not-italic text-[14px] text-[#45464E]">
+                            📘 {details.accessLevel}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                    {!checkAccess(card) ? (
+                      <div className="flex flex-col items-start gap-2">
+                        <button
+                          type="button"
+                          className="w-[205px] font-inter font-semibold text-[#421A83] text-[14px] sm:text-[16px] py-3 rounded-[8px] bg-[#FFC92A] hover:opacity-95 transition-opacity flex items-center justify-center gap-2"
+                        >
+                          <LockIcon className="w-[18px] h-[21px] shrink-0" />
+                          Upgrade to Premium
+                        </button>
+                        {!isAuthenticated && (
+                          <p className="font-inter font-normal text-[12px] text-[#6C737F]">
+                            <Link to="/" className="text-[#6E43B9] font-semibold hover:underline">
+                              Sign in
+                            </Link>
+                            {' '}to access
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/dashboard/exam/${card._id}`)}
+                        className="max-w-[106px] font-inter font-semibold text-[#421A83] text-[14px] sm:text-[16px] py-3 rounded-[8px] bg-[#FFC92A] hover:opacity-95 transition-opacity"
+                      >
+                        Take Exam
+                      </button>
                     )}
                   </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => navigate(`/dashboard/exam/${card._id}`)}
-                    className="max-w-[106px] font-inter font-semibold text-[#421A83] text-[14px] sm:text-[16px] py-3 rounded-[8px] bg-[#FFC92A] hover:opacity-95 transition-opacity"
-                  >
-                    Take Exam
-                  </button>
-                )}
-              </div>
-            );
-          })}
-        </div>
-        </>
+                );
+              })}
+            </div>
+          </>
         )}
       </main>
     </div>

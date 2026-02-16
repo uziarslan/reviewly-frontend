@@ -4,7 +4,7 @@ import AOS from 'aos';
 import DashNav from '../components/DashNav';
 import { REVIEWER_LOGO_MAP } from '../data/reviewers';
 import { BookmarkFilledIcon, SearchIcon, LockIcon, PaperIcon } from '../components/Icons';
-import EmptyStateSkeleton from '../components/EmptyStateSkeleton';
+import ReviewerCardSkeleton from '../components/ReviewerCardSkeleton';
 import { libraryAPI, examAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { canAccessReviewer } from '../utils/subscription';
@@ -16,6 +16,7 @@ const MyLibrary = () => {
   const [libraryCards, setLibraryCards] = useState([]);
   const [loading, setLoading] = useState(true);
   const [inProgressMap, setInProgressMap] = useState({}); // { reviewerId: { attemptId, answeredCount, totalQuestions, progressPercent } }
+  const [completedReviewerIds, setCompletedReviewerIds] = useState(new Set()); // reviewer IDs with submitted attempts
 
   // Fetch library and in-progress attempts on mount
   useEffect(() => {
@@ -29,20 +30,23 @@ const MyLibrary = () => {
         if (cancelled) return;
         if (libRes.success) setLibraryCards(libRes.data);
         if (histRes.success) {
-          // Build map of in-progress attempts with real progress data
           const ipMap = {};
+          const completed = new Set();
           histRes.data.forEach((attempt) => {
+            const revId = String(attempt.reviewer?._id || attempt.reviewer);
             if (attempt.status === 'in_progress') {
-              const revId = String(attempt.reviewer?._id || attempt.reviewer);
               ipMap[revId] = {
                 attemptId: attempt._id,
                 answeredCount: attempt.progress?.answeredCount || 0,
                 totalQuestions: attempt.progress?.totalQuestions || 0,
                 progressPercent: attempt.progress?.progressPercent || 0,
               };
+            } else if (attempt.status === 'submitted' || attempt.status === 'timed_out') {
+              completed.add(revId);
             }
           });
           setInProgressMap(ipMap);
+          setCompletedReviewerIds(completed);
         }
       } catch (err) {
         console.error('Failed to load library:', err);
@@ -112,7 +116,11 @@ const MyLibrary = () => {
         </div>
 
         {loading ? (
-          <EmptyStateSkeleton />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-[24px] justify-items-center">
+            {[...Array(6)].map((_, i) => (
+              <ReviewerCardSkeleton key={i} />
+            ))}
+          </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <div className="w-[140px] h-[140px] border-[1px] border-[#E1E2E9] rounded-full bg-[#F4F5FA] flex items-center justify-center mb-[40px]">
@@ -134,6 +142,7 @@ const MyLibrary = () => {
               const details = card.details || {};
               const inProgressData = inProgressMap[String(card._id)];
               const inProgress = !!inProgressData;
+              const hasCompleted = completedReviewerIds.has(String(card._id));
               return (
                 <div
                   key={card._id}
@@ -240,6 +249,14 @@ const MyLibrary = () => {
                         </div>
                       </div>
                     </div>
+                  ) : hasCompleted ? (
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/dashboard/exam/${card._id}?from=library`)}
+                      className="max-w-[106px] font-inter font-semibold text-[#421A83] text-[14px] sm:text-[16px] py-3 rounded-[8px] bg-[#FFC92A] hover:opacity-95 transition-opacity"
+                    >
+                      View Exam
+                    </button>
                   ) : (
                     <button
                       type="button"

@@ -4,6 +4,8 @@ import AOS from 'aos';
 import DashNav from '../components/DashNav';
 import { reviewerAPI, examAPI } from '../services/api';
 import { ExamNotesLightningIcon } from '../components/Icons';
+import { TextWithNewlines } from '../utils/text';
+import ExamDetailsSkeleton from '../components/skeletons/ExamDetailsSkeleton';
 
 const ExamDetails = () => {
   const { id } = useParams();
@@ -79,16 +81,7 @@ const ExamDetails = () => {
     AOS.refresh();
   }, [reviewer]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-white">
-        <DashNav />
-        <main className="max-w-[1440px] mx-auto px-6 sm:px-8 lg:px-20 py-8 flex items-center justify-center">
-          <div className="w-[48px] h-[48px] rounded-full border-[4px] border-[#6E43B9] border-t-transparent animate-spin" />
-        </main>
-      </div>
-    );
-  }
+  if (loading) return <ExamDetailsSkeleton />;
 
   if (!reviewer || !exam) {
     return (
@@ -172,8 +165,8 @@ const ExamDetails = () => {
                     {completedData
                       ? `${completedData.correct}/${completedData.totalItems}`
                       : inProgressData
-                      ? `${inProgressData.answeredCount}/${inProgressData.totalQuestions}`
-                      : exam.itemsCount}
+                        ? `${inProgressData.answeredCount}/${inProgressData.totalQuestions}`
+                        : exam.itemsCount}
                   </strong>
                 </span>
                 <div className="font-inter font-medium text-[14px] text-[#45464E]">
@@ -230,6 +223,47 @@ const ExamDetails = () => {
               </div>
             </div>
 
+            {/* Applicable for */}
+            {exam.applicableFor && (
+              <p
+                className="font-inter text-[14px] text-[#45464E] mb-2"
+                data-aos="fade-up"
+                data-aos-duration="500"
+                data-aos-delay="100"
+              >
+                Applicable for: <TextWithNewlines as="strong" className="font-inter font-semibold text-[#45464E]">{exam.applicableFor}</TextWithNewlines>
+              </p>
+            )}
+
+            {/* Access for */}
+            {exam.accessFor && (
+              <p
+                className="font-inter text-[14px] text-[#45464E] mb-4"
+                data-aos="fade-up"
+                data-aos-duration="500"
+                data-aos-delay="100"
+              >
+                Access: <TextWithNewlines as="strong" className="font-inter font-semibold text-[#45464E]">{exam.accessFor}</TextWithNewlines>
+              </p>
+            )}
+
+            {/* Intro (short + full) */}
+            {(exam.introShort || exam.introFull) && (
+              <section
+                className="mb-6"
+                data-aos="fade-up"
+                data-aos-duration="500"
+                data-aos-delay="100"
+              >
+                {exam.introShort && (
+                  <TextWithNewlines as="p" className="font-inter font-semibold text-[16px] text-[#45464E] mb-2">{exam.introShort}</TextWithNewlines>
+                )}
+                {exam.introFull && (
+                  <TextWithNewlines as="p" className="font-inter font-normal text-[16px] text-[#45464E] leading-[24px]">{exam.introFull}</TextWithNewlines>
+                )}
+              </section>
+            )}
+
             {/* Coverage / Subjects */}
             <section
               data-aos="fade-up"
@@ -240,19 +274,41 @@ const ExamDetails = () => {
                 Coverage/Subjects:
               </h2>
               <ol className="list-decimal list-inside space-y-4 font-inter font-normal text-[16px] text-[#45464E]">
-                {exam.coverage.map((item, idx) => (
+                {(exam.coverage || []).map((item, idx) => (
                   <li key={idx}>
                     <span>
-                      {item.subject} ({item.itemCount}):
+                      <TextWithNewlines>{item.subject}</TextWithNewlines>
+                      {item.itemCount ? ` (${item.itemCount})` : ''}
                     </span>
                     <ul className="list-disc list-inside font-normal text-[16px] pl-4">
-                      {item.topics.map((topic, i) => (
-                        <li key={i}>{topic}</li>
+                      {(item.topics || []).map((topic, i) => (
+                        <li key={i}><TextWithNewlines>{topic}</TextWithNewlines></li>
                       ))}
                     </ul>
                   </li>
                 ))}
               </ol>
+
+              {/* Coverage end text */}
+              {exam.coverageEndText && (
+                <TextWithNewlines as="p" className="font-inter font-normal text-[16px] text-[#45464E] mt-4 leading-[24px]">
+                  {exam.coverageEndText}
+                </TextWithNewlines>
+              )}
+
+              {/* Difficulty text (after coverage) */}
+              {exam.difficultyText && (
+                <TextWithNewlines as="p" className="font-inter font-normal text-[16px] text-[#45464E] mt-4 leading-[24px]">
+                  {exam.difficultyText}
+                </TextWithNewlines>
+              )}
+
+              {/* Disclaimer */}
+              {exam.disclaimer && (
+                <TextWithNewlines as="p" className="font-inter font-normal italic text-[12px] text-[#6C737F] mt-6 leading-[22px]">
+                  {exam.disclaimer}
+                </TextWithNewlines>
+              )}
             </section>
           </div>
 
@@ -273,10 +329,10 @@ const ExamDetails = () => {
                 Important Notes:
               </h2>
               <ul className="list-disc list-inside space-y-4 pl-1 font-inter text-sm">
-                {exam.importantNotes.map((note, idx) => (
+                {(exam.importantNotes || []).map((note, idx) => (
                   <li key={idx}>
-                    <span className="font-inter font-semibold text-[16px] text-[#45464E] leading-[20px]">{note.title}: </span>
-                    <span className="font-inter font-normal text-[16px] text-[#45464E] leading-[20px]">{note.text}</span>
+                    <TextWithNewlines as="span" className="font-inter font-semibold text-[16px] text-[#45464E] leading-[20px]">{note.title}: </TextWithNewlines>
+                    <TextWithNewlines as="span" className="font-inter font-normal text-[16px] text-[#45464E] leading-[20px]">{note.text}</TextWithNewlines>
                   </li>
                 ))}
               </ul>

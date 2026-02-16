@@ -18,6 +18,7 @@ const AllReviewers = () => {
   const [loading, setLoading] = useState(true);
   const [togglingIds, setTogglingIds] = useState(new Set());
   const [inProgressMap, setInProgressMap] = useState({}); // { reviewerId: { attemptId, answeredCount, totalQuestions, progressPercent } }
+  const [completedReviewerIds, setCompletedReviewerIds] = useState(new Set()); // reviewer IDs with submitted attempts
 
   // Fetch reviewers and library on mount
   useEffect(() => {
@@ -35,20 +36,23 @@ const AllReviewers = () => {
           setLibraryIds(new Set(libRes.data.map((r) => r._id)));
         }
         if (histRes.success) {
-          // Build map of in-progress attempts with real progress data
           const ipMap = {};
+          const completed = new Set();
           histRes.data.forEach((attempt) => {
+            const revId = String(attempt.reviewer?._id || attempt.reviewer);
             if (attempt.status === 'in_progress') {
-              const revId = String(attempt.reviewer?._id || attempt.reviewer);
               ipMap[revId] = {
                 attemptId: attempt._id,
                 answeredCount: attempt.progress?.answeredCount || 0,
                 totalQuestions: attempt.progress?.totalQuestions || 0,
                 progressPercent: attempt.progress?.progressPercent || 0,
               };
+            } else if (attempt.status === 'submitted' || attempt.status === 'timed_out') {
+              completed.add(revId);
             }
           });
           setInProgressMap(ipMap);
+          setCompletedReviewerIds(completed);
         }
       } catch (err) {
         console.error('Failed to load reviewers:', err);
@@ -153,6 +157,7 @@ const AllReviewers = () => {
               const inLibrary = libraryIds.has(card._id);
               const inProgressData = inProgressMap[String(card._id)];
               const inProgress = !!inProgressData;
+              const hasCompleted = completedReviewerIds.has(String(card._id));
               return (
                 <div
                   key={card._id}
@@ -264,6 +269,14 @@ const AllReviewers = () => {
                         </div>
                       </div>
                     </div>
+                  ) : hasCompleted ? (
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/dashboard/exam/${card._id}`)}
+                      className="max-w-[106px] font-inter font-semibold text-[#421A83] text-[14px] sm:text-[16px] py-3 rounded-[8px] bg-[#FFC92A] hover:opacity-95 transition-opacity"
+                    >
+                      View Exam
+                    </button>
                   ) : (
                     <button
                       type="button"

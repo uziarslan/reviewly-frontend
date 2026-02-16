@@ -1,12 +1,10 @@
 import React from 'react';
+import SkeletonBlock from './SkeletonBlock';
 
 /**
  * Skeleton loader that exactly matches the layout of a reviewer card.
  * Used in AllReviewers and MyLibrary while data is loading.
  */
-const SkeletonBlock = ({ className = '' }) => (
-  <div className={`skeleton-shimmer rounded ${className}`} />
-);
 
 const ReviewerCardSkeleton = () => (
   <div className="w-full max-w-[410.67px] min-w-0 bg-white rounded-[12px] p-[24px] text-left shadow-[0px_2px_4px_0px_#00000026] flex flex-col">

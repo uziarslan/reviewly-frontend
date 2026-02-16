@@ -163,7 +163,7 @@ const AccountSettings = () => {
           <hr className="border-0 border-t border-[#E1E2E9] mx-6 sm:mx-8" />
 
           {/* Notifications */}
-          <section className="p-6 sm:p-8">
+          {/* <section className="p-6 sm:p-8">
             <h2 className="font-inter font-semibold text-[16px] text-[#45464E] mb-4">Notifications</h2>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
@@ -193,7 +193,7 @@ const AccountSettings = () => {
               </div>
             </div>
           </section>
-          <hr className="border-0 border-t border-[#E1E2E9] mx-6 sm:mx-8" />
+          <hr className="border-0 border-t border-[#E1E2E9] mx-6 sm:mx-8" /> */}
 
 
           {/* App Info */}

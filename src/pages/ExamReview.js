@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link, useLocation } from 'react-router-dom';
 import DashNav from '../components/DashNav';
 import { examAPI } from '../services/api';
+import ExamReviewSkeleton from '../components/skeletons/ExamReviewSkeleton';
 
 function ExamReview() {
   const { attemptId } = useParams();
@@ -23,16 +24,7 @@ function ExamReview() {
     return () => { cancelled = true; };
   }, [attemptId]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#F5F4FF]">
-        <DashNav />
-        <main className="max-w-[1440px] mx-auto px-6 sm:px-8 lg:px-20 py-8 flex items-center justify-center">
-          <div className="w-[48px] h-[48px] rounded-full border-[4px] border-[#6E43B9] border-t-transparent animate-spin" />
-        </main>
-      </div>
-    );
-  }
+  if (loading) return <ExamReviewSkeleton />;
 
   if (!reviewData || !reviewData.questions?.length) {
     return (

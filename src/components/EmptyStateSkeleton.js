@@ -1,12 +1,10 @@
 import React from 'react';
+import SkeletonBlock from './SkeletonBlock';
 
 /**
  * Skeleton loader that matches the "No Bookmarked Reviewer Yet" empty state layout.
- * Used in MyLibrary while data is loading.
+ * Used when loading state is ambiguous (e.g. empty library).
  */
-const SkeletonBlock = ({ className = '' }) => (
-  <div className={`skeleton-shimmer rounded ${className}`} />
-);
 
 const EmptyStateSkeleton = () => (
   <div className="flex flex-col items-center justify-center py-16 text-center">

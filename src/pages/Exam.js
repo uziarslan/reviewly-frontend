@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import DashNav from '../components/DashNav';
 import { ExamTimeInfoIcon } from '../components/Icons';
+import ExamSkeleton from '../components/skeletons/ExamSkeleton';
 import Modal from '../components/Modal';
 import { examAPI, reviewerAPI } from '../services/api';
 import timeUpImage from '../Assets/timeup.png';
@@ -287,16 +288,7 @@ function Exam() {
     navigate(`/dashboard/results/${attemptId}${fromLibrary ? '?from=library' : ''}`);
   };
 
-  if (loadingExam) {
-    return (
-      <div className="min-h-screen bg-[#F5F4FF]">
-        <DashNav />
-        <main className="max-w-[1440px] mx-auto px-6 sm:px-8 lg:px-20 py-8 flex items-center justify-center">
-          <div className="w-[48px] h-[48px] rounded-full border-[4px] border-[#6E43B9] border-t-transparent animate-spin" />
-        </main>
-      </div>
-    );
-  }
+  if (loadingExam) return <ExamSkeleton />;
 
   if (errorMsg || !reviewer || questions.length === 0) {
     return (
