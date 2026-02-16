@@ -83,3 +83,11 @@ export const examAPI = {
   getReviewerProgress: (reviewerId) =>
     apiFetch(`/exams/attempts/user/progress/${reviewerId}`),
 };
+
+// ── Support ──
+export const supportAPI = {
+  submitContact: (data) =>
+    apiFetch("/support/contact", { method: "POST", body: data }),
+  submitHelp: (data) =>
+    apiFetch("/support/help", { method: "POST", body: data }),
+};

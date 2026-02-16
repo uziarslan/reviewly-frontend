@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import AOS from 'aos';
 import DashNav from '../components/DashNav';
-import { MultiArrowDropdownIcon } from '../components/Icons';
+import { supportAPI } from '../services/api';
 
 /**
  * FAQ items from the Help Center design (5 questions only).
@@ -52,25 +52,15 @@ function renderAnswer(answer, hasEmailLink, itemId) {
   });
 }
 
-const CATEGORY_OPTIONS = [
-  {
-    value: '', label: 'What can we help you with?'
-  },
-  { value: 'general', label: 'General Inquiry' },
-  { value: 'support', label: 'Support' },
-  { value: 'feedback', label: 'Feedback' },
-  { value: 'partnership', label: 'Partnership' },
-  { value: 'other', label: 'Other' },
-];
-
-const INITIAL_FORM_DATA = { category: '', message: '' };
-const INITIAL_ERRORS = { category: '', message: '' };
+const INITIAL_FORM_DATA = { message: '' };
+const INITIAL_ERRORS = { message: '' };
 
 function HelpCenter() {
   const [openFaq, setOpenFaq] = useState(-1);
   const [formData, setFormData] = useState(INITIAL_FORM_DATA);
   const [errors, setErrors] = useState(INITIAL_ERRORS);
   const [submitted, setSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   useEffect(() => {
     AOS.refresh();
@@ -95,10 +85,6 @@ function HelpCenter() {
   const validate = () => {
     const next = { ...INITIAL_ERRORS };
     let valid = true;
-    if (!formData.category?.trim()) {
-      next.category = 'Please select a category.';
-      valid = false;
-    }
     if (!formData.message?.trim()) {
       next.message = 'Message is required.';
       valid = false;
@@ -107,13 +93,18 @@ function HelpCenter() {
     return valid;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
-    console.log('Help Center form submitted:', formData);
-    setFormData(INITIAL_FORM_DATA);
-    setErrors(INITIAL_ERRORS);
-    setSubmitted(true);
+    try {
+      setSubmitError('');
+      await supportAPI.submitHelp({ message: formData.message.trim() });
+      setFormData(INITIAL_FORM_DATA);
+      setErrors(INITIAL_ERRORS);
+      setSubmitted(true);
+    } catch (err) {
+      setSubmitError(err?.message || 'Something went wrong. Please try again.');
+    }
   };
 
   if (submitted) {
@@ -236,40 +227,12 @@ function HelpCenter() {
             data-aos-duration="500"
             data-aos-delay="100"
           >
-            <div>
-              <div className="relative h-12 mt-1">
-                <select
-                  id="category"
-                  value={formData.category}
-                  onChange={(e) => setField('category')(e.target.value)}
-                  required
-                  aria-required
-                  aria-invalid={Boolean(errors.category)}
-                  aria-describedby={errors.category ? 'category-error' : undefined}
-                  className={`w-full h-full rounded-lg border bg-white pl-3 pr-10 py-3 outline-none transition-colors focus:border-[#6E43B9] appearance-none cursor-pointer font-inter font-medium text-sm text-[#111927] ${!formData.category ? 'text-[#6C737F]' : ''} ${errors.category ? 'border-red-500' : 'border-[#D2D6DB]'}`}
-                >
-                  {CATEGORY_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value} disabled={!opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
-                  <MultiArrowDropdownIcon className="w-6 h-6 shrink-0" />
-                </span>
-              </div>
-              {errors.category ? (
-                <p id="category-error" className="mt-2 font-inter text-xs text-red-500" role="alert">
-                  {errors.category}
-                </p>
-              ) : (
-                <p className="mt-2 font-inter font-normal text-xs text-[#6C737F]">
-                  Choose the option that best fits your concern. This helps us route your message faster.
+            <div className="mt-10">
+              {submitError && (
+                <p className="mb-3 font-inter text-sm text-red-500" role="alert">
+                  {submitError}
                 </p>
               )}
-            </div>
-
-            <div className="mt-10">
               <textarea
                 id="message"
                 value={formData.message}

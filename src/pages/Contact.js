@@ -5,6 +5,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import FloatingField from '../components/FloatingField';
 import { MultiArrowDropdownIcon } from '../components/Icons';
+import { supportAPI } from '../services/api';
 
 const CATEGORY_OPTIONS = [
   { value: '', label: 'Category' },
@@ -35,6 +36,7 @@ function Contact() {
   const [formData, setFormData] = useState(INITIAL_FORM_DATA);
   const [errors, setErrors] = useState(INITIAL_ERRORS);
   const [submitted, setSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   useEffect(() => {
     if (submitted) {
@@ -80,7 +82,7 @@ function Contact() {
     return valid;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
     // Submit payload – wire to your backend or email service
@@ -91,11 +93,15 @@ function Contact() {
       category: formData.category.trim(),
       message: formData.message.trim(),
     };
-    // TODO: e.g. await submitContactForm(payload);
-    console.log('Contact form submitted:', payload);
-    setFormData(INITIAL_FORM_DATA);
-    setErrors(INITIAL_ERRORS);
-    setSubmitted(true);
+    try {
+      setSubmitError('');
+      await supportAPI.submitContact(payload);
+      setFormData(INITIAL_FORM_DATA);
+      setErrors(INITIAL_ERRORS);
+      setSubmitted(true);
+    } catch (err) {
+      setSubmitError(err?.message || 'Something went wrong. Please try again.');
+    }
   };
 
   if (submitted) {
@@ -236,6 +242,11 @@ function Contact() {
             </div>
 
             <div className="mt-10">
+              {submitError && (
+                <p className="mb-3 font-inter text-sm text-red-500" role="alert">
+                  {submitError}
+                </p>
+              )}
               <button
                 type="submit"
                 className="rounded-lg py-3 px-7 bg-[#FFC92A] text-[#421A83] font-roboto font-medium text-base tracking-[0.5px] mb-4 transition-opacity hover:opacity-95"
