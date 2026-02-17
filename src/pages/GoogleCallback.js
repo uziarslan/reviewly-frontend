@@ -26,7 +26,8 @@ const GoogleCallback = () => {
       return;
     }
 
-    loginWithGoogleCode(code)
+    const redirectUri = `${window.location.origin}/auth/google/callback`;
+    loginWithGoogleCode(code, redirectUri)
       .then(() => {
         navigate('/dashboard/all-reviewers', { replace: true });
       })
