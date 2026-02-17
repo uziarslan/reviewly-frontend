@@ -52,8 +52,18 @@ function renderAnswer(answer, hasEmailLink, itemId) {
   });
 }
 
-const INITIAL_FORM_DATA = { message: '' };
-const INITIAL_ERRORS = { message: '' };
+const IN_APP_CATEGORY_OPTIONS = [
+  { value: '', label: 'Category' },
+  { value: 'Account & Login', label: 'Account & Login' },
+  { value: 'Subscription & Payment', label: 'Subscription & Payment' },
+  { value: 'Reviewer / Exam Content', label: 'Reviewer / Exam Content' },
+  { value: 'Feedback or Feature Request', label: 'Feedback or Feature Request' },
+  { value: 'Bug or Technical Issue', label: 'Bug or Technical Issue' },
+  { value: 'Other', label: 'Other' },
+];
+
+const INITIAL_FORM_DATA = { category: '', message: '', company_name: '' };
+const INITIAL_ERRORS = { category: '', message: '' };
 
 function HelpCenter() {
   const [openFaq, setOpenFaq] = useState(-1);
@@ -85,6 +95,10 @@ function HelpCenter() {
   const validate = () => {
     const next = { ...INITIAL_ERRORS };
     let valid = true;
+    if (!formData.category?.trim()) {
+      next.category = 'Please select a category.';
+      valid = false;
+    }
     if (!formData.message?.trim()) {
       next.message = 'Message is required.';
       valid = false;
@@ -98,7 +112,11 @@ function HelpCenter() {
     if (!validate()) return;
     try {
       setSubmitError('');
-      await supportAPI.submitHelp({ message: formData.message.trim() });
+      await supportAPI.submitHelp({
+        category: formData.category.trim(),
+        message: formData.message.trim(),
+        company_name: formData.company_name.trim(),
+      });
       setFormData(INITIAL_FORM_DATA);
       setErrors(INITIAL_ERRORS);
       setSubmitted(true);
@@ -222,12 +240,38 @@ function HelpCenter() {
           <form
             onSubmit={handleSubmit}
             noValidate
-            className="bg-white rounded-xl p-6 sm:p-10 shadow-sm border border-[#EFF0F6]"
+            className="bg-white rounded-xl p-6 sm:p-10 shadow-sm border border-[#EFF0F6] relative"
             data-aos="fade-up"
             data-aos-duration="500"
             data-aos-delay="100"
           >
-            <div className="mt-10">
+            <div className="mb-4">
+              <label htmlFor="help-category" className="font-inter font-medium text-sm text-[#111927]">
+                Category
+              </label>
+              <select
+                id="help-category"
+                value={formData.category}
+                onChange={(e) => setField('category')(e.target.value)}
+                required
+                aria-required
+                aria-invalid={Boolean(errors.category)}
+                className={`w-full mt-1 h-12 rounded-lg border bg-white pl-3 pr-10 py-3 outline-none transition-colors focus:border-[#6E43B9] appearance-none cursor-pointer font-inter font-medium text-sm text-[#111927] ${!formData.category ? 'text-[#6C737F]' : ''} ${errors.category ? 'border-red-500' : 'border-[#D2D6DB]'}`}
+              >
+                {IN_APP_CATEGORY_OPTIONS.map((opt) => (
+                  <option key={opt.value || 'empty'} value={opt.value} disabled={!opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+              {errors.category && (
+                <p className="mt-1 font-inter text-xs text-red-500" role="alert">
+                  {errors.category}
+                </p>
+              )}
+            </div>
+
+            <div className="mt-4">
               {submitError && (
                 <p className="mb-3 font-inter text-sm text-red-500" role="alert">
                   {submitError}
@@ -250,6 +294,20 @@ function HelpCenter() {
                   {errors.message}
                 </p>
               )}
+            </div>
+
+            {/* Honeypot – hidden from users */}
+            <div className="absolute -left-[9999px] top-0 opacity-0" aria-hidden="true">
+              <label htmlFor="help_company_name">Company name</label>
+              <input
+                type="text"
+                id="help_company_name"
+                name="company_name"
+                tabIndex={-1}
+                autoComplete="off"
+                value={formData.company_name}
+                onChange={(e) => setField('company_name')(e.target.value)}
+              />
             </div>
 
             <div className="mt-10">

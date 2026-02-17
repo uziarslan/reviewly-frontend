@@ -9,11 +9,12 @@ import { supportAPI } from '../services/api';
 
 const CATEGORY_OPTIONS = [
   { value: '', label: 'Category' },
-  { value: 'general', label: 'General Inquiry' },
-  { value: 'support', label: 'Support' },
-  { value: 'feedback', label: 'Feedback' },
-  { value: 'partnership', label: 'Partnership' },
-  { value: 'other', label: 'Other' },
+  { value: 'General Inquiry', label: 'General Inquiry' },
+  { value: 'Pricing & Plans', label: 'Pricing & Plans' },
+  { value: 'Payments & Subscription', label: 'Payments & Subscription' },
+  { value: 'Feedback or Feature Request', label: 'Feedback or Feature Request' },
+  { value: 'Bug or Technical Issue', label: 'Bug or Technical Issue' },
+  { value: 'Other', label: 'Other' },
 ];
 
 const INITIAL_FORM_DATA = {
@@ -22,6 +23,7 @@ const INITIAL_FORM_DATA = {
   email: '',
   category: '',
   message: '',
+  company_name: '', // honeypot – hidden
 };
 
 const INITIAL_ERRORS = {
@@ -59,10 +61,7 @@ function Contact() {
       next.firstName = 'First name is required.';
       valid = false;
     }
-    if (!formData.lastName?.trim()) {
-      next.lastName = 'Last name is required.';
-      valid = false;
-    }
+    // lastName is optional per client spec
     if (!formData.email?.trim()) {
       next.email = 'Email is required.';
       valid = false;
@@ -85,13 +84,13 @@ function Contact() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
-    // Submit payload – wire to your backend or email service
     const payload = {
-      firstName: formData.firstName.trim(),
-      lastName: formData.lastName.trim(),
-      email: formData.email.trim(),
-      category: formData.category.trim(),
-      message: formData.message.trim(),
+      firstName: (formData.firstName ?? '').trim(),
+      lastName: (formData.lastName ?? '').trim(),
+      email: (formData.email ?? '').trim(),
+      category: (formData.category ?? '').trim(),
+      message: (formData.message ?? '').trim(),
+      company_name: (formData.company_name ?? '').trim(), // honeypot
     };
     try {
       setSubmitError('');
@@ -114,7 +113,7 @@ function Contact() {
               Thanks for reaching out!
             </h1>
             <p className="font-inter font-normal text-base text-center text-[#0F172A] mt-4" data-aos="fade-up" data-aos-duration="500" data-aos-delay="50">
-              We've received your message and usually reply within 24-48 hours.
+              We've received your message and usually reply within 24–48 hours.
             </p>
             <p className="font-inter font-normal text-base text-center text-[#0F172A] mt-4" data-aos="fade-up" data-aos-duration="500" data-aos-delay="100">
               You may also browse our{' '}
@@ -169,7 +168,6 @@ function Contact() {
                   label="Last Name"
                   value={formData.lastName}
                   onChange={setField('lastName')}
-                  required
                   error={errors.lastName}
                 />
               </div>
@@ -239,6 +237,20 @@ function Contact() {
                   {errors.message}
                 </p>
               )}
+            </div>
+
+            {/* Honeypot – hidden from users, bots may fill it */}
+            <div className="absolute -left-[9999px] top-0 opacity-0" aria-hidden="true">
+              <label htmlFor="company_name">Company name</label>
+              <input
+                type="text"
+                id="company_name"
+                name="company_name"
+                tabIndex={-1}
+                autoComplete="off"
+                value={formData.company_name}
+                onChange={(e) => setField('company_name')(e.target.value)}
+              />
             </div>
 
             <div className="mt-10">

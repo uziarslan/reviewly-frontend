@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import logo from '../Assets/logo.png';
-import { useAuth } from '../context/AuthContext';
 
 const navLinkClass = ({ isActive }) =>
   `font-sans text-sm font-semibold px-3 py-2 border-b-[3px] transition-colors block ${
@@ -17,31 +16,28 @@ const Header = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [headerVisible, setHeaderVisible] = useState(true);
   const lastScrollY = useRef(0);
-  const { loginWithGoogle } = useAuth();
-  const navigate = useNavigate();
 
   const handleGoogleLogin = useCallback(() => {
     const clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
-    if (!clientId || !window.google) {
-      console.error('Google client not loaded or REACT_APP_GOOGLE_CLIENT_ID missing');
+    if (!clientId) {
+      console.error('REACT_APP_GOOGLE_CLIENT_ID is missing');
       return;
     }
 
-    window.google.accounts.id.initialize({
+    const redirectUri = `${window.location.origin}/auth/google/callback`;
+    const scope = 'openid email profile';
+
+    const params = new URLSearchParams({
       client_id: clientId,
-      callback: async (response) => {
-        try {
-          await loginWithGoogle(response.credential);
-          navigate('/dashboard/all-reviewers');
-        } catch (err) {
-          console.error('Google login failed:', err);
-        }
-      },
+      redirect_uri: redirectUri,
+      response_type: 'code',
+      scope,
+      access_type: 'offline',
+      prompt: 'select_account',
     });
 
-    // Use popup mode
-    window.google.accounts.id.prompt();
-  }, [loginWithGoogle, navigate]);
+    window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+  }, []);
 
   useEffect(() => {
     if (drawerOpen) {
