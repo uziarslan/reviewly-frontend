@@ -32,7 +32,15 @@ const GoogleCallback = () => {
         navigate('/dashboard/all-reviewers', { replace: true });
       })
       .catch((err) => {
-        console.error('Google login failed:', err);
+        const redirectUriToAdd = err.apiResponse?.redirect_uri;
+        if (err.status === 400 && redirectUriToAdd) {
+          console.error(
+            'Google login failed: add this URL in Google Cloud Console → Credentials → your OAuth 2.0 Client → Authorized redirect URIs:',
+            redirectUriToAdd
+          );
+        } else {
+          console.error('Google login failed:', err);
+        }
         navigate('/', { replace: true });
       });
   }, [searchParams, loginWithGoogleCode, navigate]);
