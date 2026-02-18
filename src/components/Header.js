@@ -5,10 +5,9 @@ import { useAuth } from '../context/AuthContext';
 import logo from '../Assets/logo.png';
 
 const navLinkClass = ({ isActive }) =>
-  `font-sans text-sm font-semibold px-3 py-2 border-b-[3px] transition-colors block ${
-    isActive
-      ? 'text-[#6E43B9] border-[#6E43B9]'
-      : 'text-[#6C737F] border-transparent hover:text-[#6E43B9]'
+  `font-sans text-sm font-semibold px-3 py-2 border-b-[3px] transition-colors block ${isActive
+    ? 'text-[#6E43B9] border-[#6E43B9]'
+    : 'text-[#6C737F] border-transparent hover:text-[#6E43B9]'
   }`;
 
 const SCROLL_UP_THRESHOLD = 10;
@@ -64,9 +63,8 @@ const Header = () => {
   return (
     <>
       <header
-        className={`fixed top-0 left-0 right-0 z-30 bg-white border-b border-gray-100 transition-transform duration-300 ease-out ${
-          headerVisible ? 'translate-y-0' : '-translate-y-full'
-        }`}
+        className={`fixed top-0 left-0 right-0 z-30 bg-white border-b border-gray-100 transition-transform duration-300 ease-out ${headerVisible ? 'translate-y-0' : '-translate-y-full'
+          }`}
       >
         <div className="max-w-[1440px] mx-auto px-3 py-2 sm:px-6 md:py-0 lg:px-8">
           <div className="flex justify-between items-center h-14 md:h-[104px]">
@@ -111,17 +109,15 @@ const Header = () => {
       <div
         role="presentation"
         onClick={() => setDrawerOpen(false)}
-        className={`fixed inset-0 bg-black/50 z-40 transition-opacity duration-300 ease-out md:hidden ${
-          drawerOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
-        }`}
+        className={`fixed inset-0 bg-black/50 z-40 transition-opacity duration-300 ease-out md:hidden ${drawerOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          }`}
         aria-hidden="true"
       />
 
       {/* Drawer - slides in from right; solid opaque background so not transparent on mobile */}
       <div
-        className={`fixed top-0 right-0 h-full w-[280px] max-w-[85vw] z-50 shadow-2xl flex flex-col transition-transform duration-300 ease-out md:hidden ${
-          drawerOpen ? 'translate-x-0' : 'translate-x-full'
-        }`}
+        className={`fixed top-0 right-0 h-full w-[280px] max-w-[85vw] z-50 shadow-2xl flex flex-col transition-transform duration-300 ease-out md:hidden ${drawerOpen ? 'translate-x-0' : 'translate-x-full'
+          }`}
         style={{ backgroundColor: '#ffffff' }}
         aria-modal="true"
         aria-label="Navigation menu"
