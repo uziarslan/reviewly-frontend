@@ -165,7 +165,7 @@ function Contact() {
               <div>
                 <FloatingField
                   id="last-name"
-                  label="Last Name"
+                  label="Last Name (optional)"
                   value={formData.lastName}
                   onChange={setField('lastName')}
                   error={errors.lastName}

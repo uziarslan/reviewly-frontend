@@ -156,7 +156,7 @@ const AccountSettings = () => {
                 to="/dashboard/settings/update-subscription"
                 className="font-inter font-medium text-[14px] text-[#6E43B9] underline hover:no-underline shrink-0"
               >
-                Update Subscription
+                Get 7 days Free Premium
               </Link>
             </div>
           </section>

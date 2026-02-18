@@ -59,7 +59,7 @@ const UpdateSubscription = () => {
           >
             <iframe
               title="Reviewly Subscription Form"
-              src="https://docs.google.com/forms/d/e/1FAIpQLSdjAt_XKMwL5HwYMdYWmuSPg-ORsSA20ttJ0gdudtQYrvjMPw/viewform?embedded=true"
+              src="https://docs.google.com/forms/d/e/1FAIpQLSccAkpn36ATkqzupWWtXtaCH5_GZVlb1RNHORy_xnLsg3vLVA/viewform?usp=preview"
               frameBorder="0"
               marginHeight="0"
               marginWidth="0"

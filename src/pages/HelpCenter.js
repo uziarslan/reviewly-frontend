@@ -54,9 +54,9 @@ function renderAnswer(answer, hasEmailLink, itemId) {
 
 const IN_APP_CATEGORY_OPTIONS = [
   { value: '', label: 'Category' },
-  { value: 'Account & Login', label: 'Account & Login' },
-  { value: 'Subscription & Payment', label: 'Subscription & Payment' },
-  { value: 'Reviewer / Exam Content', label: 'Reviewer / Exam Content' },
+  { value: 'General Inquiry', label: 'General Inquiry' },
+  { value: 'Pricing & Plans', label: 'Pricing & Plans' },
+  { value: 'Payments & Subscription', label: 'Payments & Subscription' },
   { value: 'Feedback or Feature Request', label: 'Feedback or Feature Request' },
   { value: 'Bug or Technical Issue', label: 'Bug or Technical Issue' },
   { value: 'Other', label: 'Other' },

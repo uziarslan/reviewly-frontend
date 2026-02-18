@@ -120,8 +120,8 @@ const ExamDetails = () => {
         </nav>
 
         <div className="flex flex-col lg:flex-row gap-8 lg:gap-[24px] items-start">
-          {/* Left column: banner, title, metrics, button, coverage — second when wrapped, first on lg */}
-          <div className="order-2 lg:order-1 w-full lg:w-auto lg:flex-1 lg:min-w-0 bg-[#FFFFFF] p-[24px] rounded-[12px]">
+          {/* Left column: banner, title, metrics, button, coverage — first on mobile (top), left on lg */}
+          <div className="order-1 lg:order-1 w-full lg:w-auto lg:flex-1 lg:min-w-0 bg-[#FFFFFF] p-[24px] rounded-[12px]">
             {/* Banner */}
             <div
               className="w-full h-[225px] rounded-tl-[8px] rounded-tr-[8px] bg-gradient-to-br from-[#6E43B9]/20 to-[#421983]/30 flex items-center justify-center"
@@ -314,8 +314,8 @@ const ExamDetails = () => {
             </section>
           </div>
 
-          {/* Right column: Important Notes — first when wrapped, right on lg; no max-width when wrapped; stretch on lg so sticky has room */}
-          <div className="order-1 lg:order-2 lg:flex-shrink-0 lg:max-w-[360px] lg:self-stretch">
+          {/* Right column: Important Notes — bottom when wrapped on mobile, right on lg; stretch on lg so sticky has room */}
+          <div className="order-2 lg:order-2 lg:flex-shrink-0 lg:max-w-[360px] lg:self-stretch">
             <section
               className="bg-[#ffffff] rounded-[12px] p-[24px] lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto"
               data-aos="fade-up"
