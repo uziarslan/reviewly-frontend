@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import AOS from 'aos';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import GoogleAuthButton from '../components/GoogleAuthButton';
 import {
   LevelUpUnderline,
   CubeIcon,
@@ -65,17 +66,11 @@ const Home = () => {
                 <p className="font-inter text-white text-[14px] sm:text-[16px] lg:text-[18px] font-normal leading-[1.6] mb-6 sm:mb-8 lg:mb-10 max-w-[520px]" data-aos="fade-up" data-aos-duration="600" data-aos-delay="150">
                   Try sample reviewers for free. Upgrade anytime for full access to dynamic questions, mock exams, and insights.
                 </p>
-                <button
-                  type="button"
-                  onClick={() => window.dispatchEvent(new CustomEvent('reviewly:trigger-google-login'))}
+                <GoogleAuthButton
+                  label="Start for Free"
+                  redirectTo="/dashboard/all-reviewers"
                   className="inline-flex items-center justify-center bg-[#FFC92A] text-[#421A83] font-bold text-[16px] sm:text-[20px] lg:text-[24px] tracking-[0.5px] rounded-lg py-3 px-6 sm:py-4 sm:px-8 lg:py-[20px] lg:px-[48px] hover:opacity-95 transition-opacity"
-                  style={{ fontFamily: 'Roboto, sans-serif' }}
-                  data-aos="fade-up"
-                  data-aos-duration="600"
-                  data-aos-delay="200"
-                >
-                  Start for Free
-                </button>
+                />
                 <p className="font-sans text-white text-[14px] sm:text-[16px] lg:text-[18px] font-normal mt-6 sm:mt-8 text-white/90" data-aos="fade-up" data-aos-duration="600" data-aos-delay="250">
                   No credit card. No stress. Just smarter studying.
                 </p>

@@ -37,6 +37,8 @@ async function apiFetch(endpoint, options = {}) {
 export const authAPI = {
   googleLogin: (token) =>
     apiFetch("/auth/google-login", { method: "POST", body: { token } }),
+  googleCodeLogin: (code) =>
+    apiFetch("/auth/google-code-login", { method: "POST", body: { code } }),
   getMe: () => apiFetch("/auth/me"),
   updateMe: (data) =>
     apiFetch("/auth/me", { method: "PUT", body: data }),

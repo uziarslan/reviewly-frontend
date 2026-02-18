@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import AOS from 'aos';
+import GoogleAuthButton from '../components/GoogleAuthButton';
 import {
   CompassIcon,
   ToothIcon,
@@ -150,17 +151,11 @@ const Pricing = () => {
               <p className="font-sans text-base font-normal text-center text-[#0F172A] mb-[50px] max-w-[480px] mx-auto" data-aos="fade-up" data-aos-duration="600" data-aos-delay="150">
                 All-access tools for every reviewer.<br /> Start free, upgrade anytime, review for as long as you need.
               </p>
-              <button
-                type="button"
-                onClick={() => window.dispatchEvent(new CustomEvent('reviewly:trigger-google-login'))}
-                className="w-full max-w-[270px] h-[80px] rounded-lg bg-yellow-400 hover:bg-yellow-500 font-bold text-[28px] text-[#421A83] tracking-[0.5px] shadow-md transition-all transform hover:scale-105"
-                style={{ fontFamily: 'Roboto, sans-serif' }}
-                data-aos="fade-up"
-                data-aos-duration="600"
-                data-aos-delay="300"
-              >
-                Start for Free
-              </button>
+              <GoogleAuthButton
+                label="Start for Free"
+                redirectTo="/dashboard/all-reviewers"
+                className="w-full max-w-[270px] mx-auto h-[80px] rounded-lg bg-yellow-400 hover:bg-yellow-500 font-bold text-[28px] text-[#421A83] tracking-[0.5px] shadow-md transition-all transform hover:scale-105 flex items-center justify-center"
+              />
             </div>
           </section>
         </div>
