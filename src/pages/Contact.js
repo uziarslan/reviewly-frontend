@@ -39,6 +39,7 @@ function Contact() {
   const [errors, setErrors] = useState(INITIAL_ERRORS);
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (submitted) {
@@ -93,6 +94,7 @@ function Contact() {
       company_name: (formData.company_name ?? '').trim(), // honeypot
     };
     try {
+      setIsSubmitting(true);
       setSubmitError('');
       await supportAPI.submitContact(payload);
       setFormData(INITIAL_FORM_DATA);
@@ -100,6 +102,8 @@ function Contact() {
       setSubmitted(true);
     } catch (err) {
       setSubmitError(err?.message || 'Something went wrong. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -261,9 +265,20 @@ function Contact() {
               )}
               <button
                 type="submit"
-                className="rounded-lg py-3 px-7 bg-[#FFC92A] text-[#421A83] font-roboto font-medium text-base tracking-[0.5px] mb-4 transition-opacity hover:opacity-95"
+                disabled={isSubmitting}
+                className="rounded-lg py-3 px-7 bg-[#FFC92A] text-[#421A83] font-roboto font-medium text-base tracking-[0.5px] mb-4 transition-opacity hover:opacity-95 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                Send Message
+                {isSubmitting ? (
+                  <>
+                    <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Sending...
+                  </>
+                ) : (
+                  'Send Message'
+                )}
               </button>
               <p className="font-inter font-normal text-xs tracking-[0.4px] text-[#6C737F]">
                 We usually reply within 24-48 hours.
