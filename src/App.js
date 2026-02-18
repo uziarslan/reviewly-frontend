@@ -18,7 +18,6 @@ import ExamDetails from './pages/ExamDetails';
 import Exam from './pages/Exam';
 import ExamResultsLoading from './pages/ExamResultsLoading';
 import ExamReview from './pages/ExamReview';
-import GoogleCallback from './pages/GoogleCallback';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 import { AOS_CONFIG } from './config/aos';
@@ -40,7 +39,6 @@ function App() {
         <Route path="/contact" element={<Contact />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/terms" element={<Terms />} />
-        <Route path="/auth/google/callback" element={<GoogleCallback />} />
 
         {/* Protected dashboard routes */}
         <Route path="/dashboard" element={<ProtectedRoute><Navigate to="/dashboard/all-reviewers" replace /></ProtectedRoute>} />

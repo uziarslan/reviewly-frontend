@@ -37,15 +37,6 @@ export const AuthProvider = ({ children }) => {
     return res;
   }, []);
 
-  const loginWithGoogleCode = useCallback(async (code, redirectUri) => {
-    const res = await authAPI.googleLoginWithCode(code, redirectUri);
-    if (res.success) {
-      localStorage.setItem("reviewly_token", res.token);
-      setUser(res.user);
-    }
-    return res;
-  }, []);
-
   const logout = useCallback(async () => {
     try {
       await authAPI.logout();
@@ -65,7 +56,6 @@ export const AuthProvider = ({ children }) => {
     loading,
     isAuthenticated: !!user,
     loginWithGoogle,
-    loginWithGoogleCode,
     logout,
     updateUser,
     setUser,

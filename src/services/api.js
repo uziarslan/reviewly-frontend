@@ -35,10 +35,8 @@ async function apiFetch(endpoint, options = {}) {
 
 // ── Auth ──
 export const authAPI = {
-  googleLogin: (credential) =>
-    apiFetch("/auth/google", { method: "POST", body: { credential } }),
-  googleLoginWithCode: (code, redirectUri) =>
-    apiFetch("/auth/google/code", { method: "POST", body: { code, redirect_uri: redirectUri } }),
+  googleLogin: (token) =>
+    apiFetch("/auth/google-login", { method: "POST", body: { token } }),
   getMe: () => apiFetch("/auth/me"),
   updateMe: (data) =>
     apiFetch("/auth/me", { method: "PUT", body: data }),
