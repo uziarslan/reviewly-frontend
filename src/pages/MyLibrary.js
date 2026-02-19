@@ -213,6 +213,7 @@ const MyLibrary = () => {
                     <div className="flex flex-col items-start gap-2">
                       <button
                         type="button"
+                        onClick={() => navigate('/dashboard/settings/update-subscription')}
                         className="w-[205px] font-inter font-semibold text-[#421A83] text-[14px] sm:text-[16px] py-3 rounded-[8px] bg-[#FFC92A] hover:opacity-95 transition-opacity flex items-center justify-center gap-2"
                       >
                         <LockIcon className="w-[18px] h-[21px] shrink-0" />

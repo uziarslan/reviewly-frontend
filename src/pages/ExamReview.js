@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link, useLocation } from 'react-router-dom';
+import { useParams, Link, useLocation, useNavigate } from 'react-router-dom';
 import DashNav from '../components/DashNav';
 import { examAPI } from '../services/api';
 import ExamReviewSkeleton from '../components/skeletons/ExamReviewSkeleton';
@@ -7,6 +7,7 @@ import ExamReviewSkeleton from '../components/skeletons/ExamReviewSkeleton';
 function ExamReview() {
   const { attemptId } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const fromLibrary = new URLSearchParams(location.search).get('from') === 'library';
   const [reviewData, setReviewData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -55,10 +56,9 @@ function ExamReview() {
   const selectedLetter = (currentQ.selectedAnswer || '').toString().toUpperCase().trim();
   const isCorrectAnswer = currentQ.isCorrect;
 
-  // Build explanation text
-  const explanation = isCorrectAnswer
-    ? currentQ.explanationCorrect || `Correct Answer: ${correctLetter}`
-    : currentQ.explanationWrong || `The correct answer is ${correctLetter}.`;
+  // Same content for both correct/wrong – only background differs
+  const explanationCorrect = currentQ.explanationCorrect || '';
+  const explanationWrong = currentQ.explanationWrong || '';
   const tip = currentQ.reviewlyTip;
 
   const totalCorrect = result.correct || 0;
@@ -121,13 +121,12 @@ function ExamReview() {
                       className="flex items-start gap-3 font-inter text-[16px] text-[#45464E]"
                     >
                       <span
-                        className={`mt-1 w-5 h-5 flex items-center justify-center shrink-0 rounded-full bg-white ${
-                          showCheck
-                            ? 'border-[6px] border-[#06A561]'
-                            : showX
-                              ? 'border-[6px] border-[#F0142F]'
-                              : 'border border-[#B0B0B0]'
-                        }`}
+                        className={`mt-1 w-5 h-5 flex items-center justify-center shrink-0 rounded-full bg-white ${showCheck
+                          ? 'border-[6px] border-[#06A561]'
+                          : showX
+                            ? 'border-[6px] border-[#F0142F]'
+                            : 'border border-[#B0B0B0]'
+                          }`}
                         aria-hidden="true"
                       />
                       <span>{option}</span>
@@ -136,43 +135,53 @@ function ExamReview() {
                 })}
               </div>
 
-              {/* Correct Answer / Feedback box */}
+              {/* Correct Answer / Feedback box – same content for correct/wrong, only background differs */}
               <div
-                className={`rounded-[8px] py-3 px-[15px] mb-4 ${isCorrectAnswer ? 'bg-[#DAF9EC80]' : 'bg-[#FDE7EA]'
-                  }`}
+                className={`rounded-[8px] py-3 px-[15px] mb-4 ${isCorrectAnswer ? 'bg-[#DAF9EC80]' : 'bg-[#FDE7EA]'}`}
               >
                 <p className="font-inter text-[14px] text-[#45464E] whitespace-pre-line">
-                  {explanation}
+                  <strong>Correct answer:{" "}{correctLetter}</strong>
+                  {explanationCorrect ? ` – ${explanationCorrect}` : ''}
+                  {explanationWrong ? `\n\n${explanationWrong}` : ''}
                 </p>
               </div>
 
               {/* Reviewly Tip */}
               {tip && (
-              <div className="rounded-[8px] py-3 px-[15px] mb-8 bg-[#FFC92A1A]">
-                <p className="font-inter text-[14px] text-[#53545C]">
-                  💡 <span className="font-bold">Reviewly Tip:</span> {tip}
-                </p>
-              </div>
+                <div className="rounded-[8px] py-3 px-[15px] mb-8 bg-[#FFC92A1A]">
+                  <p className="font-inter text-[14px] text-[#53545C]">
+                    💡 <span className="font-bold">Reviewly Tip:</span> {tip}
+                  </p>
+                </div>
               )}
             </div>
+            <div className="flex justify-between pt-4 border-t border-[#F2F4F7]">
+              <button
+                type="button"
+                onClick={() => navigate(`/dashboard/exam/${reviewer._id}${fromLibrary ? '?from=library' : ''}`)}
+                className="font-inter font-normal not-italic text-[16px] text-[#6C737F] py-2.5 px-6 rounded-[8px] border border-[#6C737F] bg-white hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Close
+              </button>
 
-            <div className="flex flex-wrap items-center justify-end gap-2 pt-4 border-t border-[#F2F4F7]">
-              <button
-                type="button"
-                onClick={handlePrev}
-                disabled={currentIndex === 0}
-                className="font-inter font-semibold text-[14px] text-[#45464E] py-2.5 px-4 rounded-[8px] border border-[#CFD3D4] bg-white hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                ‹ Previous
-              </button>
-              <button
-                type="button"
-                onClick={handleNext}
-                disabled={currentIndex === totalQuestions - 1}
-                className="font-inter font-semibold text-[14px] text-[#421A83] py-2.5 px-6 rounded-[8px] bg-[#FFC92A] hover:opacity-95 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Next
-              </button>
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={handlePrev}
+                  disabled={currentIndex === 0}
+                  className="font-inter font-semibold text-[16px] text-[#6C737F] py-2.5 px-4 rounded-[8px] border border-[#6C737F] bg-white hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  ‹
+                </button>
+                <button
+                  type="button"
+                  onClick={handleNext}
+                  disabled={currentIndex === totalQuestions - 1}
+                  className="font-inter font-semibold text-[14px] text-[#421A83] py-2.5 px-6 rounded-[8px] bg-[#FFC92A] hover:opacity-95 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
+              </div>
             </div>
           </div>
 
@@ -218,9 +227,8 @@ function ExamReview() {
                       key={num}
                       type="button"
                       onClick={() => goToQuestion(num)}
-                      className={`shrink-0 w-8 h-8 lg:min-w-0 lg:w-full lg:aspect-square lg:max-w-8 font-inter text-[14px] font-medium rounded-[4px] transition-colors flex items-center justify-center ${
-                        isCorrect ? 'bg-[#DAF9EC]' : 'bg-[#FDE7EA]'
-                      } ${isCurrent ? 'text-[#53545C]' : 'text-[#AEAEAE]'}`}
+                      className={`shrink-0 w-8 h-8 lg:min-w-0 lg:w-full lg:aspect-square lg:max-w-8 font-inter text-[14px] font-medium rounded-[4px] transition-colors flex items-center justify-center ${isCorrect ? 'bg-[#DAF9EC]' : 'bg-[#FDE7EA]'
+                        } ${isCurrent ? 'text-[#53545C]' : 'text-[#AEAEAE]'}`}
                     >
                       {num}
                     </button>

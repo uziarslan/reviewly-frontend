@@ -333,8 +333,8 @@ const ExamDetails = () => {
               <ul className="list-disc list-inside space-y-4 pl-1 font-inter text-sm">
                 {(exam.importantNotes || []).map((note, idx) => (
                   <li key={idx}>
-                    <TextWithNewlines as="span" className="font-inter font-semibold text-[16px] text-[#45464E] leading-[20px]">{note.title}: </TextWithNewlines>
-                    <TextWithNewlines as="span" className="font-inter font-normal text-[16px] text-[#45464E] leading-[20px]">{note.text}</TextWithNewlines>
+                    <span className="font-inter font-semibold text-[16px] text-[#45464E] leading-[20px]">{note.title}:{" "}</span>
+                    <span className="font-inter font-normal text-[16px] text-[#45464E] leading-[20px]">{note.text}</span>
                   </li>
                 ))}
               </ul>
