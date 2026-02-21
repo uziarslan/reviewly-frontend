@@ -583,13 +583,18 @@ function Exam() {
               <div className="flex flex-row justify-between items-center mb-[15px]">
                 <div className="flex items-center gap-[10px]">
                   <span className="font-inter font-normal not-italic text-[20px] text-[#45464E]">Time Left</span>
-                  <button
-                    type="button"
-                    aria-label="Time information"
-                    className="w-[20px] h-[20px] rounded-[4px] flex items-center justify-center opacity-40 text-[#130F26] bg-[linear-gradient(0deg,_#FFC92A,_#FFC92A),_linear-gradient(0deg,_rgba(255,255,255,0.5),_rgba(255,255,255,0.5))]"
-                  >
-                    <ExamTimeInfoIcon className="w-[1.76px] h-[9.34px]" />
-                  </button>
+                  <div className="relative flex items-center group">
+                    <button
+                      type="button"
+                      aria-label="Time information"
+                      className="w-[20px] h-[20px] rounded-[4px] flex items-center justify-center opacity-40 text-[#130F26] bg-[linear-gradient(0deg,_#FFC92A,_#FFC92A),_linear-gradient(0deg,_rgba(255,255,255,0.5),_rgba(255,255,255,0.5))]"
+                    >
+                      <ExamTimeInfoIcon className="w-[1.76px] h-[9.34px]" />
+                    </button>
+                    <div className="pointer-events-none absolute left-1/2 top-[28px] w-[220px] -translate-x-1/2 rounded-[8px] bg-[#1F2937] px-3 py-2 text-[12px] text-white opacity-0 shadow-md transition-opacity duration-150 group-hover:opacity-100">
+                      Your answers will be automatically submitted once the timer reaches zero. Make sure to manage your time wisely.
+                    </div>
+                  </div>
                 </div>
                 <p className="font-inter font-medium not-italic text-[32px] text-[#431C86]">{timeLeft}</p>
               </div>

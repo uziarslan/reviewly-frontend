@@ -97,6 +97,8 @@ const ExamResultsLoading = () => {
   const lowestSection = sortedSections[sortedSections.length - 1] || null;
   const gapToPass = passed ? 0 : Math.max(0, passingScore - totalCorrect);
 
+  const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1);
+
   const takenAt = attempt.submittedAt
     ? new Date(attempt.submittedAt).toLocaleString('en-US', {
       year: 'numeric', month: 'long', day: 'numeric',
@@ -174,7 +176,7 @@ const ExamResultsLoading = () => {
   );
 
   const recommendedButtons = (
-    <div className="pt-[28px] max-w-[850px] mx-auto">
+    <div className="pt-[28px] max-w-[800px] mx-auto">
       <h3 className="font-inter font-semibold text-[18px] text-[#45464E] mb-[16px] flex items-center gap-2">
         <span>📌</span> Recommended Next Step
       </h3>
@@ -227,7 +229,7 @@ const ExamResultsLoading = () => {
     </h3>
   );
 
-  if (reviewerType === 'practice') {
+  if (reviewerType === 'practice' || reviewerType === 'demo') {
     return (
       <div className={PAGE_CLASSES}>
         <DashNav />
@@ -332,7 +334,7 @@ const ExamResultsLoading = () => {
               <tbody>
                 {breakdown.map((row, i) => (
                   <tr key={i} className="bg-[#FAF9FF]">
-                    <td className="py-3 px-3 text-[#45464E] border-t border-l border-[#B0B0B0]">{row.section}</td>
+                    <td className="py-3 px-3 text-[#45464E] border-t border-l border-[#B0B0B0]">{capitalize(row.section)}</td>
                     <td className="py-3 px-3 text-[#45464E] border-t border-l border-[#B0B0B0]">{row.totalItems}</td>
                     <td className="py-3 px-3 text-[#45464E] border-t border-l border-[#B0B0B0]">{row.correct}</td>
                     <td className="py-3 px-3 text-[#45464E] border-t border-l border-[#B0B0B0]">{row.incorrect}</td>
@@ -394,7 +396,7 @@ const ExamResultsLoading = () => {
                   const aiLines = getAILines(s.section);
                   return (
                     <li key={i} className="font-inter text-[15px] text-[#45464E]">
-                      <span className="font-bold">{s.section} ({s.score}%)</span>
+                      <span className="font-bold">{capitalize(s.section)} ({s.score}%)</span>
                       {(aiLines.length ? aiLines : [s.score >= 85 ? "Excellent proficiency. You're exam-ready in this section." : 'Good performance. Minor refinements can push this to mastery level.']).map((line, li) => (
                         <p key={li} className="font-normal text-[15px] text-[#45464E] leading-[24px] mt-[2px]">{line}</p>
                       ))}
@@ -417,7 +419,7 @@ const ExamResultsLoading = () => {
                     : 'You understand basic patterns, but this area needs focused practice and refinement.';
                   return (
                     <li key={i} className="font-inter text-[15px] text-[#45464E]">
-                      <span className="font-bold">{s.section} ({s.score}%){isLowest && <span className="text-[#45464E] font-bold"> — Highest Impact Area</span>}</span>
+                      <span className="font-bold">{capitalize(s.section)} ({s.score}%){isLowest && <span className="text-[#45464E] font-bold"> — Highest Impact Area</span>}</span>
                       {(aiLines.length ? aiLines : [fallback]).map((line, li) => (
                         <p key={li} className={`font-inter leading-[24px] mt-[2px] ${aiLines.length ? 'font-bold text-[16px]' : 'font-normal text-[15px]'} text-[#45464E]`}>{line}</p>
                       ))}
@@ -428,7 +430,7 @@ const ExamResultsLoading = () => {
             </div>
           )}
 
-          <div className="flex flex-wrap justify-center gap-4 mb-[8px]">
+          <div className="flex flex-wrap justify-start gap-4 mb-[8px] max-w-[800px] mx-auto">
             <button type="button" onClick={() => navigate(backUrl)} className="font-inter font-normal text-[14px] text-[#6E43B9] py-[11.5px] px-4 rounded-[8px] border border-[#6E43B9] bg-white hover:bg-gray-50 transition-colors">
               Go back to Dashboard
             </button>
@@ -480,7 +482,6 @@ const ExamResultsLoading = () => {
             </div>
           )}
 
-          {reviewerType === 'demo' && recommendations.length > 0 && recommendedButtons}
         </section>
       </main>
     </div>
