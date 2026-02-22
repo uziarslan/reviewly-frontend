@@ -7,6 +7,7 @@ import { ExamNotesLightningIcon } from '../components/Icons';
 import { TextWithNewlines } from '../utils/text';
 import ExamDetailsSkeleton from '../components/skeletons/ExamDetailsSkeleton';
 import { BANNER_IMAGE_MAP } from '../data/reviewers';
+import { trackExamSelected } from '../services/analytics';
 
 const ExamDetails = () => {
   const { id } = useParams();
@@ -28,7 +29,10 @@ const ExamDetails = () => {
           examAPI.getUserHistory(),
         ]);
         if (cancelled) return;
-        if (revRes.success) setReviewer(revRes.data);
+        if (revRes.success) {
+          setReviewer(revRes.data);
+          trackExamSelected(id, revRes.data.title);
+        }
         if (histRes.success) {
           // Build map by reviewer id for both in_progress and completed attempts
           const ipMap = {};

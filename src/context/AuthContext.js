@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { authAPI } from "../services/api";
+import { identifyUser, resetAnalytics, trackLoginSuccess, trackLogout } from "../services/analytics";
 
 const AuthContext = createContext(null);
 
@@ -20,7 +21,10 @@ export const AuthProvider = ({ children }) => {
     authAPI
       .getMe()
       .then((res) => {
-        if (res.success) setUser(res.user);
+        if (res.success) {
+          setUser(res.user);
+          identifyUser(res.user);
+        }
       })
       .catch(() => {
         localStorage.removeItem("reviewly_token");
@@ -33,6 +37,8 @@ export const AuthProvider = ({ children }) => {
     if (res.success) {
       localStorage.setItem("reviewly_token", res.token);
       setUser(res.user);
+      identifyUser(res.user);
+      trackLoginSuccess(res.user);
     }
     return res;
   }, []);
@@ -42,16 +48,20 @@ export const AuthProvider = ({ children }) => {
     if (res.success) {
       localStorage.setItem("reviewly_token", res.token);
       setUser(res.user);
+      identifyUser(res.user);
+      trackLoginSuccess(res.user);
     }
     return res;
   }, []);
 
   const logout = useCallback(async () => {
+    trackLogout();
     try {
       await authAPI.logout();
     } catch (_) {}
     localStorage.removeItem("reviewly_token");
     setUser(null);
+    resetAnalytics();
   }, []);
 
   const updateUser = useCallback(async (data) => {

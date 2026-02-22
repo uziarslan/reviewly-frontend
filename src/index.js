@@ -5,6 +5,10 @@ import App from './App';
 import { AuthProvider } from './context/AuthContext';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import reportWebVitals from './reportWebVitals';
+import { initAnalytics } from './services/analytics';
+
+// Initialize PostHog analytics
+initAnalytics();
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(

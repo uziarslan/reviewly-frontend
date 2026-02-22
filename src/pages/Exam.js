@@ -6,6 +6,7 @@ import ExamSkeleton from '../components/skeletons/ExamSkeleton';
 import Modal from '../components/Modal';
 import { examAPI, reviewerAPI } from '../services/api';
 import timeUpImage from '../Assets/timeup.png';
+import { trackExamStarted, trackExamCompleted } from '../services/analytics';
 
 /** Format seconds as "HH:MM:SS" (non-negative). */
 function secondsToTimeStr(totalSec) {
@@ -73,6 +74,11 @@ function Exam() {
           setTotalQuestions(data.totalQuestions);
           setCurrentIndex(data.currentIndex || 0);
           setRemainingSeconds(data.remainingSeconds);
+
+          // Track exam started
+          if (revRes.success) {
+            trackExamStarted(id, revRes.data.title);
+          }
 
           // Restore answered state
           const answeredSet = new Set();
@@ -277,6 +283,12 @@ function Exam() {
     try {
       const res = await examAPI.submit(attemptId);
       if (res.success) {
+        // Track exam completed
+        trackExamCompleted(id, reviewer?.title, {
+          score: res.data?.result?.percentage,
+          duration: res.data?.result?.duration,
+          totalQuestions: totalQuestions,
+        });
         setShowSubmitModal(false);
         navigate(`/dashboard/results/${attemptId}${fromLibrary ? '?from=library' : ''}`);
       }
