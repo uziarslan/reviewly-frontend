@@ -64,8 +64,11 @@ function ExamReview() {
   const totalCorrect = result.correct || 0;
   const totalItems = result.totalItems || totalQuestions;
   const percentage = result.percentage != null ? result.percentage.toFixed(2) : '0.00';
-  const passed = result.passed;
   const passingScore = result.passingScore || 0;
+
+  const pct = parseFloat(percentage);
+  const performanceLevel = pct >= 85 ? 'Strong' : pct >= 70 ? 'Developing' : 'Needs Improvement';
+  const performanceLevelColor = pct >= 85 ? 'text-[#06A561]' : pct >= 70 ? 'text-[#F5A623]' : 'text-[#F0142F]';
 
   const handlePrev = () => {
     if (currentIndex > 0) setCurrentIndex((i) => i - 1);
@@ -198,9 +201,10 @@ function ExamReview() {
                 Percentage: {percentage}%
               </p>
               <p className="font-inter text-[16px] text-[#45464E] mb-0">
-                <span className="font-semibold">Status: </span>
-                <span className={`font-bold ${passed ? 'text-[#06A561]' : 'text-[#F0142F]'}`}>
-                  {passed ? 'PASSED! 🎉' : 'FAILED'}
+                <span className="font-semibold">Performance Level</span>
+                <span className="font-normal"> - </span>
+                <span className={`font-semibold ${performanceLevelColor}`}>
+                  {performanceLevel}
                 </span>
               </p>
               <p className="font-inter font-normal text-[12px] text-[#45464E] mb-[15px]">
