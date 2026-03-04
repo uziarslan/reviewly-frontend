@@ -43,6 +43,12 @@ export function captureEvent(eventName, properties = {}) {
   posthog.capture(eventName, properties);
 }
 
+// ── Pageview on SPA route change (surveys need this) ──
+export function capturePageView(path = window?.location?.pathname) {
+  if (!initialized || !path) return;
+  posthog.capture("$pageview", { $current_url: window.location.href });
+}
+
 // ── GA4 helpers ────────────────────────────────
 export function gtagEvent(eventName, params = {}) {
   if (typeof window.gtag === "function") {

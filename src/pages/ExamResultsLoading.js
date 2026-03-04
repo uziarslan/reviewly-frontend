@@ -49,7 +49,7 @@ const ExamResultsLoading = () => {
     return () => { cancelled = true; };
   }, [attemptId]);
 
-  // Track results_viewed once when final results are available
+  // Track results_viewed once when final results are available (Survey A trigger)
   useEffect(() => {
     if (!attempt || hasTrackedResultsView) return;
     if (attempt.status !== 'submitted' && attempt.status !== 'timed_out') return;

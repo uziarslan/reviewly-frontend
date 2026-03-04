@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import ScrollToTop from './components/ScrollToTop';
 import ProtectedRoute from './components/ProtectedRoute';
 import Home from './pages/Home';
@@ -20,14 +20,19 @@ import ExamReview from './pages/ExamReview';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 import { AOS_CONFIG } from './config/aos';
+import { capturePageView } from './services/analytics';
 
-function App() {
+function AppContent() {
+  const location = useLocation();
   useEffect(() => {
     AOS.init(AOS_CONFIG);
   }, []);
+  useEffect(() => {
+    capturePageView(location.pathname);
+  }, [location.pathname]);
 
   return (
-    <Router>
+    <>
       <ScrollToTop />
       <Routes>
         {/* Public routes */}
@@ -50,6 +55,14 @@ function App() {
         <Route path="/dashboard/review/:attemptId" element={<ProtectedRoute><ExamReview /></ProtectedRoute>} />
         <Route path="/dashboard/exam/:id" element={<ProtectedRoute><ExamDetails /></ProtectedRoute>} />
       </Routes>
+    </>
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <AppContent />
     </Router>
   );
 }
