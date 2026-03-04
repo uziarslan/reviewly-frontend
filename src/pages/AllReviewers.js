@@ -8,6 +8,7 @@ import ReviewerCardSkeleton from '../components/ReviewerCardSkeleton';
 import { reviewerAPI, libraryAPI, examAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { canAccessReviewer } from '../utils/subscription';
+import { trackDashboardCtaClicked } from '../services/analytics';
 
 const AllReviewers = () => {
   const navigate = useNavigate();
@@ -158,6 +159,8 @@ const AllReviewers = () => {
               const inProgressData = inProgressMap[String(card._id)];
               const inProgress = !!inProgressData;
               const hasCompleted = completedReviewerIds.has(String(card._id));
+              const examId = card._id;
+              const examTitle = card.title;
               return (
                 <div
                   key={card._id}
@@ -252,7 +255,15 @@ const AllReviewers = () => {
                     <div className="flex items-start justify-start gap-6 w-full">
                       <button
                         type="button"
-                        onClick={() => navigate(`/dashboard/exam/${card._id}`)}
+                        onClick={() => {
+                          trackDashboardCtaClicked({
+                            action: 'resume_exam',
+                            source: 'all_reviewers',
+                            examId,
+                            examTitle,
+                          });
+                          navigate(`/dashboard/exam/${card._id}`);
+                        }}
                         className="font-inter font-semibold text-[#421A83] text-[14px] sm:text-[16px] py-3 px-4 rounded-[8px] bg-[#FFC92A] hover:opacity-95 transition-opacity shrink-0"
                       >
                         Resume Exam
@@ -273,7 +284,15 @@ const AllReviewers = () => {
                   ) : hasCompleted ? (
                     <button
                       type="button"
-                      onClick={() => navigate(`/dashboard/exam/${card._id}`)}
+                      onClick={() => {
+                        trackDashboardCtaClicked({
+                          action: 'view_exam',
+                          source: 'all_reviewers',
+                          examId,
+                          examTitle,
+                        });
+                        navigate(`/dashboard/exam/${card._id}`);
+                      }}
                       className="max-w-[106px] font-inter font-semibold text-[#421A83] text-[14px] sm:text-[16px] py-3 rounded-[8px] bg-[#FFC92A] hover:opacity-95 transition-opacity"
                     >
                       View Exam
@@ -281,7 +300,15 @@ const AllReviewers = () => {
                   ) : (
                     <button
                       type="button"
-                      onClick={() => navigate(`/dashboard/exam/${card._id}`)}
+                      onClick={() => {
+                        trackDashboardCtaClicked({
+                          action: 'start_exam',
+                          source: 'all_reviewers',
+                          examId,
+                          examTitle,
+                        });
+                        navigate(`/dashboard/exam/${card._id}`);
+                      }}
                       className="max-w-[106px] font-inter font-semibold text-[#421A83] text-[14px] sm:text-[16px] py-3 rounded-[8px] bg-[#FFC92A] hover:opacity-95 transition-opacity"
                     >
                       Take Exam

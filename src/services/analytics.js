@@ -27,6 +27,7 @@ export function identifyUser(user) {
     last_name: user.lastName,
     plan_type: user.subscription?.plan || "free",
     signup_date: user.createdAt,
+    login_count: user.loginCount ?? undefined,
   });
 }
 
@@ -66,6 +67,27 @@ export function trackExamCompleted(examId, examName, { score, duration, totalQue
     score,
     duration,
     total_questions: totalQuestions,
+  });
+}
+
+// Results screen shown (used for PostHog survey trigger)
+export function trackResultsViewed({ examType, section, scorePercent, attemptId, reviewerId } = {}) {
+  captureEvent("results_viewed", {
+    exam_type: examType,
+    section,
+    score_percent: scorePercent,
+    attempt_id: attemptId,
+    reviewer_id: reviewerId,
+  });
+}
+
+// Dashboard CTA clicked (start/resume/view exam) – used for dashboard CSAT survey
+export function trackDashboardCtaClicked({ action, source, examId, examTitle } = {}) {
+  captureEvent("dashboard_cta_clicked", {
+    action,
+    source,
+    exam_id: examId,
+    exam_title: examTitle,
   });
 }
 

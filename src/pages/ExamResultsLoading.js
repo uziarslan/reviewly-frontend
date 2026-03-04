@@ -8,6 +8,7 @@ import { examAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import ExamResultsLoadingSkeleton from '../components/skeletons/ExamResultsLoadingSkeleton';
 import { canAccessReviewer } from '../utils/subscription';
+import { trackResultsViewed } from '../services/analytics';
 
 const PAGE_CLASSES = 'min-h-screen bg-[#F5F4FF]';
 const MAIN_CLASSES = 'max-w-[1440px] mx-auto px-6 sm:px-8 lg:px-20';
@@ -23,6 +24,7 @@ const ExamResultsLoading = () => {
   const { isAuthenticated, user } = useAuth();
   const [attempt, setAttempt] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [hasTrackedResultsView, setHasTrackedResultsView] = useState(false);
 
   const backUrl = fromLibrary ? '/dashboard/library' : '/dashboard/all-reviewers';
   const checkAccess = (r) => canAccessReviewer(r, { isAuthenticated, user });
@@ -46,6 +48,30 @@ const ExamResultsLoading = () => {
     })();
     return () => { cancelled = true; };
   }, [attemptId]);
+
+  // Track results_viewed once when final results are available
+  useEffect(() => {
+    if (!attempt || hasTrackedResultsView) return;
+    if (attempt.status !== 'submitted' && attempt.status !== 'timed_out') return;
+
+    const reviewerType = attempt.reviewer?.type || 'mock';
+    const examType = reviewerType === 'practice' || reviewerType === 'demo' ? 'practice' : 'mock';
+    const result = attempt.result || {};
+    const breakdown = result.sectionScores || [];
+    const section =
+      breakdown.length === 1
+        ? breakdown[0].section
+        : 'overall';
+
+    trackResultsViewed({
+      examType,
+      section,
+      scorePercent: result.percentage,
+      attemptId: attempt._id,
+      reviewerId: attempt.reviewer?._id,
+    });
+    setHasTrackedResultsView(true);
+  }, [attempt, hasTrackedResultsView]);
 
   useEffect(() => {
     if (!attemptId || !isProcessing) return;

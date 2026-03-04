@@ -8,6 +8,7 @@ import ReviewerCardSkeleton from '../components/ReviewerCardSkeleton';
 import { libraryAPI, examAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { canAccessReviewer } from '../utils/subscription';
+import { trackDashboardCtaClicked } from '../services/analytics';
 
 const MyLibrary = () => {
   const navigate = useNavigate();
@@ -143,6 +144,8 @@ const MyLibrary = () => {
               const inProgressData = inProgressMap[String(card._id)];
               const inProgress = !!inProgressData;
               const hasCompleted = completedReviewerIds.has(String(card._id));
+              const examId = card._id;
+              const examTitle = card.title;
               return (
                 <div
                   key={card._id}
@@ -232,7 +235,15 @@ const MyLibrary = () => {
                     <div className="flex items-start justify-start gap-6 w-full">
                       <button
                         type="button"
-                        onClick={() => navigate(`/dashboard/exam/${card._id}?from=library`)}
+                        onClick={() => {
+                          trackDashboardCtaClicked({
+                            action: 'resume_exam',
+                            source: 'my_library',
+                            examId,
+                            examTitle,
+                          });
+                          navigate(`/dashboard/exam/${card._id}?from=library`);
+                        }}
                         className="font-inter font-semibold text-[#421A83] text-[14px] sm:text-[16px] py-3 px-4 rounded-[8px] bg-[#FFC92A] hover:opacity-95 transition-opacity shrink-0"
                       >
                         Resume Exam
@@ -253,7 +264,15 @@ const MyLibrary = () => {
                   ) : hasCompleted ? (
                     <button
                       type="button"
-                      onClick={() => navigate(`/dashboard/exam/${card._id}?from=library`)}
+                      onClick={() => {
+                        trackDashboardCtaClicked({
+                          action: 'view_exam',
+                          source: 'my_library',
+                          examId,
+                          examTitle,
+                        });
+                        navigate(`/dashboard/exam/${card._id}?from=library`);
+                      }}
                       className="max-w-[106px] font-inter font-semibold text-[#421A83] text-[14px] sm:text-[16px] py-3 rounded-[8px] bg-[#FFC92A] hover:opacity-95 transition-opacity"
                     >
                       View Exam
@@ -261,7 +280,15 @@ const MyLibrary = () => {
                   ) : (
                     <button
                       type="button"
-                      onClick={() => navigate(`/dashboard/exam/${card._id}?from=library`)}
+                      onClick={() => {
+                        trackDashboardCtaClicked({
+                          action: 'start_exam',
+                          source: 'my_library',
+                          examId,
+                          examTitle,
+                        });
+                        navigate(`/dashboard/exam/${card._id}?from=library`);
+                      }}
                       className="max-w-[106px] font-inter font-semibold text-[#421A83] text-[14px] sm:text-[16px] py-3 rounded-[8px] bg-[#FFC92A] hover:opacity-95 transition-opacity"
                     >
                       Take Exam
