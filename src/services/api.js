@@ -75,8 +75,11 @@ export const examAPI = {
       method: "PUT",
       body: { remainingSeconds, currentIndex },
     }),
-  submit: (attemptId) =>
-    apiFetch(`/exams/attempts/${attemptId}/submit`, { method: "POST" }),
+  submit: (attemptId, remainingSeconds) =>
+    apiFetch(`/exams/attempts/${attemptId}/submit`, {
+      method: "POST",
+      body: remainingSeconds != null ? { remainingSeconds } : undefined,
+    }),
   getResult: (attemptId) =>
     apiFetch(`/exams/attempts/${attemptId}`),
   getReview: (attemptId) =>

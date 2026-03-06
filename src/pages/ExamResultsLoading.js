@@ -132,8 +132,11 @@ const ExamResultsLoading = () => {
     })
     : '—';
 
-  const durationMs = attempt.submittedAt && attempt.startedAt
-    ? new Date(attempt.submittedAt) - new Date(attempt.startedAt) : 0;
+  // Use result.duration (active time) when available; fallback to wall-clock for legacy attempts
+  const durationMs = (result.duration != null)
+    ? result.duration * 1000
+    : (attempt.submittedAt && attempt.startedAt
+      ? new Date(attempt.submittedAt) - new Date(attempt.startedAt) : 0);
   const durationMin = Math.floor(durationMs / 60000);
   const durationH = Math.floor(durationMin / 60);
   const durationM = durationMin % 60;

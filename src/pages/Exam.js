@@ -115,9 +115,9 @@ function Exam() {
     return () => { cancelled = true; };
   }, [id]);
 
-  // Timer logic – starts after reload warning is dismissed
+  // Timer logic – starts after reload warning is dismissed (pauses when pause modal is open)
   useEffect(() => {
-    if (loadingExam || showReloadWarningModal || timeUp) return;
+    if (loadingExam || showReloadWarningModal || showPauseModal || timeUp) return;
     if (remainingSeconds == null || remainingSeconds <= 0) return;
 
     // Set end time from remaining seconds
@@ -128,11 +128,11 @@ function Exam() {
     const tick = () => {
       const remaining = Math.max(0, Math.ceil((endTimeRef.current - Date.now()) / 1000));
       setTimeLeft(secondsToTimeStr(remaining));
-      if (remaining <= 0) {
+        if (remaining <= 0) {
         setTimeUp(true);
-        // Auto-submit on time up
+        // Auto-submit on time up (remaining=0 for correct duration)
         if (attemptId) {
-          examAPI.submit(attemptId).catch(() => {});
+          examAPI.submit(attemptId, 0).catch(() => {});
         }
         return true;
       }
@@ -147,7 +147,7 @@ function Exam() {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [loadingExam, showReloadWarningModal, timeUp, remainingSeconds, attemptId]);
+  }, [loadingExam, showReloadWarningModal, showPauseModal, timeUp, remainingSeconds, attemptId]);
 
   // When time's up, close any other modals
   useEffect(() => {
@@ -281,7 +281,8 @@ function Exam() {
     if (submitting) return;
     setSubmitting(true);
     try {
-      const res = await examAPI.submit(attemptId);
+      const remaining = hasTimeLimit ? getRemainingSecondsNow() : null;
+      const res = await examAPI.submit(attemptId, remaining);
       if (res.success) {
         // Track exam completed
         trackExamCompleted(id, reviewer?.title, {
@@ -366,10 +367,7 @@ function Exam() {
             </button>
             <button
               type="button"
-              onClick={() => {
-                setShowPauseModal(false);
-                handlePauseAndExit();
-              }}
+              onClick={() => handlePauseAndExit()}
               className="font-inter font-bold text-[14px] text-[#421A83] py-[11.5px] px-6 rounded-[8px] bg-[#FACC15] hover:opacity-90 transition-opacity"
             >
               Leave for now
