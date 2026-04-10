@@ -1,9 +1,9 @@
 import React from 'react';
 
 /** Wavy yellow underline for "level up" in the hero headline. Use under the text. */
-export const LevelUpUnderline = ({ className = "w-full h-[15px]" }) => (
-  <svg className={className} viewBox="0 0 148 15" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-    <path d="M0.297852 6.0167C19.1955 4.40398 87.9829 1.26735 144.298 6.01672C115.066 6.01672 76.9785 6.49696 52.4553 11.5" stroke="#FFC92A" strokeWidth="7" strokeLinejoin="round" />
+export const YellowUnderline = ({ className = "w-full h-[15px]" }) => (
+  <svg className={className} viewBox="0 0 361 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M0.101562 5.5167C46.952 3.90398 217.487 0.767353 357.102 5.51672C284.63 5.51672 190.206 5.99696 129.409 11" stroke="#FFC92A" stroke-width="6" stroke-linejoin="round" />
   </svg>
 );
 
@@ -25,21 +25,6 @@ export const CloudThunderIcon = ({ className = "w-[54px] h-[56px]" }) => (
 export const CodeSampleIcon = ({ className = "w-[37px] h-[27px]" }) => (
   <svg className={className} viewBox="0 0 37 27" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
     <path d="M10.5106 13.3386L0.610576 3.43858C0.419556 3.25408 0.267192 3.03339 0.162374 2.78939C0.0575556 2.54538 0.00238315 2.28294 7.55135e-05 2.01738C-0.00223212 1.75182 0.0483713 1.48846 0.148933 1.24267C0.249495 0.996876 0.398001 0.773572 0.585786 0.585786C0.773572 0.398001 0.996876 0.249495 1.24267 0.148933C1.48846 0.0483713 1.75182 -0.00223212 2.01738 7.55135e-05C2.28294 0.00238315 2.54538 0.0575556 2.78939 0.162374C3.03339 0.267192 3.25408 0.419556 3.43858 0.610576L14.7526 11.9246C15.1275 12.2996 15.3381 12.8082 15.3381 13.3386C15.3381 13.8689 15.1275 14.3775 14.7526 14.7526L3.43858 26.0666C3.25408 26.2576 3.03339 26.41 2.78939 26.5148C2.54538 26.6196 2.28294 26.6748 2.01738 26.6771C1.75182 26.6794 1.48846 26.6288 1.24267 26.5282C0.996876 26.4277 0.773572 26.2792 0.585786 26.0914C0.398001 25.9036 0.249495 25.6803 0.148933 25.4345C0.0483713 25.1887 -0.00223212 24.9253 7.55135e-05 24.6598C0.00238315 24.3942 0.0575556 24.1318 0.162374 23.8878C0.267192 23.6438 0.419556 23.4231 0.610576 23.2386L10.5106 13.3386V13.3386ZM18.0246 22.0246H34.0246C34.555 22.0246 35.0637 22.2353 35.4388 22.6104C35.8139 22.9854 36.0246 23.4941 36.0246 24.0246C36.0246 24.555 35.8139 25.0637 35.4388 25.4388C35.0637 25.8139 34.555 26.0246 34.0246 26.0246H18.0246C17.4941 26.0246 16.9854 25.8139 16.6104 25.4388C16.2353 25.0637 16.0246 24.555 16.0246 24.0246C16.0246 23.4941 16.2353 22.9854 16.6104 22.6104C16.9854 22.2353 17.4941 22.0246 18.0246 22.0246V22.0246Z" fill="#CBD5E1" />
-  </svg>
-);
-
-/** Why Reviewly section - purple plane icon (64×64). */
-export const WhyReviewlyPlaneIcon = ({ className = "w-16 h-16" }) => (
-  <svg className={className} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-    <g clipPath="url(#clip0_why_reviewly_plane)">
-      <path d="M39.0374 27.3531L51.9164 23.9022C53.2827 23.5361 54.7385 23.7278 55.9635 24.435C57.1884 25.1423 58.0823 26.3072 58.4484 27.6735C58.8145 29.0397 58.6228 30.4955 57.9156 31.7205C57.2084 32.9455 56.0435 33.8393 54.6772 34.2054L16.0401 44.5582L4.17162 31.1739L11.899 29.1034L18.431 32.8746L26.1584 30.8041L16.1755 14.1538L23.9029 12.0833L39.0374 27.3531Z" stroke="#7D52CC" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M8 56H56" stroke="#7D52CC" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
-    </g>
-    <defs>
-      <clipPath id="clip0_why_reviewly_plane">
-        <rect width="64" height="64" fill="white" />
-      </clipPath>
-    </defs>
   </svg>
 );
 
@@ -158,31 +143,6 @@ export const CheckmarkIcon = ({ className = "w-4 h-4" }) => (
   </svg>
 );
 
-/* ----- How It Works section icons ----- */
-
-export const SendIcon = ({ className = "w-[23px] h-[23px]" }) => (
-  <svg className={className} viewBox="0 0 23 23" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M10.8936 11.9944L21.968 0.919922" stroke="#FFC92A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    <path fillRule="evenodd" clipRule="evenodd" d="M10.8931 11.9945C10.8931 11.9945 -3.07966 9.104 1.77595 6.30102C5.87346 3.93584 19.9947 -0.130638 21.9676 0.920062C23.0183 2.8929 18.9518 17.0142 16.5866 21.1117C13.7836 25.9673 10.8931 11.9945 10.8931 11.9945Z" stroke="#6E43B9" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-
-export const DocumentIcon = ({ className = "w-[22px] h-6" }) => (
-  <svg className={className} viewBox="0 0 22 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M14.7339 15.8529H6.31055" stroke="#FFC92A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M14.7339 11.4661H6.31055" stroke="#FFC92A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M9.52471 7.08138H6.31055" stroke="#FFC92A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    <path fillRule="evenodd" clipRule="evenodd" d="M0.75 11.5417C0.75 19.6348 3.19767 22.3333 10.5395 22.3333C17.8825 22.3333 20.329 19.6348 20.329 11.5417C20.329 3.4485 17.8825 0.75 10.5395 0.75C3.19767 0.75 0.75 3.4485 0.75 11.5417Z" stroke="#6E43B9" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-
-export const TwoToneStarIcon = ({ className = "w-6 h-6" }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M12 3C9.96385 3 9.77134 6.54652 8.55911 7.79957C7.34689 9.05263 3.5782 7.61992 3.05459 9.84403C2.53207 12.0693 5.92235 12.8243 6.34036 14.7334C6.76057 16.6426 4.68922 19.3249 6.45916 20.6598C8.22911 21.9936 10.1343 18.9747 12 18.9747" stroke="#6E43B9" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    <path opacity="0.4" d="M12 3C14.0361 3 14.2298 6.54652 15.442 7.79957C16.6531 9.05263 20.4229 7.61992 20.9454 9.84403C21.4679 12.0693 18.0787 12.8243 17.6596 14.7334C17.2405 16.6426 19.3108 19.3249 17.5408 20.6598C15.7709 21.9936 13.8656 18.9747 12 18.9747" stroke="#FFC92A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-
 /** Contact form – category dropdown chevron. */
 export const MultiArrowDropdownIcon = ({ className = "w-6 h-6" }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -276,6 +236,62 @@ export const CloseIcon = ({ className = "w-6 h-6" }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
     <path d="M18 6L6 18" stroke="#45464E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     <path d="M6 6L18 18" stroke="#45464E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+/** Hero floating badge — ruler/sprint icon */
+export const RulerIcon = ({ className = "w-7 h-7" }) => (
+  <svg className={className} width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <g clipPath="url(#clip0_rulerIcon)">
+      <path d="M13.9246 16.49L13.5158 13.5039M17.8877 15.9474L17.4788 12.9613M20.6298 6.4879L4.77769 8.65836M20.9011 8.46942L20.3585 4.50639M5.049 10.6399L4.50638 6.67685M9.96161 17.0326L9.55275 14.0465M5.59161 14.6029L21.4437 12.4324C21.9909 12.3575 22.4952 12.7404 22.5701 13.2875L23.2484 18.2413C23.3233 18.7885 22.9405 19.2928 22.3933 19.3677L6.54118 21.5382C5.994 21.6131 5.48969 21.2303 5.41477 20.6831L4.73651 15.7293C4.66159 15.1821 5.04443 14.6778 5.59161 14.6029Z" stroke="#6E43B9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </g>
+    <defs>
+      <clipPath id="clip0_rulerIcon">
+        <rect width="24" height="24" fill="white" transform="translate(0 3.25586) rotate(-7.79641)" />
+      </clipPath>
+    </defs>
+  </svg>
+);
+
+/** Hero floating badge — pie chart / analytics icon */
+export const ChartPieIcon = ({ className = "w-6 h-6" }) => (
+  <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M21.2104 15.8906C20.5742 17.395 19.5792 18.7208 18.3123 19.7519C17.0454 20.783 15.5452 21.488 13.9428 21.8053C12.3405 22.1227 10.6848 22.0427 9.12055 21.5724C7.55627 21.102 6.13103 20.2556 4.96942 19.1072C3.80782 17.9588 2.94522 16.5433 2.45704 14.9845C1.96886 13.4257 1.86996 11.7711 2.169 10.1652C2.46804 8.55935 3.1559 7.05119 4.17245 5.7726C5.189 4.494 6.50329 3.48388 8.0004 2.83057M21.0004 12.0004C21.5524 12.0004 22.0054 11.5514 21.9504 11.0024C21.7198 8.70658 20.7025 6.56111 19.0707 4.92973C17.439 3.29835 15.2933 2.28144 12.9974 2.05141C12.4474 1.99641 11.9994 2.44941 11.9994 3.00141V11.0014C11.9994 11.2666 12.1047 11.521 12.2923 11.7085C12.4798 11.8961 12.7342 12.0014 12.9994 12.0014L21.0004 12.0004Z" stroke="#6E43B9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+/** Hero floating badge — open book icon */
+export const BookOpenIcon = ({ className = "w-7 h-7" }) => (
+  <svg className={className} width="27" height="27" viewBox="0 0 27 27" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <g clipPath="url(#clip0_bookOpenIcon)">
+      <path d="M13.5172 8.07894L12.2234 22.019M13.5172 8.07894C13.6153 7.02262 13.2897 5.97061 12.6121 5.15434C11.9344 4.33808 10.9603 3.82443 9.90401 3.72639L4.92541 3.26429C4.66133 3.23978 4.39832 3.32118 4.19426 3.49058C3.99019 3.65999 3.86178 3.90351 3.83727 4.1676L2.63583 17.112C2.61132 17.376 2.69271 17.639 2.86212 17.8431C3.03152 18.0472 3.27505 18.1756 3.53913 18.2001L9.51345 18.7546C10.3057 18.8281 11.0363 19.2134 11.5445 19.8256C12.0527 20.4378 12.2969 21.2268 12.2234 22.019M13.5172 8.07894C13.6153 7.02262 14.1289 6.0485 14.9452 5.37089C15.7614 4.69329 16.8134 4.36769 17.8698 4.46574L22.8484 4.92783C23.1125 4.95234 23.356 5.08075 23.5254 5.28482C23.6948 5.48888 23.7762 5.75189 23.7517 6.01597L22.5502 18.9603C22.5257 19.2244 22.3973 19.4679 22.1932 19.6373C21.9892 19.8067 21.7262 19.8881 21.4621 19.8636L15.4878 19.3091C14.6955 19.2356 13.9065 19.4798 13.2943 19.988C12.6821 20.4962 12.2969 21.2268 12.2234 22.019M17.038 13.4272L19.0294 13.6121M17.4077 9.44434L19.3991 9.62917M7.0808 12.503L9.07224 12.6879M7.45048 8.52015L9.44192 8.70499" stroke="#6E43B9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </g>
+    <defs>
+      <clipPath id="clip0_bookOpenIcon">
+        <rect width="24" height="24" fill="white" transform="translate(2.21875) rotate(5.30276)" />
+      </clipPath>
+    </defs>
+  </svg>
+);
+
+/** How It Works — timer/stopwatch icon */
+export const TimerIcon = ({ className = "w-7 h-7" }) => (
+  <svg className={className} width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M11.6641 2.33398H16.3307M13.9974 16.334L17.4974 12.834M23.3307 16.334C23.3307 21.4886 19.1521 25.6673 13.9974 25.6673C8.84274 25.6673 4.66406 21.4886 4.66406 16.334C4.66406 11.1793 8.84274 7.00065 13.9974 7.00065C19.1521 7.00065 23.3307 11.1793 23.3307 16.334Z" stroke="#6E43B9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+/** How It Works — file chart icon */
+export const FileChartIcon = ({ className = "w-7 h-7" }) => (
+  <svg className={className} width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M16.3307 2.33398V7.00065C16.3307 7.61949 16.5766 8.21298 17.0141 8.65057C17.4517 9.08815 18.0452 9.33398 18.6641 9.33398H23.3307M9.33073 21.0007V19.834M13.9974 21.0007V14.0007M18.6641 21.0007V17.5007M17.4974 2.33398H6.9974C6.37856 2.33398 5.78506 2.57982 5.34748 3.0174C4.9099 3.45499 4.66406 4.04848 4.66406 4.66732V23.334C4.66406 23.9528 4.9099 24.5463 5.34748 24.9839C5.78506 25.4215 6.37856 25.6673 6.9974 25.6673H20.9974C21.6162 25.6673 22.2097 25.4215 22.6473 24.9839C23.0849 24.5463 23.3307 23.9528 23.3307 23.334V8.16732L17.4974 2.33398Z" stroke="#6E43B9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+/** How It Works — rocket icon */
+export const RocketIcon = ({ className = "w-7 h-7" }) => (
+  <svg className={className} width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M13.9974 17.5009L10.4974 14.0009M13.9974 17.5009C15.627 16.8811 17.1904 16.0994 18.6641 15.1676M13.9974 17.5009V23.3343C13.9974 23.3343 17.5324 22.6926 18.6641 21.0009C19.9241 19.1109 18.6641 15.1676 18.6641 15.1676M10.4974 14.0009C11.1182 12.3903 11.9 10.8463 12.8307 9.39261C14.1901 7.21909 16.083 5.4295 18.3292 4.19405C20.5755 2.9586 23.1005 2.31837 25.6641 2.33427C25.6641 5.50761 24.7541 11.0843 18.6641 15.1676M10.4974 14.0009L4.66406 14.001C4.66406 14.001 5.30573 10.466 6.9974 9.33429C8.8874 8.07429 12.8307 9.33429 12.8307 9.33429M5.2474 19.251C3.4974 20.721 2.91406 25.0844 2.91406 25.0844C2.91406 25.0844 7.2774 24.501 8.7474 22.751C9.57573 21.771 9.56406 20.266 8.6424 19.356C8.18892 18.9232 7.59157 18.6731 6.96499 18.6537C6.33841 18.6343 5.72675 18.8471 5.2474 19.251Z" stroke="#6E43B9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
