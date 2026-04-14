@@ -47,7 +47,8 @@ export const authAPI = {
 
 // ── Reviewers ──
 export const reviewerAPI = {
-  getAll: () => apiFetch("/reviewers"),
+  getAll: (page = 1, limit = 50) =>
+    apiFetch(`/reviewers?page=${page}&limit=${limit}`),
   getById: (id) => apiFetch(`/reviewers/${id}`),
   getBySlug: (slug) => apiFetch(`/reviewers/slug/${slug}`),
 };
@@ -81,10 +82,19 @@ export const examAPI = {
     apiFetch(`/exams/attempts/${attemptId}`),
   getReview: (attemptId) =>
     apiFetch(`/exams/attempts/${attemptId}/review`),
-  getUserHistory: () =>
-    apiFetch(`/exams/attempts/user/history`),
+  getUserHistory: (page = 1, limit = 20) =>
+    apiFetch(`/exams/attempts/user/history?page=${page}&limit=${limit}`),
   getReviewerProgress: (reviewerId) =>
     apiFetch(`/exams/attempts/user/progress/${reviewerId}`),
+  generateShareLink: (attemptId) =>
+    apiFetch(`/exams/attempts/${attemptId}/share`, { method: "POST" }),
+};
+
+// ── Shared results (public, no auth) ──
+export const sharedAPI = {
+  getResult: (shareToken) =>
+    fetch(`${API_BASE}/exams/shared/${encodeURIComponent(shareToken)}`)
+      .then((r) => r.json()),
 };
 
 // ── Support ──

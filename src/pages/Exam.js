@@ -5,7 +5,7 @@ import { ExamTimeInfoIcon } from '../components/Icons';
 import ExamSkeleton from '../components/skeletons/ExamSkeleton';
 import Modal from '../components/Modal';
 import { examAPI, reviewerAPI } from '../services/api';
-import timeUpImage from '../Assets/timeup.png';
+
 import { trackExamStarted, trackExamCompleted } from '../services/analytics';
 
 /** Format seconds as "HH:MM:SS" (non-negative). */
@@ -46,12 +46,37 @@ function Exam() {
   const [timeUp, setTimeUp] = useState(false);
   const [showReloadWarningModal, setShowReloadWarningModal] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [saveStatus, setSaveStatus] = useState(null); // null | 'saving' | 'saved'
 
   const endTimeRef = useRef(null);
   const timerRef = useRef(null);
+  const debounceTimerRef = useRef(null);
+  const pendingAnswersRef = useRef({}); // { [questionIndex]: selectedAnswer }
 
   // Exam is frozen when time's up or when the initial reload modal is open
   const examFrozen = timeUp || showReloadWarningModal || loadingExam;
+
+  const flushPendingAnswers = useCallback(async () => {
+    const pending = pendingAnswersRef.current;
+    const entries = Object.entries(pending);
+    if (entries.length === 0 || !attemptId) return;
+    pendingAnswersRef.current = {};
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
+    setSaveStatus('saving');
+    try {
+      for (const [questionIndexStr, selectedAnswer] of entries) {
+        await examAPI.saveAnswer(attemptId, parseInt(questionIndexStr, 10), selectedAnswer);
+      }
+      setSaveStatus('saved');
+      setTimeout(() => setSaveStatus(null), 2000);
+    } catch (err) {
+      console.error('Failed to save answers:', err);
+      setSaveStatus(null);
+    }
+  }, [attemptId]);
 
   // Start or resume exam on mount
   useEffect(() => {
@@ -130,9 +155,8 @@ function Exam() {
       setTimeLeft(secondsToTimeStr(remaining));
       if (remaining <= 0) {
         setTimeUp(true);
-        // Auto-submit on time up
         if (attemptId) {
-          examAPI.submit(attemptId).catch(() => {});
+          flushPendingAnswers().then(() => examAPI.submit(attemptId, 0).catch(() => {}));
         }
         return true;
       }
@@ -147,7 +171,24 @@ function Exam() {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [loadingExam, showReloadWarningModal, timeUp, remainingSeconds, attemptId]);
+  }, [loadingExam, showReloadWarningModal, timeUp, remainingSeconds, attemptId, flushPendingAnswers]);
+
+  // beforeunload: send pending answers via beacon (sendBeacon survives tab close)
+  useEffect(() => {
+    const handler = () => {
+      const pending = pendingAnswersRef.current;
+      const entries = Object.entries(pending);
+      if (entries.length === 0 || !attemptId) return;
+      const token = localStorage.getItem('reviewly_token');
+      if (!token) return;
+      const apiBase = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+      const url = `${apiBase}/exams/attempts/${attemptId}/beacon`;
+      const body = JSON.stringify({ token, answers: pending });
+      navigator.sendBeacon(url, new Blob([body], { type: 'application/json' }));
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [attemptId]);
 
   // When time's up, close any other modals
   useEffect(() => {
@@ -159,6 +200,7 @@ function Exam() {
   }, [timeUp]);
 
   const currentQuestion = questions[currentIndex];
+  const unansweredCount = totalQuestions - answered.size;
 
   const handleOptionChange = useCallback((optionIndex) => {
     if (examFrozen) return;
@@ -167,19 +209,18 @@ function Exam() {
     setAnswered((prev) => new Set(prev).add(currentIndex + 1));
     setAnswers((prev) => ({ ...prev, [currentIndex]: letter }));
 
-    // Save answer to backend (fire and forget)
     if (attemptId) {
-      examAPI.saveAnswer(attemptId, currentIndex, letter).catch((err) =>
-        console.error('Failed to save answer:', err)
-      );
+      pendingAnswersRef.current = { ...pendingAnswersRef.current, [currentIndex]: letter };
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = setTimeout(flushPendingAnswers, 10000);
     }
-  }, [examFrozen, currentIndex, attemptId]);
+  }, [examFrozen, currentIndex, attemptId, flushPendingAnswers]);
 
   const handleNext = () => {
     if (examFrozen) return;
+    flushPendingAnswers();
     if (currentIndex < totalQuestions - 1) {
       setCurrentIndex((i) => i + 1);
-      // Restore previously selected answer for next question
       const nextIdx = currentIndex + 1;
       const prevAnswer = answers[nextIdx];
       setSelectedOption(prevAnswer ? OPTION_LABELS.indexOf(prevAnswer) : null);
@@ -188,9 +229,9 @@ function Exam() {
 
   const handlePrev = () => {
     if (examFrozen) return;
+    flushPendingAnswers();
     if (currentIndex > 0) {
       setCurrentIndex((i) => i - 1);
-      // Restore previously selected answer
       const prevIdx = currentIndex - 1;
       const prevAnswer = answers[prevIdx];
       setSelectedOption(prevAnswer ? OPTION_LABELS.indexOf(prevAnswer) : null);
@@ -199,6 +240,7 @@ function Exam() {
 
   const goToQuestion = (num) => {
     if (examFrozen) return;
+    flushPendingAnswers();
     const idx = num - 1;
     setCurrentIndex(idx);
     const prevAnswer = answers[idx];
@@ -235,6 +277,7 @@ function Exam() {
   const handlePauseAndExit = async () => {
     if (!attemptId) return;
     try {
+      await flushPendingAnswers();
       await examAPI.pause(attemptId, getRemainingSecondsNow(), currentIndex);
     } catch (err) {
       console.error('Pause failed:', err);
@@ -245,11 +288,14 @@ function Exam() {
 
   const handleResetExam = async () => {
     if (examFrozen || !attemptId) return;
-    // Submit current attempt and start fresh
+    pendingAnswersRef.current = {};
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
     try {
       await examAPI.submit(attemptId);
     } catch (_) {}
-    // Start a new attempt
     setLoadingExam(true);
     endTimeRef.current = null;
     try {
@@ -281,7 +327,9 @@ function Exam() {
     if (submitting) return;
     setSubmitting(true);
     try {
-      const res = await examAPI.submit(attemptId);
+      await flushPendingAnswers();
+      const remaining = hasTimeLimit ? getRemainingSecondsNow() : null;
+      const res = await examAPI.submit(attemptId, remaining);
       if (res.success) {
         // Track exam completed
         trackExamCompleted(id, reviewer?.title, {
@@ -349,11 +397,11 @@ function Exam() {
         </p>
       </Modal>
 
-      {/* Pause and Exit modal */}
+      {/* Save and Exit modal */}
       <Modal
         isOpen={showPauseModal}
         onClose={() => setShowPauseModal(false)}
-        title="Pause and Exit"
+        title="Save and exit assessment?"
         titleId="pause-modal-title"
         footer={
           <>
@@ -362,7 +410,7 @@ function Exam() {
               onClick={() => setShowPauseModal(false)}
               className="font-inter font-normal text-[14px] text-[#431C86] py-[11.5px] px-6 rounded-[8px] border border-[#431C86] bg-white hover:bg-gray-50 transition-colors"
             >
-              Cancel
+              Continue Assessment
             </button>
             <button
               type="button"
@@ -372,16 +420,16 @@ function Exam() {
               }}
               className="font-inter font-bold text-[14px] text-[#421A83] py-[11.5px] px-6 rounded-[8px] bg-[#FACC15] hover:opacity-90 transition-opacity"
             >
-              Leave for now
+              Save &amp; Exit
             </button>
           </>
         }
       >
         <p className="font-inter font-normal text-[14px] text-[#45464E]">
-          Your progress will be saved, and you can resume anytime where you left off.
+          Your progress will be saved, and you can continue anytime from the Dashboard.
         </p>
         <p className="font-inter font-normal text-[14px] text-[#45464E]">
-          ✅ Don&apos;t worry — your answers and time left are safe!
+          Your answers and remaining time will be kept.
         </p>
       </Modal>
 
@@ -422,7 +470,7 @@ function Exam() {
       <Modal
         isOpen={showSubmitModal}
         onClose={() => setShowSubmitModal(false)}
-        title="Confirm Submission?"
+        title="Submit your assessment?"
         titleId="submit-modal-title"
         footer={
           <>
@@ -431,7 +479,7 @@ function Exam() {
               onClick={() => setShowSubmitModal(false)}
               className="font-inter font-normal text-[14px] text-[#431C86] py-[11.5px] px-6 rounded-[8px] border border-[#431C86] bg-white hover:bg-gray-50 transition-colors"
             >
-              Review My Answers
+              Review Answers
             </button>
             <button
               type="button"
@@ -445,47 +493,51 @@ function Exam() {
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                 </svg>
               )}
-              Submit Exam
+              Submit Assessment
             </button>
           </>
         }
       >
-        <p className="font-inter font-normal text-[14px] text-[#45464E]">
-          You still have{' '}
-          <span className="text-[#F59E0B] font-medium">{formatTimeLeftForModal()}</span>
-          {' '}left on the clock.
-        </p>
-        <p className="font-inter font-normal text-[14px] text-[#45464E]">
-          It&apos;s recommended to use all your allotted time to review your answers. Would you like to take another look?
-        </p>
+        {unansweredCount > 0 ? (
+          <p className="font-inter font-normal text-[14px] text-[#45464E]">
+            You still have{' '}
+            <span className="text-[#F59E0B] font-semibold">{unansweredCount} unanswered question{unansweredCount !== 1 ? 's' : ''}</span>
+            {' '}and{' '}
+            <span className="text-[#F59E0B] font-semibold">{formatTimeLeftForModal()}</span>
+            {' '}left. You can submit now or go back and review them first.
+          </p>
+        ) : (
+          <p className="font-inter font-normal text-[14px] text-[#45464E]">
+            You still have{' '}
+            <span className="text-[#F59E0B] font-semibold">{formatTimeLeftForModal()}</span>
+            {' '}left. You can submit now or review your answers first.
+          </p>
+        )}
       </Modal>
 
-      {/* Time's Up modal – non-dismissible */}
-      {timeUp && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" role="dialog" aria-modal="true" aria-labelledby="timeup-modal-title">
-          <div className="bg-white rounded-[16px] shadow-lg w-full max-w-[480px] pt-6 pr-6 pb-8 pl-6 flex flex-col gap-4">
-            <img src={timeUpImage} alt="" className="w-full max-w-[280px] mx-auto h-auto" />
-            <h2 id="timeup-modal-title" className="font-inter font-medium text-[18px] text-[#45464E] text-center">
-              ⏰ Time&apos;s Up!
-            </h2>
-            <div className="flex flex-col gap-4">
-              <p className="font-inter font-normal text-[14px] text-[#45464E] text-center">
-                You&apos;ve run out of time! Don&apos;t worry, your answers have been automatically submitted for evaluation. Our AI is now busy analyzing your performance to give you insights into your strengths and areas for improvement.
-              </p>
-              <p className="font-inter font-normal text-[14px] text-[#45464E] text-center">
-                Click below to view your results.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={handleViewResults}
-              className="font-inter font-bold text-[14px] text-[#421A83] py-[11.5px] px-[24px] rounded-[8px] bg-[#FFC92A] hover:opacity-90 transition-opacity w-full max-w-[162px] mx-auto"
-            >
-              View My Results
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Time's Up modal */}
+      <Modal
+        isOpen={timeUp}
+        onClose={handleViewResults}
+        title="Time's up"
+        titleId="timeup-modal-title"
+        footer={
+          <button
+            type="button"
+            onClick={handleViewResults}
+            className="font-inter font-bold text-[14px] text-[#421A83] py-[11.5px] px-6 rounded-[8px] bg-[#FACC15] hover:opacity-90 transition-opacity"
+          >
+            View Results
+          </button>
+        }
+      >
+        <p className="font-inter font-normal text-[14px] text-[#45464E]">
+          Your assessment time has ended. Your answers have been submitted automatically.
+        </p>
+        <p className="font-inter font-normal text-[14px] text-[#45464E]">
+          Unanswered questions will be counted as unanswered.
+        </p>
+      </Modal>
 
       <DashNav />
       {/* When exam is frozen (time's up or reload modal open), block all interaction with exam content */}
@@ -515,62 +567,76 @@ function Exam() {
           {/* Left: Question card */}
           <div className="order-1 w-full lg:w-auto lg:flex-1 lg:min-w-0 bg-[#FFFFFF] p-[24px] rounded-[12px]" data-aos="fade-up" data-aos-duration="400" data-aos-delay="50">
             <div key={currentIndex} className="animate-question-change">
-              <p className="font-inter font-medium text-[#0F172A] text-base mb-6">
-                {questionNumber}. {currentQuestion?.questionText}
+              {/* Question header with counter and tags */}
+              <div className="flex items-center justify-between mb-5">
+                <p className="font-inter font-medium text-[#0F172A] text-[16px]">
+                  Question {questionNumber} of {totalQuestions}
+                </p>
+                {(currentQuestion?.section || currentQuestion?.module) && (
+                  <div className="flex gap-2">
+                    {currentQuestion.section && (
+                      <span className="font-inter text-[13px] font-medium text-[#14B8A6] border border-[#14B8A6] rounded-full px-3 py-0.5 capitalize">
+                        {currentQuestion.section}
+                      </span>
+                    )}
+                    {currentQuestion.module && (
+                      <span className="font-inter text-[13px] font-medium text-[#14B8A6] border border-[#14B8A6] rounded-full px-3 py-0.5 capitalize">
+                        {currentQuestion.module}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Question text */}
+              <p className="font-inter font-normal text-[#45464E] text-[16px] mb-6">
+                {currentQuestion?.questionText}
               </p>
-              <div className="space-y-4 mb-8">
-                {[currentQuestion?.choiceA, currentQuestion?.choiceB, currentQuestion?.choiceC, currentQuestion?.choiceD].map((option, idx) => (
-                  <label
-                    key={idx}
-                    className={`flex items-start gap-3 font-inter text-[16px] text-[#45464E] ${examFrozen ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
-                  >
-                    <input
-                      type="radio"
-                      name="answer"
-                      checked={selectedOption === idx}
-                      onChange={() => handleOptionChange(idx)}
+
+              {/* Option cards */}
+              <div className="space-y-3 mb-8">
+                {[currentQuestion?.choiceA, currentQuestion?.choiceB, currentQuestion?.choiceC, currentQuestion?.choiceD].map((option, idx) => {
+                  const isSelected = selectedOption === idx;
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => handleOptionChange(idx)}
                       disabled={examFrozen}
-                      className="mt-1 w-4 h-4 border-[#6E43B9] text-[#6E43B9] focus:ring-[#6E43B9] disabled:opacity-50 disabled:cursor-not-allowed"
-                    />
-                    <span>{option}</span>
-                  </label>
-                ))}
+                      className={`w-full flex items-center gap-4 py-3.5 px-4 rounded-[12px] border-2 transition-all ${
+                        isSelected
+                          ? 'border-[#6E43B9] bg-[#F5F0FF]'
+                          : 'border-[#E5E7EB] bg-white hover:border-[#D1D5DB]'
+                      } ${examFrozen ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
+                    >
+                      <span
+                        className={`w-9 h-9 rounded-full flex items-center justify-center text-[14px] font-semibold shrink-0 transition-colors ${
+                          isSelected
+                            ? 'bg-[#6E43B9] text-white'
+                            : 'bg-[#F3F4F6] text-[#6B7280]'
+                        }`}
+                      >
+                        {OPTION_LABELS[idx]}
+                      </span>
+                      <span className={`font-inter text-[15px] text-left ${
+                        isSelected ? 'text-[#0F172A] font-medium' : 'text-[#45464E]'
+                      }`}>
+                        {option}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
+
+            {/* Bottom actions */}
             <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-[#F2F4F7]">
-              <div className="flex flex-wrap items-center gap-3">
-                <button
-                  type="button"
-                  disabled={examFrozen}
-                  onClick={() => {
-                    if (examFrozen) return;
-                    setShowPauseModal(true);
-                  }}
-                  className="font-inter font-semibold text-[14px] text-[#45464E] py-2.5 px-4 rounded-[8px] border border-[#CFD3D4] bg-white hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Pause and Exit
-                </button>
-                <button
-                  type="button"
-                  disabled={examFrozen}
-                  onClick={() => {
-                    if (examFrozen) return;
-                    setShowResetModal(true);
-                  }}
-                  className="font-inter font-semibold text-[14px] text-[#45464E] py-2.5 px-4 rounded-[8px] border border-[#CFD3D4] bg-white hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Reset
-                </button>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handlePrev}
-                  disabled={currentIndex === 0 || examFrozen}
-                  className="font-inter font-semibold text-[14px] text-[#45464E] py-2.5 px-4 rounded-[8px] border border-[#CFD3D4] bg-white hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  ‹
-                </button>
+              <div className="flex items-center gap-3">
+                {saveStatus && (
+                  <span className="font-inter text-[13px] text-[#45464E]">
+                    {saveStatus === 'saving' ? 'Saving...' : 'Saved ✓'}
+                  </span>
+                )}
                 <button
                   type="button"
                   onClick={handleNextOrSubmit}
@@ -585,8 +651,30 @@ function Exam() {
                   )}
                   {isLastQuestion ? 'Submit' : 'Next'}
                 </button>
+                <button
+                  type="button"
+                  onClick={handlePrev}
+                  disabled={currentIndex === 0 || examFrozen}
+                  className="font-inter font-semibold text-[14px] text-[#45464E] py-2.5 px-4 rounded-[8px] border border-[#CFD3D4] bg-white hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Previous
+                </button>
               </div>
+              <button
+                type="button"
+                disabled={examFrozen}
+                onClick={() => {
+                  if (examFrozen) return;
+                  setShowPauseModal(true);
+                }}
+                className="font-inter font-semibold text-[14px] text-[#45464E] py-2.5 px-4 rounded-[8px] border border-[#CFD3D4] bg-white hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Save and Exit
+              </button>
             </div>
+            <p className="font-inter text-[13px] text-[#14B8A6] mt-3">
+              You can skip questions and return to them anytime.
+            </p>
           </div>
 
           {/* Right: Time + question grid */}

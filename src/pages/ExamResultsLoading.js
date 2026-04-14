@@ -1,19 +1,107 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import AOS from 'aos';
 import DashNav from '../components/DashNav';
-import { REVIEWER_LOGO_MAP } from '../data/reviewers';
-import { LockIcon } from '../components/Icons';
+import {
+  LockIcon,
+  ShareOutIcon,
+  VerbalAbilityLogoIcon,
+  AnalyticalAbilityLogoIcon,
+  ClericalAbilityLogoIcon,
+  NumericalAbilityLogoIcon,
+  GeneralInformationLogoIcon,
+} from '../components/Icons';
 import { examAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import ExamResultsLoadingSkeleton from '../components/skeletons/ExamResultsLoadingSkeleton';
 import { canAccessReviewer } from '../utils/subscription';
+import { SaveIcon, ComputeIcon, FindIcon, PrepareIcon } from '../components/LoadingStepIcons';
+import ShareModal from '../components/ShareModal';
+import MockScoreCard from '../components/MockScoreCard';
 
 const PAGE_CLASSES = 'min-h-screen bg-[#F5F4FF]';
 const MAIN_CLASSES = 'max-w-[1440px] mx-auto px-6 sm:px-8 lg:px-20';
 const SECTION_CLASSES = 'bg-[#FFFFFF] rounded-[12px] px-[24px] py-[32px] sm:px-[32px] sm:py-[40px]';
 const BREADCRUMB_LINK = 'text-[#45464E] font-inter font-normal not-italic text-[14px] hover:text-[#6E43B9] transition-colors';
 const BREADCRUMB_ACTIVE = 'text-[#6E43B9] font-inter font-normal not-italic text-[14px]';
+
+const normalizeSection = (sectionName) => (sectionName || '').toLowerCase().trim();
+
+const SectionLogoByName = ({ sectionName, className = 'w-[22px] h-[22px]' }) => {
+  const section = normalizeSection(sectionName);
+  if (section.includes('verbal')) return <VerbalAbilityLogoIcon className={className} />;
+  if (section.includes('analytical')) return <AnalyticalAbilityLogoIcon className={className} />;
+  if (section.includes('clerical')) return <ClericalAbilityLogoIcon className={className} />;
+  if (section.includes('numerical')) return <NumericalAbilityLogoIcon className={className} />;
+  if (section.includes('general')) return <GeneralInformationLogoIcon className={className} />;
+
+  // Fallback keeps the same visual language when section names vary.
+  return <GeneralInformationLogoIcon className={className} />;
+};
+
+/** Semi-circle speedometer gauge rendered as an inline SVG. */
+const SemiCircleGauge = ({ percentage }) => {
+  const pct = Math.min(100, Math.max(0, Number(percentage) || 0));
+  const W = 220;
+  const cx = W / 2;
+  const cy = 100; // y coordinate of the arc's base (centre of the full circle)
+  const r = 88;
+  const sw = 13; // stroke width
+
+  const toRad = (deg) => (deg * Math.PI) / 180;
+
+  // Upper semicircle: from left (cx-r, cy) counter-clockwise (sweep=0) to right (cx+r, cy)
+  const startX = cx - r;
+  const endX = cx + r;
+
+  // Progress end point: angle decreases from 180° (0%) to 0° (100%)
+  const angle = 180 - (pct / 100) * 180;
+  const px = cx + r * Math.cos(toRad(angle));
+  const py = cy - r * Math.sin(toRad(angle));
+
+  const H = cy + sw / 2 + 4;
+
+  const dotColor = pct >= 75 ? '#4ADE80' : pct >= 50 ? '#FBBF24' : '#F87171';
+
+  return (
+    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} aria-hidden="true">
+      <defs>
+        {/* Gradient aligned to the arc's x extent */}
+        <linearGradient id="scoreGaugeGrad" x1={startX} y1="0" x2={endX} y2="0" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#F87171" />
+          <stop offset="40%" stopColor="#FB923C" />
+          <stop offset="70%" stopColor="#FBBF24" />
+          <stop offset="100%" stopColor="#4ADE80" />
+        </linearGradient>
+      </defs>
+
+      {/* Track */}
+      <path
+        d={`M ${startX} ${cy} A ${r} ${r} 0 0 0 ${endX} ${cy}`}
+        fill="none"
+        stroke="#E5E7EB"
+        strokeWidth={sw}
+        strokeLinecap="round"
+      />
+
+      {/* Progress arc */}
+      {pct > 0 && (
+        <path
+          d={`M ${startX} ${cy} A ${r} ${r} 0 0 0 ${px} ${py}`}
+          fill="none"
+          stroke="url(#scoreGaugeGrad)"
+          strokeWidth={sw}
+          strokeLinecap="round"
+        />
+      )}
+
+      {/* Progress dot */}
+      {pct > 0 && (
+        <circle cx={px} cy={py} r={sw * 0.58} fill={dotColor} />
+      )}
+    </svg>
+  );
+};
 
 const ExamResultsLoading = () => {
   const { attemptId } = useParams();
@@ -23,10 +111,35 @@ const ExamResultsLoading = () => {
   const { isAuthenticated, user } = useAuth();
   const [attempt, setAttempt] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [activeStep, setActiveStep] = useState(0);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [shareUrl, setShareUrl] = useState('');
+  const cardRef = useRef(null);
 
   const backUrl = fromLibrary ? '/dashboard/library' : '/dashboard/all-reviewers';
+
+  const handleOpenShare = useCallback(async () => {
+    setShowShareModal(true);
+    if (shareUrl) return; // already fetched
+    try {
+      const res = await examAPI.generateShareLink(attemptId);
+      if (res.success && res.shareToken) {
+        const origin = window.location.origin;
+        setShareUrl(`${origin}/share/${res.shareToken}`);
+      }
+    } catch (err) {
+      console.error('Failed to generate share link', err);
+    }
+  }, [attemptId, shareUrl]);
+
   const checkAccess = (r) => canAccessReviewer(r, { isAuthenticated, user });
-  const isProcessing = attempt && attempt.status !== 'submitted' && attempt.status !== 'timed_out';
+  const result = attempt?.result || {};
+  const aiStatus = result.aiStatus ?? null;
+  const isProcessing =
+    attempt &&
+    ((attempt.status !== 'submitted' && attempt.status !== 'timed_out') ||
+      aiStatus === 'pending' ||
+      aiStatus === 'processing');
 
   useEffect(() => {
     const t = requestAnimationFrame(() => AOS.refresh());
@@ -49,16 +162,39 @@ const ExamResultsLoading = () => {
 
   useEffect(() => {
     if (!attemptId || !isProcessing) return;
+    let pollCount = 0;
+    const MAX_POLLS = 60;
+    const POLL_INTERVAL_MS = 2500;
     const iv = setInterval(async () => {
+      pollCount += 1;
+      if (pollCount > MAX_POLLS) {
+        clearInterval(iv);
+        setAttempt((prev) => {
+          if (!prev?.result) return prev;
+          return { ...prev, result: { ...prev.result, aiStatus: 'failed' } };
+        });
+        return;
+      }
       try {
         const res = await examAPI.getResult(attemptId);
         if (res.success && (res.data?.status === 'submitted' || res.data?.status === 'timed_out')) {
+          const status = res.data?.result?.aiStatus ?? null;
+          if (status === 'complete' || status === 'failed') clearInterval(iv);
           setAttempt(res.data);
         }
       } catch { /* ignore */ }
-    }, 2000);
+    }, POLL_INTERVAL_MS);
     return () => clearInterval(iv);
   }, [attemptId, isProcessing]);
+
+  useEffect(() => {
+    if (!isProcessing) return;
+    if (activeStep >= 4) return;
+    const timer = setTimeout(() => {
+      setActiveStep((prev) => Math.min(prev + 1, 4));
+    }, 1800);
+    return () => clearTimeout(timer);
+  }, [isProcessing, activeStep]);
 
   if (loading) return <ExamResultsLoadingSkeleton />;
 
@@ -78,7 +214,6 @@ const ExamResultsLoading = () => {
 
   const title = attempt.reviewer?.title || 'Exam';
   const reviewerType = attempt.reviewer?.type || 'mock';
-  const result = attempt.result || {};
   const breakdown = result.sectionScores || [];
   const recommendations = result.recommendedNextStep?.ctas ?? [];
   const totalCorrect = result.correct || 0;
@@ -89,11 +224,8 @@ const ExamResultsLoading = () => {
   const passingScore = result.passingScore ?? Math.ceil((passingThreshold / 100) * (result.totalItems || 0));
   const passed = result.passed;
   const quickSummary = result.quickSummary || null;
-  const sectionAnalysis = result.sectionAnalysis || [];
 
   const sortedSections = [...breakdown].sort((a, b) => b.score - a.score);
-  const strongAreas = sortedSections.slice(0, 2);
-  const refineAreas = sortedSections.slice(2);
   const lowestSection = sortedSections[sortedSections.length - 1] || null;
   const gapToPass = passed ? 0 : Math.max(0, passingScore - totalCorrect);
 
@@ -128,14 +260,14 @@ const ExamResultsLoading = () => {
         : `${totalUnanswered} unanswered items suggest pacing adjustments may help.`);
 
   const sectionLabel = breakdown.length === 1 ? breakdown[0].section : title;
+  const aiFailedMessage = aiStatus === 'failed'
+    ? 'AI summary unavailable — here are your scores.'
+    : null;
   const practiceFallbackSummary = performanceLevel === 'Strong'
     ? `You demonstrate a strong understanding of core ${sectionLabel.toLowerCase()} concepts. Accuracy is high across question types. Consider trying the full mock exam to test your overall readiness.`
     : performanceLevel === 'Developing'
       ? `You demonstrate a developing understanding of core ${sectionLabel.toLowerCase()} concepts. Accuracy decreases in multi-step and application-based questions. Improving structured problem-solving and pacing will increase consistency.`
       : `You demonstrate a developing understanding of core ${sectionLabel.toLowerCase()} concepts. Focus on multi-step and application-based questions to improve.`;
-
-  const getAILines = (sectionName) =>
-    (sectionAnalysis.find((sa) => sa.section?.toLowerCase() === sectionName?.toLowerCase())?.lines) || [];
 
   const getRecAction = (rec) => {
     const reviewerId = rec.reviewer?._id || rec.reviewerId;
@@ -190,33 +322,77 @@ const ExamResultsLoading = () => {
   );
 
   if (isProcessing) {
+    const LOADING_STEPS = [
+      { title: 'Saving your answers', description: 'Securing your responses for this attempt.', Icon: SaveIcon },
+      { title: 'Computing your score', description: 'Calculating your latest score using CSE section weights.', Icon: ComputeIcon },
+      { title: 'Finding your weak sections', description: 'Spotting the areas that pulled your score down.', Icon: FindIcon },
+      { title: 'Preparing your next steps', description: 'Building your recommended focus and Sprint Plan starting point.', Icon: PrepareIcon },
+    ];
+
     return (
       <div className={PAGE_CLASSES}>
         <DashNav />
         <main className={`${MAIN_CLASSES} pt-[24px] pb-[40px]`}>
           {breadcrumb}
           <h1 className="font-inter font-medium text-[#45464E] text-[20px] mb-[24px]" data-aos="fade-up" data-aos-duration="400" data-aos-delay="25">{title}</h1>
-          <section className={`${SECTION_CLASSES} py-[40px] sm:py-[56px] flex flex-col items-center justify-center`} data-aos="fade-up" data-aos-duration="400" data-aos-delay="50">
-            <div className="mb-10 sm:mb-12">
-              <div className="w-[80px] h-[80px] rounded-full border-[6px] border-[#FFE79A] border-t-transparent animate-spin" />
+          <section className="bg-white rounded-[16px] p-[24px] sm:p-[40px] max-w-[620px] mx-auto shadow-sm" data-aos="fade-up" data-aos-duration="400" data-aos-delay="50">
+            <h2 className="font-inter font-bold text-[18px] text-[#1A1A2E] mb-[4px]">
+              Checking your results...
+            </h2>
+            <p className="font-inter font-normal text-[14px] text-[#6B7280] mb-[24px]">
+              Submitting your answers and generating your breakdown.
+            </p>
+            <div className="flex flex-col gap-[12px] mb-[24px]">
+              {LOADING_STEPS.map((step, i) => {
+                const allDone = activeStep >= 4;
+                const stepCompleted = i < activeStep || allDone;
+                const stepActive = i === activeStep && !allDone;
+                const iconState = stepCompleted ? 'done' : stepActive ? 'active' : 'idle';
+                return (
+                  <div
+                    key={i}
+                    className={`flex items-center gap-[16px] p-[16px] rounded-[12px] border transition-all duration-300 ${
+                      stepActive
+                        ? 'border-[#E5E7EB] bg-white shadow-sm'
+                        : stepCompleted
+                        ? 'border-[#E5E7EB] bg-white'
+                        : 'border-[#F3F4F6] bg-[#FAFAFA]'
+                    }`}
+                  >
+                    <step.Icon state={iconState} />
+                    <div className="flex-1 min-w-0">
+                      <h4
+                        className={`font-inter font-semibold text-[15px] leading-[20px] transition-colors duration-300 ${
+                          stepActive || stepCompleted ? 'text-[#1A1A2E]' : 'text-[#B0A3CC]'
+                        }`}
+                      >
+                        {step.title}
+                      </h4>
+                      <p
+                        className={`font-inter font-normal text-[13px] leading-[18px] mt-[2px] transition-colors duration-300 ${
+                          stepActive || stepCompleted ? 'text-[#6B7280]' : 'text-[#D1D5DB]'
+                        }`}
+                      >
+                        {step.description}
+                      </p>
+                    </div>
+                    <div className="w-[24px] h-[24px] flex items-center justify-center shrink-0">
+                      {stepActive && (
+                        <div className="w-[22px] h-[22px] border-[2px] border-[#E5E7EB] border-t-[#6E43B9] rounded-full animate-spin" />
+                      )}
+                      {stepCompleted && (
+                        <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                          <path d="M6 11.5l3.5 3.5L16 8" stroke="#10B981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-            <div className="w-full max-w-[640px] text-left">
-              <h2 className="font-inter font-medium text-[20px] sm:text-[22px] text-[#45464E] mb-[15px] text-center">
-                Your AI Bestie is Now Analyzing Your Performance!
-              </h2>
-              <p className="font-inter font-normal text-[16px] text-[#45464E] max-w-[550px] mb-[15px]">
-                Great job! Your answers are now with our smart AI. We&apos;re busy crunching the numbers to:
-              </p>
-              <ul className="font-inter font-normal text-[16px] text-[#45464E] space-y-3 max-w-[640px] mb-[15px]">
-                <li>🕵🏼‍️ Accurately check your scores</li>
-                <li>💪🏼 Pinpoint your strong subjects</li>
-                <li>⚡️ Identify areas where you can still grow</li>
-                <li>🏆 Prepare personalized recommendations for your next review steps!</li>
-              </ul>
-              <p className="font-inter font-normal text-[16px] text-[#45464E] max-w-[640px]">
-                This might take just a few moments. Hang tight, future passer!
-              </p>
-            </div>
+            <p className="font-inter font-normal text-[13px] text-[#9CA3AF]">
+              No pressure – this usually takes a few seconds.
+            </p>
           </section>
         </main>
       </div>
@@ -269,6 +445,11 @@ const ExamResultsLoading = () => {
             </div>
             <div className="pt-[28px] mb-[32px] max-w-[800px] mx-auto">
               {blockTitle('📊', 'Quick Summary')}
+              {aiFailedMessage && (
+                <p className="font-inter font-normal text-[15px] text-[#45464E] leading-[24px] mb-[12px] italic">
+                  {aiFailedMessage}
+                </p>
+              )}
               {(quickSummary || practiceFallbackSummary).split(/(?<=[.!?])\s+/).filter(Boolean).map((s, i) => (
                 <p key={i} className="font-inter font-normal text-[15px] text-[#45464E] leading-[24px] mb-[4px]">{s}</p>
               ))}
@@ -280,212 +461,281 @@ const ExamResultsLoading = () => {
     );
   }
 
-  const cardCtas = recommendations.filter((r) => r.type === 'take_section_practice' || r.type === 'retake_full_mock');
+  const retakeMockRec = recommendations.find((r) => r.type === 'retake_full_mock') || null;
+
+  // Section distribution for weight calculations
+  const sectionDistribution = attempt.reviewer?.examConfig?.sectionDistribution || [];
+  const lowestSectionDist = lowestSection
+    ? sectionDistribution.find((sd) => sd.section?.toLowerCase() === lowestSection.section?.toLowerCase())
+    : null;
+  const focusSectionWeight = lowestSection
+    ? Math.round(((lowestSectionDist?.count ?? lowestSection.totalItems) / result.totalItems) * 100)
+    : 0;
+
+  const shortSectionName = (name) => {
+    const lower = (name || '').toLowerCase();
+    if (lower.includes('general')) return 'Gen Info';
+    return capitalize(lower);
+  };
+
+  const sectionWeightsText = sectionDistribution.length > 0
+    ? sectionDistribution.map((sd) => `${shortSectionName(sd.section)} ${Math.round((sd.count / result.totalItems) * 100)}%`).join(', ')
+    : null;
+
+  const pctNum = parseFloat(overallPercentage);
+  const readiness = pctNum >= 85
+    ? { label: 'Exam Ready', textColor: 'text-[#16A34A]', message: 'You are above the passing threshold.' }
+    : pctNum >= 75
+      ? { label: 'Almost Ready', textColor: 'text-[#D97706]', message: 'A few improvements can push you to passing.' }
+      : pctNum >= 60
+        ? { label: 'Needs Improvement', textColor: 'text-[#2563EB]', message: "You're within reach but need more practice." }
+        : { label: 'Early Stage', textColor: 'text-[#6E43B9]', message: 'Focus on building fundamentals first.' };
 
   return (
     <div className={PAGE_CLASSES}>
       <DashNav />
       <main className={`${MAIN_CLASSES} pt-[24px] pb-[40px]`}>
         {breadcrumb}
-        <h1 className="font-inter font-medium text-[#45464E] text-[20px] mb-[24px]" data-aos="fade-up" data-aos-duration="400" data-aos-delay="25">{title}</h1>
-        <section className={SECTION_CLASSES} data-aos="fade-up" data-aos-duration="400" data-aos-delay="50">
-          <h2 className="font-inter font-medium text-[20px] text-[#45464E] text-center mb-[24px]">{title}</h2>
-          <p className="font-inter font-normal text-[16px] text-[#45464E] text-center mb-[4px]">Mock Exam Taken On: {takenAt}</p>
-          <p className="font-inter font-normal text-[16px] text-[#45464E] text-center mb-[24px]">Exam Duration: <span className="font-bold">{duration}</span></p>
+        <h1 className="font-inter font-medium text-[#45464E] text-[20px] mb-[20px]" data-aos="fade-up" data-aos-duration="400" data-aos-delay="25">{title}</h1>
 
-          <h3 className="font-inter font-semibold text-[16px] text-[#45464E] text-center uppercase tracking-wide mb-[22px]">Overall Performance</h3>
-          <div className="overflow-x-auto flex justify-center mb-2">
-            <table className="w-full max-w-[800px] border-collapse border border-[#B0B0B0] font-inter text-[14px]">
-              <thead>
-                <tr className="bg-[#431C86] text-white">
-                  {['Total Items', 'Your Score', 'Percentage', 'Status'].map((h) => (
-                    <th key={h} className="text-left py-3 px-2 font-semibold border border-[#B0B0B0] w-[120px]">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="bg-[#FAF9FF]">
-                  <td className="py-3 px-2 text-[#45464E] border-t border-l border-[#B0B0B0]">{result.totalItems}</td>
-                  <td className="py-3 px-2 text-[#45464E] border-t border-l border-[#B0B0B0]">{totalCorrect}</td>
-                  <td className="py-3 px-2 text-[#45464E] border-t border-l border-[#B0B0B0]">{overallPercentage}%</td>
-                  <td className={`py-3 px-2 border-t border-l border-[#B0B0B0] ${passed ? 'text-[#06A561]' : 'text-[#F0142F]'} font-inter font-bold text-[16px]`}>
-                    {passed ? 'PASSED' : 'FAILED'}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+        {/* ── Score Overview Card ───────────────────────────────────────── */}
+        <section
+          className="bg-white rounded-[16px] px-[24px] py-[28px] sm:px-[32px] sm:py-[32px] mb-[16px]"
+          data-aos="fade-up" data-aos-duration="400" data-aos-delay="50"
+        >
+          {/* Card header */}
+          <div className="flex items-start justify-between gap-4 mb-[28px]">
+            <h2 className="font-inter font-semibold text-[17px] text-[#1A1A2E] leading-snug">{title}</h2>
+            <button
+              type="button"
+              onClick={handleOpenShare}
+              className="shrink-0 flex items-center gap-[6px] font-inter font-normal text-[13px] text-[#45464E] border border-[#D1D5DB] bg-white hover:bg-gray-50 transition-colors py-[7px] px-[14px] rounded-[8px]"
+            >
+              <ShareOutIcon className="w-[15px] h-[15px]" />
+              Share
+            </button>
           </div>
-          <p className="font-inter font-normal text-[12px] text-[#45464E] text-center mb-[24px]">
-            {passed
-              ? `You surpassed the ${passingThreshold}% passing rate with ${totalCorrect}/${result.totalItems} correct answers! Excellent work! 🎉`
-              : `Remember: You need at least ${passingThreshold}% or ${passingScore}/${result.totalItems} correct answers to pass.`}
-          </p>
 
-          <h3 className="font-inter font-semibold text-[16px] text-[#45464E] text-center uppercase tracking-wide mb-[16px]">Detailed Performance Breakdown</h3>
-          <div className="overflow-x-auto mb-8">
-            <table className="w-full border-collapse border border-[#B0B0B0] font-inter text-[14px]">
+          {/* Gauge + Stats */}
+          <div className="flex flex-col md:flex-row gap-[32px] md:gap-[48px]">
+            {/* Left: gauge */}
+            <div className="flex flex-col items-center md:w-[240px] shrink-0">
+              <SemiCircleGauge percentage={overallPercentage} />
+              <p className="font-inter font-bold text-[32px] text-[#1A1A2E] leading-none -mt-[6px]">
+                {overallPercentage}%
+              </p>
+              <p className="font-inter font-normal text-[13px] text-[#6B7280] mt-[6px]">Mock Exam Score</p>
+              <p className="font-inter font-normal text-[11px] text-[#9CA3AF] mt-[4px] text-center max-w-[180px]">
+                This score is for this mock attempt only
+              </p>
+            </div>
+
+            {/* Right: stats + status message */}
+            <div className="flex-1 min-w-0">
+              <div className="divide-y divide-[#F3F4F6]">
+                <div className="flex items-center justify-between py-[13px]">
+                  <span className="font-inter font-normal text-[14px] text-[#6B7280]">Mock Exam Score</span>
+                  <span className="font-inter font-semibold text-[14px] text-[#1A1A2E]">{overallPercentage}%</span>
+                </div>
+                <div className="flex items-center justify-between py-[13px]">
+                  <span className="font-inter font-normal text-[14px] text-[#6B7280]">Correct Items</span>
+                  <span className="font-inter font-semibold text-[14px] text-[#1A1A2E]">{totalCorrect} / {result.totalItems}</span>
+                </div>
+                <div className="flex items-center justify-between py-[13px]">
+                  <span className="font-inter font-normal text-[14px] text-[#6B7280]">Status</span>
+                  <span className={`font-inter font-semibold text-[14px] ${readiness.textColor}`}>{readiness.label}</span>
+                </div>
+                <div className="flex items-center justify-between py-[13px]">
+                  <span className="font-inter font-normal text-[14px] text-[#6B7280]">Total Time</span>
+                  <span className="font-inter font-semibold text-[14px] text-[#1A1A2E]">{duration}</span>
+                </div>
+              </div>
+
+              <div className="mt-[16px]">
+                <p className="font-inter font-medium text-[14px] text-[#45464E]">{readiness.message}</p>
+                {sectionWeightsText && (
+                  <p className="font-inter font-normal text-[13px] text-[#9CA3AF] mt-[6px] leading-[20px]">
+                    Weighted by section coverage:<br />{sectionWeightsText}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── Detailed Exam Breakdown Card ─────────────────────────────── */}
+        <section
+          className="bg-white rounded-[16px] px-[24px] py-[28px] sm:px-[32px] sm:py-[32px] mb-[16px]"
+          data-aos="fade-up" data-aos-duration="400" data-aos-delay="75"
+        >
+          <h3 className="font-inter font-semibold text-[18px] text-[#1A1A2E] mb-[4px]">Detailed Exam Breakdown</h3>
+          <p className="font-inter font-normal text-[14px] text-[#6B7280] mb-[20px]">Your performance breakdown based on the mock exam.</p>
+
+          <div className="overflow-x-auto mb-[28px]">
+            <table className="w-full font-inter text-[14px] border-collapse">
               <thead>
-                <tr className="bg-[#431C86] text-white">
-                  {['Subject Area', 'Items', 'Correct', 'Incorrect', 'Unanswered', 'Your Score (%)'].map((h) => (
-                    <th key={h} className="text-left py-3 px-3 font-semibold border border-[#B0B0B0]">{h}</th>
+                <tr className="bg-[#F9FAFB] border-b border-[#E5E7EB]">
+                  {['Section', 'Items', 'Correct', 'Incorrect', 'Unanswered', 'Your Score'].map((h) => (
+                    <th key={h} className="text-left py-[11px] px-[14px] font-medium text-[#6B7280] text-[13px] whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {breakdown.map((row, i) => (
-                  <tr key={i} className="bg-[#FAF9FF]">
-                    <td className="py-3 px-3 text-[#45464E] border-t border-l border-[#B0B0B0]">{capitalize(row.section)}</td>
-                    <td className="py-3 px-3 text-[#45464E] border-t border-l border-[#B0B0B0]">{row.totalItems}</td>
-                    <td className="py-3 px-3 text-[#45464E] border-t border-l border-[#B0B0B0]">{row.correct}</td>
-                    <td className="py-3 px-3 text-[#45464E] border-t border-l border-[#B0B0B0]">{row.incorrect}</td>
-                    <td className="py-3 px-3 text-[#45464E] border-t border-l border-[#B0B0B0]">{row.unanswered}</td>
-                    <td className="py-3 px-3 font-medium text-[#45464E] border-t border-l border-[#B0B0B0]">{row.score}%</td>
+                  <tr key={i} className="border-b border-[#F3F4F6] hover:bg-[#FAFAFA] transition-colors">
+                    <td className="py-[12px] px-[14px] text-[#45464E]">{capitalize(row.section)}</td>
+                    <td className="py-[12px] px-[14px] text-[#45464E]">{row.totalItems}</td>
+                    <td className="py-[12px] px-[14px] text-[#45464E]">{row.correct}</td>
+                    <td className="py-[12px] px-[14px] text-[#45464E]">{row.incorrect}</td>
+                    <td className="py-[12px] px-[14px] text-[#45464E]">{row.unanswered}</td>
+                    <td className="py-[12px] px-[14px] font-semibold text-[#45464E]">{row.score} %</td>
                   </tr>
                 ))}
-                <tr className="font-inter font-bold text-[14px] bg-[#FAF9FF]">
-                  <td className="py-3 px-3 text-[#45464E] border-t border-l border-[#B0B0B0]">TOTAL</td>
-                  <td className="py-3 px-3 text-[#45464E] border-t border-l border-[#B0B0B0]">{result.totalItems}</td>
-                  <td className="py-3 px-3 text-[#45464E] border-t border-l border-[#B0B0B0]">{totalCorrect}</td>
-                  <td className="py-3 px-3 text-[#45464E] border-t border-l border-[#B0B0B0]">{totalIncorrect}</td>
-                  <td className="py-3 px-3 text-[#45464E] border-t border-l border-[#B0B0B0]">{totalUnanswered}</td>
-                  <td className={`py-3 px-3 font-bold border-t border-l border-[#B0B0B0] ${passed ? 'text-[#22C55E]' : 'text-[#DC2626]'}`}>{overallPercentage}%</td>
+                <tr className="border-t-2 border-[#E5E7EB]">
+                  <td className="py-[12px] px-[14px] font-semibold text-[#1A1A2E]">Total</td>
+                  <td className="py-[12px] px-[14px] font-semibold text-[#1A1A2E]">{result.totalItems}</td>
+                  <td className="py-[12px] px-[14px] font-semibold text-[#1A1A2E]">{totalCorrect}</td>
+                  <td className="py-[12px] px-[14px] font-semibold text-[#1A1A2E]">{totalIncorrect}</td>
+                  <td className="py-[12px] px-[14px] font-semibold text-[#1A1A2E]">{totalUnanswered}</td>
+                  <td className={`py-[12px] px-[14px] font-bold ${passed ? 'text-[#16A34A]' : 'text-[#DC2626]'}`}>{overallPercentage} %</td>
                 </tr>
               </tbody>
             </table>
           </div>
 
-          <div className="pt-[32px] mt-[8px] mb-[32px] max-w-[800px] mx-auto">
-            <h3 className="font-poppins font-bold text-[20px] text-[#45464E] mb-[16px] flex items-center gap-2"><span>📊</span> Quick Summary</h3>
-            {quickSummary ? (
-              <p className="font-inter font-normal text-[15px] text-[#45464E] leading-[24px] mb-[12px]">{quickSummary}</p>
-            ) : (
-              <>
-                {strongAreas.length >= 2 && (
-                  <p className="font-inter font-normal text-[15px] text-[#45464E] leading-[24px] mb-[4px]">
-                    You performed strongly in <span className="font-bold">{strongAreas[0].section}</span>
-                    {strongAreas.length > 1 && <> and <span className="font-bold">{strongAreas[1].section}</span></>}.
-                  </p>
-                )}
-                {lowestSection && (
-                  <p className="font-inter font-normal text-[15px] text-[#45464E] leading-[24px] mb-[4px]">
-                    Your overall score was mainly affected by <span className="font-bold">{lowestSection.section}</span>.
-                  </p>
-                )}
-              </>
-            )}
-            {!passed && gapToPass > 0 && (
-              <>
-                <p className="font-inter font-normal text-[15px] text-[#45464E] leading-[24px] mb-[4px]">
-                  You are <span className="font-bold">{gapToPass} correct answer{gapToPass !== 1 ? 's' : ''}</span> away from the passing mark.
-                </p>
-                <p className="font-inter font-normal text-[15px] text-[#45464E] leading-[24px]">Focused improvement in one section can realistically close this gap.</p>
-              </>
-            )}
-            {passed && (
-              <p className="font-inter font-normal text-[15px] text-[#45464E] leading-[24px]">
-                Outstanding work! You exceeded the {passingThreshold}% passing threshold. Keep refining your weaker areas to maintain consistency.
-              </p>
-            )}
-          </div>
-
-          {strongAreas.length > 0 && (
-            <div className="mb-[28px] max-w-[800px] mx-auto">
-              <h3 className="font-poppins font-bold text-[20px] text-[#45464E] mb-[16px] flex items-center gap-2"><span>💪</span> Strong Areas</h3>
-              <ul className="list-disc list-outside pl-6 space-y-[16px]">
-                {strongAreas.map((s, i) => {
-                  const aiLines = getAILines(s.section);
-                  return (
-                    <li key={i} className="font-inter text-[15px] text-[#45464E]">
-                      <span className="font-bold">{capitalize(s.section)} ({s.score}%)</span>
-                      {(aiLines.length ? aiLines : [s.score >= 85 ? "Excellent proficiency. You're exam-ready in this section." : 'Good performance. Minor refinements can push this to mastery level.']).map((line, li) => (
-                        <p key={li} className="font-normal text-[15px] text-[#45464E] leading-[24px] mt-[2px]">{line}</p>
-                      ))}
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          )}
-
-          {refineAreas.length > 0 && (
-            <div className="mb-[32px] max-w-[800px] mx-auto">
-              <h3 className="font-poppins font-bold text-[20px] text-[#45464E] mb-[16px] flex items-center gap-2"><span>🎯</span> Refine Further</h3>
-              <ul className="list-disc list-outside pl-6 space-y-[16px]">
-                {refineAreas.map((s, i) => {
-                  const aiLines = getAILines(s.section);
-                  const isLowest = lowestSection && s.section === lowestSection.section;
-                  const fallback = isLowest
-                    ? `This section had the biggest impact on your overall score. Improving this section alone could move you closer to the ${passingThreshold}% passing mark.`
-                    : 'You understand basic patterns, but this area needs focused practice and refinement.';
-                  return (
-                    <li key={i} className="font-inter text-[15px] text-[#45464E]">
-                      <span className="font-bold">{capitalize(s.section)} ({s.score}%){isLowest && <span className="text-[#45464E] font-bold"> — Highest Impact Area</span>}</span>
-                      {(aiLines.length ? aiLines : [fallback]).map((line, li) => (
-                        <p key={li} className={`font-inter leading-[24px] mt-[2px] ${aiLines.length ? 'font-bold text-[16px]' : 'font-normal text-[15px]'} text-[#45464E]`}>{line}</p>
-                      ))}
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          )}
-
-          <div className="flex flex-wrap justify-start gap-4 mb-[8px] max-w-[800px] mx-auto">
-            <button type="button" onClick={() => navigate(backUrl)} className="font-inter font-normal text-[14px] text-[#6E43B9] py-[11.5px] px-4 rounded-[8px] border border-[#6E43B9] bg-white hover:bg-gray-50 transition-colors">
-              Go back to Dashboard
+          {/* CTA buttons */}
+          <div className="flex flex-wrap gap-[10px] mb-[14px]">
+            <button
+              type="button"
+              onClick={() => navigate(backUrl)}
+              className="font-inter font-bold text-[14px] text-[#421A83] bg-[#FFC92A] hover:opacity-95 transition-opacity py-[11px] px-[20px] rounded-[8px]"
+            >
+              Go to Dashboard
             </button>
-            <button type="button" onClick={() => navigate(`/dashboard/review/${attemptId}${fromLibrary ? '?from=library' : ''}`)} className="font-inter font-bold text-[14px] text-[#421A83] py-[11.5px] px-4 rounded-[8px] bg-[#FFC92A] hover:opacity-95 transition-opacity">
-              Review My Answers
+            <button
+              type="button"
+              onClick={() => navigate(`/dashboard/review/${attemptId}${fromLibrary ? '?from=library' : ''}`)}
+              className="font-inter font-normal text-[14px] text-[#45464E] border border-[#D1D5DB] bg-white hover:bg-gray-50 transition-colors py-[11px] px-[20px] rounded-[8px]"
+            >
+              Review Answers
+            </button>
+            {retakeMockRec && (() => {
+              const { showUpgrade, handleClick } = getRecAction(retakeMockRec);
+              return (
+                <button
+                  type="button"
+                  onClick={handleClick}
+                  className="font-inter font-normal text-[14px] text-[#45464E] border border-[#D1D5DB] bg-white hover:bg-gray-50 transition-colors py-[11px] px-[20px] rounded-[8px] flex items-center gap-[6px]"
+                >
+                  {showUpgrade && <LockIcon className="w-[14px] h-[14px] shrink-0" />}
+                  Retake Full Mock
+                </button>
+              );
+            })()}
+            <button
+              type="button"
+              onClick={handleOpenShare}
+              className="font-inter font-normal text-[14px] text-[#45464E] border border-[#D1D5DB] bg-white hover:bg-gray-50 transition-colors py-[11px] px-[20px] rounded-[8px] flex items-center gap-[7px]"
+            >
+              <ShareOutIcon className="w-[15px] h-[15px]" />
+              Share Mock Score Card
             </button>
           </div>
 
-          {reviewerType === 'mock' && cardCtas.length > 0 && (
-            <div className="max-w-[800px] mx-auto">
-              <h3 className="font-inter font-semibold text-[20px] text-[#45464E] mt-[40px] mb-[24px] flex items-center gap-2"><span>📌</span> Recommended Next Step</h3>
-              <div className="flex flex-col gap-[16px]">
-                {cardCtas.map((rec, idx) => {
-                  const reviewer = rec.reviewer;
-                  const logoSrc = reviewer?.logo?.filename && REVIEWER_LOGO_MAP[reviewer.logo.filename] ? REVIEWER_LOGO_MAP[reviewer.logo.filename] : reviewer?.logo?.path ?? null;
-                  const details = reviewer?.details || {};
-                  const sectionDisplayName = reviewer?.sectionDisplayName || reviewer?.title?.match(/\(([^)]+)\)/)?.[1] || null;
-                  const cardTitle = rec.type === 'take_section_practice' && sectionDisplayName
-                    ? `${sectionDisplayName} Practice${rec.isHighestImpact ? ' – Highest Impact improvement' : ''}`
-                    : rec.type === 'retake_full_mock' ? 'Retake Full Mock Exam after focused review' : reviewer?.title || rec.label;
-                  const cardDescription = rec.type === 'take_section_practice' && sectionDisplayName
-                    ? (rec.isHighestImpact ? `Strengthen ${sectionDisplayName.toLowerCase()} reasoning and problem-solving skills.` : `Improve ${sectionDisplayName.toLowerCase()} skills and logical consistency.`)
-                    : rec.type === 'retake_full_mock' ? 'Reassess overall readiness under exam conditions.' : null;
-                  const { showUpgrade, handleClick } = getRecAction(rec);
-                  const showMeta = reviewer && (details.items || details.duration);
-                  return (
-                    <div key={`${rec.type}-${idx}`} className="bg-white rounded-[12px] p-[24px] border border-[#0000001A] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4" data-aos="fade-up" data-aos-duration="500" data-aos-delay={100 + idx * 50}>
-                      <div className="flex items-start gap-[16px] flex-1">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-[16px] mb-[16px]">
-                            {logoSrc && <img src={logoSrc} alt="" className="w-[40px] h-[40px] shrink-0 object-cover mt-[2px]" />}
-                            <h4 className="font-inter font-medium text-[14px] text-[#45464E] m-0">{cardTitle}</h4>
-                          </div>
-                          {cardDescription && <p className="font-inter font-normal text-[14px] text-[#45464E] mb-[16px] leading-[20px]">{cardDescription}</p>}
-                          {showMeta && (
-                            <div className="flex flex-wrap items-center gap-[6px] text-[13px] text-[#45464E] font-inter">
-                              <span>📝 {details.items || (result.totalItems ? `${result.totalItems} items` : '50 items')}</span>
-                              <span>•</span>
-                              <span>⏱️ {details.duration || 'Approx. 45m'}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      {ctaButton(rec, { showUpgrade, handleClick }, true)}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+          <p className="font-inter font-normal text-[13px] text-[#9CA3AF]">
+            See your topic-level breakdown + Day 1 task on your Dashboard.
+          </p>
+          {!passed && passingScore > 0 && (
+            <p className="font-inter font-normal text-[13px] text-[#9CA3AF] mt-[2px]">
+              Passing target: {passingScore} correct ({passingThreshold}%)
+            </p>
           )}
-
         </section>
+
+        {/* ── Recommended Focus Card ────────────────────────────────────── */}
+        {!passed && lowestSection && (
+          <section
+            className="bg-white rounded-[16px] px-[24px] py-[28px] sm:px-[32px] sm:py-[32px]"
+            data-aos="fade-up" data-aos-duration="400" data-aos-delay="100"
+          >
+            <h3 className="font-inter font-semibold text-[18px] text-[#1A1A2E] mb-[4px]">Recommended Focus</h3>
+            <p className="font-inter font-normal text-[14px] text-[#6B7280] mb-[24px]">
+              Improving this section will raise your next mock score the fastest.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-[20px] sm:gap-[32px]">
+              {/* Section to focus */}
+              <div className="flex items-center gap-[14px]">
+                <div className="w-[44px] h-[44px] rounded-[10px] bg-[#F5F4FF] flex items-center justify-center shrink-0">
+                  <SectionLogoByName sectionName={lowestSection.section} />
+                </div>
+                <div>
+                  <p className="font-inter font-semibold text-[15px] text-[#1A1A2E]">{capitalize(lowestSection.section)}</p>
+                  <p className="font-inter font-normal text-[13px] text-[#6B7280]">Section to focus</p>
+                </div>
+              </div>
+
+              {/* Items to pass */}
+              {gapToPass > 0 && (
+                <div className="flex items-center gap-[14px]">
+                  <div className="w-[44px] h-[44px] rounded-[10px] bg-[#FFF9EC] flex items-center justify-center shrink-0">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m-6 9l2 2 4-4" stroke="#D97706" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-inter font-semibold text-[15px] text-[#1A1A2E]">{gapToPass} item{gapToPass !== 1 ? 's' : ''}</p>
+                    <p className="font-inter font-normal text-[13px] text-[#6B7280]">To pass</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Section weight */}
+              {focusSectionWeight > 0 && (
+                <div className="flex items-center gap-[14px]">
+                  <div className="w-[44px] h-[44px] rounded-[10px] bg-[#F0FDF4] flex items-center justify-center shrink-0">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <circle cx="12" cy="12" r="10" stroke="#16A34A" strokeWidth="1.5" />
+                      <path d="M12 2a10 10 0 0 1 10 10H12V2Z" fill="#16A34A" fillOpacity="0.2" stroke="#16A34A" strokeWidth="1.5" strokeLinejoin="round" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-inter font-semibold text-[15px] text-[#1A1A2E]">{focusSectionWeight}%</p>
+                    <p className="font-inter font-normal text-[13px] text-[#6B7280]">Section weight</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <p className="font-inter font-normal text-[13px] text-[#9CA3AF] mt-[20px]">
+              This is what your Sprint Plan will prioritize first.
+            </p>
+          </section>
+        )}
       </main>
+
+      <ShareModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        shareUrl={shareUrl}
+        cardRef={cardRef}
+      />
+
+      {/* Hidden off-screen card for html2canvas capture */}
+      <MockScoreCard
+        ref={cardRef}
+        title={title}
+        submittedAt={attempt.submittedAt}
+        result={result}
+        passingThreshold={passingThreshold}
+        lowestSection={lowestSection}
+        gapToPass={gapToPass}
+        focusSectionWeight={focusSectionWeight}
+        sectionWeightsText={sectionWeightsText}
+      />
     </div>
   );
 };
 
 export default ExamResultsLoading;
+

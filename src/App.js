@@ -18,6 +18,7 @@ import ExamDetails from './pages/ExamDetails';
 import Exam from './pages/Exam';
 import ExamResultsLoading from './pages/ExamResultsLoading';
 import ExamReview from './pages/ExamReview';
+import ShareResult from './pages/ShareResult';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 import { AOS_CONFIG } from './config/aos';
@@ -39,6 +40,7 @@ function App() {
         <Route path="/terms" element={<Terms />} />
         <Route path="/refund" element={<Refund />} />
         <Route path="/pricing/upgrade" element={<UpgradeToPremium />} />
+        <Route path="/share/:shareToken" element={<ShareResult />} />
 
         {/* Protected dashboard routes */}
         <Route path="/dashboard" element={<ProtectedRoute><Navigate to="/dashboard/all-reviewers" replace /></ProtectedRoute>} />

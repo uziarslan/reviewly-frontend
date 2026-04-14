@@ -4,6 +4,19 @@ import DashNav from '../components/DashNav';
 import { examAPI } from '../services/api';
 import ExamReviewSkeleton from '../components/skeletons/ExamReviewSkeleton';
 
+const formatSection = (s) => {
+  if (!s) return '';
+  return s.split(/[\s_]+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+};
+
+const formatDuration = (secs) => {
+  if (secs == null) return '–';
+  const h = Math.floor(secs / 3600);
+  const m = Math.floor((secs % 3600) / 60);
+  if (h > 0) return `${h} hr ${m} min`;
+  return `${m} min`;
+};
+
 function ExamReview() {
   const { attemptId } = useParams();
   const location = useLocation();
@@ -56,19 +69,34 @@ function ExamReview() {
   const selectedLetter = (currentQ.selectedAnswer || '').toString().toUpperCase().trim();
   const isCorrectAnswer = currentQ.isCorrect;
 
-  // Same content for both correct/wrong – only background differs
   const explanationCorrect = currentQ.explanationCorrect || '';
   const explanationWrong = currentQ.explanationWrong || '';
   const tip = currentQ.reviewlyTip;
+  const sectionTag = formatSection(currentQ.section);
+  const topicTag = currentQ.topic ? formatSection(currentQ.topic) : (currentQ.module ? formatSection(currentQ.module) : '');
 
   const totalCorrect = result.correct || 0;
   const totalItems = result.totalItems || totalQuestions;
   const percentage = result.percentage != null ? result.percentage.toFixed(2) : '0.00';
-  const passingScore = result.passingScore || 0;
-
   const pct = parseFloat(percentage);
-  const performanceLevel = pct >= 85 ? 'Strong' : pct >= 70 ? 'Developing' : 'Needs Improvement';
-  const performanceLevelColor = pct >= 85 ? 'text-[#06A561]' : pct >= 70 ? 'text-[#F5A623]' : 'text-[#F0142F]';
+  const duration = result.duration ?? null;
+
+  const reviewerTypeLabel = reviewer.type === 'practice' ? 'Practice Exam Score' : 'Mock Exam Score';
+  const statusLabel = pct >= 85 ? 'Exam Ready' : pct >= 70 ? 'Almost Ready' : 'Keep Practicing';
+  const statusColor = pct >= 85 ? '#06A561' : pct >= 70 ? '#F5A623' : '#F0142F';
+
+  const scoreMessage = result.quickSummary ||
+    (result.passed
+      ? 'Great job — you passed!'
+      : pct >= 70
+        ? 'A few improvements can push you to passing.'
+        : "Keep studying – you're building strong foundations!");
+
+  const sectionCoverage = result.sectionScores?.length
+    ? result.sectionScores
+        .map(s => `${formatSection(s.section)} ${Math.round((s.totalItems / totalItems) * 100)}%`)
+        .join(', ')
+    : '';
 
   const handlePrev = () => {
     if (currentIndex > 0) setCurrentIndex((i) => i - 1);
@@ -98,131 +126,184 @@ function ExamReview() {
           >
             {fromLibrary ? 'My Library' : 'All Reviewers'}
           </Link>
-          <span className="mx-2">›</span>
+          <span className="mx-2 text-[#45464E]">›</span>
           <span className="text-[#6E43B9] font-inter font-normal text-[14px]">{reviewer.title}</span>
         </nav>
 
         <h1 className="font-inter font-medium text-[#45464E] text-[20px] mb-[24px]">{reviewer.title}</h1>
 
-        <div className="flex flex-col lg:flex-row gap-8 lg:gap-[24px] items-start">
-          {/* Left: Question card */}
-          <div className="order-1 w-full lg:w-auto lg:flex-1 lg:min-w-0 bg-[#FFFFFF] p-[24px] rounded-[12px]">
+        <div className="flex flex-col lg:flex-row gap-6 items-start">
+          {/* ── Left: Question card ── */}
+          <div className="order-1 w-full lg:w-auto lg:flex-1 lg:min-w-0 bg-white p-[24px] rounded-[16px] shadow-sm">
             <div key={currentIndex} className="animate-question-change">
-              <p className="font-inter font-medium text-[#0F172A] text-base mb-6">
-                {questionNumber}. {currentQ.questionText}
+
+              {/* Question header: number + category tags */}
+              <div className="flex items-center justify-between gap-3 mb-5">
+                <span className="font-inter font-medium text-[#45464E] text-[15px] shrink-0">
+                  Question {questionNumber} of {totalQuestions}
+                </span>
+                <div className="flex items-center gap-2 flex-wrap justify-end">
+                  {sectionTag && (
+                    <span className="font-inter text-[12px] font-medium px-3 py-1 rounded-full bg-[#FDE7EA] text-[#E05C6E]">
+                      {sectionTag}
+                    </span>
+                  )}
+                  {topicTag && (
+                    <span className="font-inter text-[12px] font-medium px-3 py-1 rounded-full bg-[#EDE9FF] text-[#6E43B9]">
+                      {topicTag}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Question text */}
+              <p className="font-inter font-medium text-[#0F172A] text-[16px] leading-relaxed mb-6">
+                {currentQ.questionText}
               </p>
-              <div className="space-y-4 mb-6">
+
+              {/* Options */}
+              <div className="space-y-3 mb-6">
                 {[currentQ.choiceA, currentQ.choiceB, currentQ.choiceC, currentQ.choiceD].map((option, idx) => {
                   const letter = optionLabels[idx];
                   const isCorrectOption = letter === correctLetter;
                   const isUserChoice = letter === selectedLetter;
                   const showCheck = isCorrectOption;
                   const showX = !isCorrectAnswer && isUserChoice && !isCorrectOption;
+
+                  const rowClass = isCorrectOption
+                    ? 'bg-[#F0FBF6] border border-[#06A56126]'
+                    : showX
+                      ? 'bg-[#FEF2F3] border border-[#F0142F26]'
+                      : 'bg-white border border-[#E5E7EB]';
+
+                  const badgeClass = isCorrectOption
+                    ? 'bg-[#06A561] text-white'
+                    : showX
+                      ? 'bg-[#F0142F] text-white'
+                      : 'bg-white text-[#9CA3AF] border border-[#D1D5DB]';
+
                   return (
-                    <div
-                      key={idx}
-                      className="flex items-start gap-3 font-inter text-[16px] text-[#45464E]"
-                    >
-                      <span
-                        className={`mt-1 w-5 h-5 flex items-center justify-center shrink-0 rounded-full bg-white ${showCheck
-                          ? 'border-[6px] border-[#06A561]'
-                          : showX
-                            ? 'border-[6px] border-[#F0142F]'
-                            : 'border border-[#B0B0B0]'
-                          }`}
-                        aria-hidden="true"
-                      />
-                      <span>{option}</span>
+                    <div key={idx} className={`flex items-center gap-3 px-4 py-3 rounded-[10px] ${rowClass}`}>
+                      <span className={`w-7 h-7 flex items-center justify-center shrink-0 rounded-full font-inter font-semibold text-[13px] ${badgeClass}`}>
+                        {letter}
+                      </span>
+                      <span className="font-inter text-[15px] text-[#45464E] flex-1 leading-snug">{option}</span>
+                      {showCheck && (
+                        <svg className="shrink-0" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                          <circle cx="10" cy="10" r="9" stroke="#06A561" strokeWidth="1.5" />
+                          <path d="M6 10.5L8.5 13L14 7" stroke="#06A561" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      )}
+                      {showX && (
+                        <svg className="shrink-0" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                          <circle cx="10" cy="10" r="9" stroke="#F0142F" strokeWidth="1.5" />
+                          <path d="M7 7L13 13M13 7L7 13" stroke="#F0142F" strokeWidth="2" strokeLinecap="round" />
+                        </svg>
+                      )}
                     </div>
                   );
                 })}
               </div>
 
-              {/* Correct Answer / Feedback box – same content for correct/wrong, only background differs */}
-              <div
-                className={`rounded-[8px] py-3 px-[15px] mb-4 ${isCorrectAnswer ? 'bg-[#DAF9EC80]' : 'bg-[#FDE7EA]'}`}
-              >
-                <p className="font-inter text-[14px] text-[#45464E] whitespace-pre-line">
-                  <strong>Correct answer:{" "}{correctLetter}</strong>
-                  {explanationCorrect ? ` – ${explanationCorrect}` : ''}
+              {/* Explanation box */}
+              <div className={`rounded-[10px] py-4 px-4 mb-4 ${isCorrectAnswer ? 'bg-[#F0FBF6]' : 'bg-[#FEF2F3]'}`}>
+                <p className="font-inter text-[14px] text-[#45464E] leading-relaxed whitespace-pre-line">
+                  <span className="font-semibold">Correct Answer: {correctLetter}</span>
+                  {explanationCorrect ? ` — ${explanationCorrect}` : ''}
                   {explanationWrong ? `\n\n${explanationWrong}` : ''}
                 </p>
               </div>
 
               {/* Reviewly Tip */}
               {tip && (
-                <div className="rounded-[8px] py-3 px-[15px] mb-8 bg-[#FFC92A1A]">
-                  <p className="font-inter text-[14px] text-[#53545C]">
-                    💡 <span className="font-bold">Reviewly Tip:</span> {tip}
+                <div className="rounded-[10px] py-3.5 px-4 mb-2 bg-[#FFF8E6]">
+                  <p className="font-inter text-[14px] text-[#53545C] leading-relaxed">
+                    💡 <span className="font-semibold">Reviewly Tip:</span> {tip}
                   </p>
                 </div>
               )}
             </div>
-            <div className="flex justify-between pt-4 border-t border-[#F2F4F7]">
-              <button
-                type="button"
-                onClick={() => navigate(`/dashboard/exam/${reviewer._id}${fromLibrary ? '?from=library' : ''}`)}
-                className="font-inter font-normal not-italic text-[16px] text-[#6C737F] py-2.5 px-6 rounded-[8px] border border-[#6C737F] bg-white hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Close
-              </button>
 
-              <div className="flex flex-wrap items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={handlePrev}
-                  disabled={currentIndex === 0}
-                  className="font-inter font-semibold text-[16px] text-[#6C737F] py-2.5 px-4 rounded-[8px] border border-[#6C737F] bg-white hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  ‹
-                </button>
+            {/* Navigation */}
+            <div className="flex items-center justify-between pt-5 mt-4 border-t border-[#F2F4F7]">
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={handleNext}
                   disabled={currentIndex === totalQuestions - 1}
-                  className="font-inter font-semibold text-[14px] text-[#421A83] py-2.5 px-6 rounded-[8px] bg-[#FFC92A] hover:opacity-95 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="font-inter font-semibold text-[14px] text-[#421A83] py-2.5 px-6 rounded-[8px] bg-[#FFC92A] hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Next
                 </button>
+                <button
+                  type="button"
+                  onClick={handlePrev}
+                  disabled={currentIndex === 0}
+                  className="font-inter font-normal text-[15px] text-[#6C737F] py-2.5 px-5 rounded-[8px] border border-[#D1D5DB] bg-white hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Previous
+                </button>
               </div>
+              <button
+                type="button"
+                onClick={() => navigate(`/dashboard/exam/${reviewer._id}${fromLibrary ? '?from=library' : ''}`)}
+                className="font-inter font-normal text-[15px] text-[#6C737F] py-2.5 px-5 rounded-[8px] border border-[#D1D5DB] bg-white hover:bg-gray-50 transition-colors"
+              >
+                Close
+              </button>
             </div>
           </div>
 
-          {/* Right: Overall Performance + answer grid (same layout as Exam.js right sidebar) */}
-          <div className="order-2 lg:flex-shrink-0 lg:max-w-[404px] lg:self-stretch w-full lg:w-auto">
-            <div className="bg-[#FFFFFF] rounded-[12px] p-[24px] lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto">
-              <h2 className="font-inter font-bold text-[14px] text-[#45464E] uppercase tracking-wide mb-[15px]">
-                Overall Performance
-              </h2>
-              <p className="font-inter font-normal text-[16px] text-[#45464E] mb-0">
-                Your Score: {totalCorrect} / {totalItems}
-              </p>
-              <p className="font-inter font-normal text-[16px] text-[#45464E] mb-[15px]">
-                Percentage: {percentage}%
-              </p>
-              <p className="font-inter text-[16px] text-[#45464E] mb-0">
-                <span className="font-semibold">Performance Level</span>
-                <span className="font-normal"> - </span>
-                <span className={`font-semibold ${performanceLevelColor}`}>
-                  {performanceLevel}
-                </span>
-              </p>
-              <p className="font-inter font-normal text-[12px] text-[#45464E] mb-[15px]">
-                {passingScore > 0
-                  ? `You need at least ${passingScore}/${totalItems} correct answers to pass.`
-                  : ''}
-              </p>
-              <div className="flex items-center gap-4 mb-[15px]">
+          {/* ── Right: Score summary + question grid ── */}
+          <div className="order-2 lg:flex-shrink-0 lg:w-[320px] w-full">
+            <div className="bg-white rounded-[16px] shadow-sm p-[24px] lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto">
+
+              {/* Stat rows */}
+              <div className="mb-5">
+                {[
+                  { label: reviewerTypeLabel, value: `${percentage} %` },
+                  { label: 'Correct Items', value: `${totalCorrect} / ${totalItems}` },
+                  { label: 'Status', value: statusLabel, style: { color: statusColor } },
+                  ...(duration != null ? [{ label: 'Total Time', value: formatDuration(duration) }] : []),
+                ].map(({ label, value, style }, i, arr) => (
+                  <div
+                    key={i}
+                    className={`flex items-center justify-between py-3 ${i < arr.length - 1 ? 'border-b border-[#F3F4F6]' : ''}`}
+                  >
+                    <span className="font-inter text-[14px] text-[#45464E]">{label}</span>
+                    <span className="font-inter text-[14px] font-medium text-right" style={style || { color: '#0F172A' }}>
+                      {value}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Score message */}
+              {scoreMessage && (
+                <p className="font-inter text-[13px] font-medium text-[#45464E] mb-1">{scoreMessage}</p>
+              )}
+              {sectionCoverage ? (
+                <p className="font-inter text-[12px] text-[#9CA3AF] mb-5">
+                  Weighted by section coverage: {sectionCoverage}
+                </p>
+              ) : (
+                <div className="mb-5" />
+              )}
+
+              {/* Legend */}
+              <div className="flex items-center gap-4 mb-4">
                 <div className="flex items-center gap-2">
-                  <span className="w-[32px] h-[32px] rounded-[4px] bg-[#DAF9EC]" aria-hidden />
-                  <span className="font-inter font-normal text-[14px] text-[#53545C]">Correct Answer</span>
+                  <span className="w-7 h-7 rounded-[4px] bg-[#DAF9EC]" aria-hidden />
+                  <span className="font-inter text-[13px] text-[#53545C]">Correct Answer</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="w-[32px] h-[32px] rounded-[4px] bg-[#FDE7EA]" aria-hidden />
-                  <span className="font-inter font-normal text-[14px] text-[#53545C]">Incorrect Answer</span>
+                  <span className="w-7 h-7 rounded-[4px] bg-[#FDE7EA]" aria-hidden />
+                  <span className="font-inter text-[13px] text-[#53545C]">Incorrect Answer</span>
                 </div>
               </div>
-              <div className="flex flex-wrap gap-[4px] lg:grid lg:grid-cols-10 lg:gap-x-[4px] lg:gap-y-[4px]">
+
+              {/* Question number grid */}
+              <div className="grid grid-cols-10 gap-[4px]">
                 {Array.from({ length: totalQuestions }, (_, i) => i + 1).map((num) => {
                   const isCorrect = correctSet.has(num);
                   const isCurrent = num === questionNumber;
@@ -231,8 +312,9 @@ function ExamReview() {
                       key={num}
                       type="button"
                       onClick={() => goToQuestion(num)}
-                      className={`shrink-0 w-8 h-8 lg:min-w-0 lg:w-full lg:aspect-square lg:max-w-8 font-inter text-[14px] font-medium rounded-[4px] transition-colors flex items-center justify-center ${isCorrect ? 'bg-[#DAF9EC]' : 'bg-[#FDE7EA]'
-                        } ${isCurrent ? 'text-[#53545C]' : 'text-[#AEAEAE]'}`}
+                      className={`w-full aspect-square font-inter text-[12px] font-medium rounded-[4px] transition-colors flex items-center justify-center
+                        ${isCorrect ? 'bg-[#DAF9EC] text-[#53545C]' : 'bg-[#FDE7EA] text-[#53545C]'}
+                        ${isCurrent ? 'ring-2 ring-[#6E43B9] ring-offset-1' : ''}`}
                     >
                       {num}
                     </button>

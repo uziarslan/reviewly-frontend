@@ -14,6 +14,7 @@ const MyLibrary = () => {
   const { isAuthenticated, user } = useAuth();
   const [search, setSearch] = useState('');
   const [libraryCards, setLibraryCards] = useState([]);
+  const [displayCount, setDisplayCount] = useState(50);
   const [loading, setLoading] = useState(true);
   const [inProgressMap, setInProgressMap] = useState({}); // { reviewerId: { attemptId, answeredCount, totalQuestions, progressPercent } }
   const [completedReviewerIds, setCompletedReviewerIds] = useState(new Set()); // reviewer IDs with submitted attempts
@@ -72,6 +73,11 @@ const MyLibrary = () => {
     );
   }, [libraryCards, search]);
 
+  const displayed = useMemo(
+    () => filtered.slice(0, displayCount),
+    [filtered, displayCount]
+  );
+
   const checkAccess = (reviewer) => canAccessReviewer(reviewer, { isAuthenticated, user });
 
   const removeFromLibrary = async (id) => {
@@ -121,7 +127,7 @@ const MyLibrary = () => {
               <ReviewerCardSkeleton key={i} />
             ))}
           </div>
-        ) : filtered.length === 0 ? (
+        ) : displayed.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <div className="w-[140px] h-[140px] border-[1px] border-[#E1E2E9] rounded-full bg-[#F4F5FA] flex items-center justify-center mb-[40px]">
               <PaperIcon className="w-[60px] h-[60px] text-[#9CA3AF]" />
@@ -135,7 +141,7 @@ const MyLibrary = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-[24px] justify-items-center">
-            {filtered.map((card, index) => {
+            {displayed.map((card, index) => {
               const logoSrc = card.logo?.filename && REVIEWER_LOGO_MAP[card.logo.filename]
                 ? REVIEWER_LOGO_MAP[card.logo.filename]
                 : (card.logo?.path ?? null);
@@ -270,6 +276,17 @@ const MyLibrary = () => {
                 </div>
               );
             })}
+          </div>
+        )}
+        {!loading && filtered.length > 0 && displayCount < filtered.length && (
+          <div className="flex justify-center mt-8">
+            <button
+              type="button"
+              onClick={() => setDisplayCount((c) => c + 50)}
+              className="font-inter font-semibold text-[14px] text-[#421A83] py-3 px-6 rounded-[8px] border border-[#6E43B9] bg-white hover:bg-[#F5F4FF] transition-colors"
+            >
+              Load More
+            </button>
           </div>
         )}
       </main>

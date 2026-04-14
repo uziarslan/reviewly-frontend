@@ -28,6 +28,12 @@ const Home = () => {
     AOS.refresh();
   }, []);
 
+  useEffect(() => {
+    reviewerAPI.getAll(1, 50)
+      .then((res) => { if (res.success) setReviewers(res.data); })
+      .catch(() => {});
+  }, []);
+
   return (
     <div className="min-h-screen bg-white">
       <Header />

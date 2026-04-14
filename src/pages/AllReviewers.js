@@ -14,11 +14,13 @@ const AllReviewers = () => {
   const { isAuthenticated, user } = useAuth();
   const [search, setSearch] = useState('');
   const [reviewers, setReviewers] = useState([]);
-  const [libraryIds, setLibraryIds] = useState(new Set());
+  const [pagination, setPagination] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [togglingIds, setTogglingIds] = useState(new Set());
   const [inProgressMap, setInProgressMap] = useState({}); // { reviewerId: { attemptId, answeredCount, totalQuestions, progressPercent } }
   const [completedReviewerIds, setCompletedReviewerIds] = useState(new Set()); // reviewer IDs with submitted attempts
+  const [libraryIds, setLibraryIds] = useState(new Set()); // reviewer IDs in user's library
 
   // Fetch reviewers and library on mount
   useEffect(() => {
@@ -26,12 +28,15 @@ const AllReviewers = () => {
     async function fetchData() {
       try {
         const [revRes, libRes, histRes] = await Promise.all([
-          reviewerAPI.getAll(),
+          reviewerAPI.getAll(1, 50),
           isAuthenticated ? libraryAPI.get() : Promise.resolve({ success: true, data: [] }),
-          isAuthenticated ? examAPI.getUserHistory() : Promise.resolve({ success: true, data: [] }),
+          isAuthenticated ? examAPI.getUserHistory(1, 20) : Promise.resolve({ success: true, data: [] }),
         ]);
         if (cancelled) return;
-        if (revRes.success) setReviewers(revRes.data);
+        if (revRes.success) {
+          setReviewers(revRes.data);
+          setPagination(revRes.pagination || null);
+        }
         if (libRes.success) {
           setLibraryIds(new Set(libRes.data.map((r) => r._id)));
         }
@@ -290,6 +295,31 @@ const AllReviewers = () => {
                 </div>
               );
             })}
+          </div>
+        )}
+        {!loading && pagination && pagination.page < pagination.pages && (
+          <div className="flex justify-center mt-8">
+            <button
+              type="button"
+              disabled={loadingMore}
+              onClick={async () => {
+                setLoadingMore(true);
+                try {
+                  const res = await reviewerAPI.getAll(pagination.page + 1, 50);
+                  if (res.success) {
+                    setReviewers((prev) => [...prev, ...res.data]);
+                    setPagination(res.pagination || null);
+                  }
+                } catch (err) {
+                  console.error('Load more failed:', err);
+                } finally {
+                  setLoadingMore(false);
+                }
+              }}
+              className="font-inter font-semibold text-[14px] text-[#421A83] py-3 px-6 rounded-[8px] border border-[#6E43B9] bg-white hover:bg-[#F5F4FF] transition-colors disabled:opacity-50"
+            >
+              {loadingMore ? 'Loading...' : 'Load More'}
+            </button>
           </div>
         )}
       </main>
