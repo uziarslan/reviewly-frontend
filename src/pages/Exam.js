@@ -4,7 +4,7 @@ import DashNav from '../components/DashNav';
 import { ExamTimeInfoIcon } from '../components/Icons';
 import ExamSkeleton from '../components/skeletons/ExamSkeleton';
 import Modal from '../components/Modal';
-import { examAPI, reviewerAPI } from '../services/api';
+import { examAPI, reviewerAPI, trialAPI } from '../services/api';
 
 import { trackExamStarted, trackExamCompleted } from '../services/analytics';
 
@@ -19,11 +19,18 @@ function secondsToTimeStr(totalSec) {
 
 const OPTION_LABELS = ['A', 'B', 'C', 'D'];
 
-function Exam() {
+function Exam({ isTrial = false }) {
   const { id } = useParams(); // reviewer id
   const navigate = useNavigate();
   const location = useLocation();
-  const fromLibrary = new URLSearchParams(location.search).get('from') === 'library';
+  const fromLibrary = !isTrial && new URLSearchParams(location.search).get('from') === 'library';
+
+  // API adapter: use trial endpoints when in trial mode
+  const api = isTrial
+    ? { start: trialAPI.start, saveAnswer: trialAPI.saveAnswer, pause: trialAPI.pause, submit: trialAPI.submit }
+    : { start: examAPI.start, saveAnswer: examAPI.saveAnswer, pause: examAPI.pause, submit: examAPI.submit };
+  const beaconPath = isTrial ? 'trial-assessment' : 'exams';
+  const resultsPath = isTrial ? '/trial/results' : '/dashboard/results';
 
   // Exam data from API
   const [attemptId, setAttemptId] = useState(null);
@@ -68,7 +75,7 @@ function Exam() {
     setSaveStatus('saving');
     try {
       for (const [questionIndexStr, selectedAnswer] of entries) {
-        await examAPI.saveAnswer(attemptId, parseInt(questionIndexStr, 10), selectedAnswer);
+        await api.saveAnswer(attemptId, parseInt(questionIndexStr, 10), selectedAnswer);
       }
       setSaveStatus('saved');
       setTimeout(() => setSaveStatus(null), 2000);
@@ -85,12 +92,16 @@ function Exam() {
       try {
         // Fetch reviewer info for display
         const [examRes, revRes] = await Promise.all([
-          examAPI.start(id),
-          reviewerAPI.getById(id),
+          api.start(id),
+          isTrial ? Promise.resolve({ success: false }) : reviewerAPI.getById(id),
         ]);
         if (cancelled) return;
 
         if (revRes.success) setReviewer(revRes.data);
+        // For trial, build minimal reviewer from location state
+        if (isTrial && !revRes.success) {
+          setReviewer({ _id: id, title: location.state?.reviewerTitle || 'CSE Assessment', type: 'trial_assessment' });
+        }
 
         if (examRes.success) {
           const data = examRes.data;
@@ -156,7 +167,7 @@ function Exam() {
       if (remaining <= 0) {
         setTimeUp(true);
         if (attemptId) {
-          flushPendingAnswers().then(() => examAPI.submit(attemptId, 0).catch(() => {}));
+          flushPendingAnswers().then(() => api.submit(attemptId, 0).catch(() => {}));
         }
         return true;
       }
@@ -182,7 +193,7 @@ function Exam() {
       const token = localStorage.getItem('reviewly_token');
       if (!token) return;
       const apiBase = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-      const url = `${apiBase}/exams/attempts/${attemptId}/beacon`;
+      const url = `${apiBase}/${beaconPath}/attempts/${attemptId}/beacon`;
       const body = JSON.stringify({ token, answers: pending });
       navigator.sendBeacon(url, new Blob([body], { type: 'application/json' }));
     };
@@ -278,12 +289,16 @@ function Exam() {
     if (!attemptId) return;
     try {
       await flushPendingAnswers();
-      await examAPI.pause(attemptId, getRemainingSecondsNow(), currentIndex);
+      await api.pause(attemptId, getRemainingSecondsNow(), currentIndex);
     } catch (err) {
       console.error('Pause failed:', err);
     }
     setShowPauseModal(false);
-    navigate(`/dashboard/exam/${id}${fromLibrary ? '?from=library' : ''}`);
+    if (isTrial) {
+      navigate('/dashboard/all-reviewers');
+    } else {
+      navigate(`/dashboard/exam/${id}${fromLibrary ? '?from=library' : ''}`);
+    }
   };
 
   const handleResetExam = async () => {
@@ -294,12 +309,12 @@ function Exam() {
       debounceTimerRef.current = null;
     }
     try {
-      await examAPI.submit(attemptId);
+      await api.submit(attemptId);
     } catch (_) {}
     setLoadingExam(true);
     endTimeRef.current = null;
     try {
-      const examRes = await examAPI.start(id);
+      const examRes = await api.start(id);
       if (examRes.success) {
         const data = examRes.data;
         setAttemptId(data.attemptId);
@@ -329,7 +344,7 @@ function Exam() {
     try {
       await flushPendingAnswers();
       const remaining = hasTimeLimit ? getRemainingSecondsNow() : null;
-      const res = await examAPI.submit(attemptId, remaining);
+      const res = await api.submit(attemptId, remaining);
       if (res.success) {
         // Track exam completed
         trackExamCompleted(id, reviewer?.title, {
@@ -338,7 +353,7 @@ function Exam() {
           totalQuestions: totalQuestions,
         });
         setShowSubmitModal(false);
-        navigate(`/dashboard/results/${attemptId}${fromLibrary ? '?from=library' : ''}`);
+        navigate(`${resultsPath}/${attemptId}${!isTrial && fromLibrary ? '?from=library' : ''}`);
       }
     } catch (err) {
       console.error('Submit failed:', err);
@@ -350,7 +365,7 @@ function Exam() {
 
   const handleViewResults = () => {
     if (!attemptId) return;
-    navigate(`/dashboard/results/${attemptId}${fromLibrary ? '?from=library' : ''}`);
+    navigate(`${resultsPath}/${attemptId}${!isTrial && fromLibrary ? '?from=library' : ''}`);
   };
 
   if (loadingExam) return <ExamSkeleton />;

@@ -97,6 +97,31 @@ export const sharedAPI = {
       .then((r) => r.json()),
 };
 
+// ── Trial Assessment ──
+export const trialAPI = {
+  getStatus: () => apiFetch("/trial-assessment/status"),
+  getReviewers: () => apiFetch("/trial-assessment/reviewers"),
+  skip: () => apiFetch("/trial-assessment/skip", { method: "POST" }),
+  start: (reviewerId) =>
+    apiFetch(`/trial-assessment/${reviewerId}/start`, { method: "POST" }),
+  saveAnswer: (attemptId, questionIndex, selectedAnswer) =>
+    apiFetch(`/trial-assessment/attempts/${attemptId}/answer`, {
+      method: "PUT",
+      body: { questionIndex, selectedAnswer },
+    }),
+  pause: (attemptId, remainingSeconds, currentIndex) =>
+    apiFetch(`/trial-assessment/attempts/${attemptId}/pause`, {
+      method: "PUT",
+      body: { remainingSeconds, currentIndex },
+    }),
+  submit: (attemptId) =>
+    apiFetch(`/trial-assessment/attempts/${attemptId}/submit`, { method: "POST" }),
+  abandon: (attemptId) =>
+    apiFetch(`/trial-assessment/attempts/${attemptId}/abandon`, { method: "POST" }),
+  getResult: (attemptId) =>
+    apiFetch(`/trial-assessment/attempts/${attemptId}/result`),
+};
+
 // ── Support ──
 export const supportAPI = {
   submitContact: (data) =>

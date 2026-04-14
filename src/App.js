@@ -19,6 +19,8 @@ import Exam from './pages/Exam';
 import ExamResultsLoading from './pages/ExamResultsLoading';
 import ExamReview from './pages/ExamReview';
 import ShareResult from './pages/ShareResult';
+import TrialAssessment from './pages/TrialAssessment';
+import TrialResult from './pages/TrialResult';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 import { AOS_CONFIG } from './config/aos';
@@ -41,6 +43,11 @@ function App() {
         <Route path="/refund" element={<Refund />} />
         <Route path="/pricing/upgrade" element={<UpgradeToPremium />} />
         <Route path="/share/:shareToken" element={<ShareResult />} />
+
+        {/* Trial assessment flow (shown once for new/existing users) */}
+        <Route path="/trial" element={<ProtectedRoute skipTrialGate><TrialAssessment /></ProtectedRoute>} />
+        <Route path="/trial/exam/:id" element={<ProtectedRoute skipTrialGate><Exam isTrial /></ProtectedRoute>} />
+        <Route path="/trial/results/:attemptId" element={<ProtectedRoute skipTrialGate><TrialResult /></ProtectedRoute>} />
 
         {/* Protected dashboard routes */}
         <Route path="/dashboard" element={<ProtectedRoute><Navigate to="/dashboard/all-reviewers" replace /></ProtectedRoute>} />
