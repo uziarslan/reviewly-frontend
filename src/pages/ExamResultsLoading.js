@@ -10,6 +10,8 @@ import {
   ClericalAbilityLogoIcon,
   NumericalAbilityLogoIcon,
   GeneralInformationLogoIcon,
+  RulerIcon,
+  ChartPieIcon
 } from '../components/Icons';
 import { examAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -41,64 +43,92 @@ const SectionLogoByName = ({ sectionName, className = 'w-[22px] h-[22px]' }) => 
 /** Semi-circle speedometer gauge rendered as an inline SVG. */
 const SemiCircleGauge = ({ percentage }) => {
   const pct = Math.min(100, Math.max(0, Number(percentage) || 0));
-  const W = 220;
-  const cx = W / 2;
-  const cy = 100; // y coordinate of the arc's base (centre of the full circle)
-  const r = 88;
-  const sw = 13; // stroke width
 
-  const toRad = (deg) => (deg * Math.PI) / 180;
+  // The gauge is a full circle (320×320) clipped to its top half (320×160).
+  // Circle centre sits at the bottom-centre of the visible area.
+  const outerR = 160;                               // half of 320px container width
+  const trackW = 15;                                // ring thickness in px
+  const midR = outerR - trackW / 2;               // 152.5 — for handle placement
+  const innerPct = ((outerR - trackW) / outerR * 100).toFixed(3); // 90.625%
 
-  // Upper semicircle: from left (cx-r, cy) counter-clockwise (sweep=0) to right (cx+r, cy)
-  const startX = cx - r;
-  const endX = cx + r;
+  const progressDeg = (pct / 100) * 180;
+  const pd = progressDeg.toFixed(2);
 
-  // Progress end point: angle decreases from 180° (0%) to 0° (100%)
+  // Handle position as % of the visible 320×160 area.
+  // Circle centre is at (160, 160) in that space.
+  const toRad = (d) => (d * Math.PI) / 180;
   const angle = 180 - (pct / 100) * 180;
-  const px = cx + r * Math.cos(toRad(angle));
-  const py = cy - r * Math.sin(toRad(angle));
+  const handleX = outerR + midR * Math.cos(toRad(angle));
+  const handleY = outerR - midR * Math.sin(toRad(angle));
 
-  const H = cy + sw / 2 + 4;
+  // Two-layer background:
+  //  Bottom: smooth colour gradient across the full 180° arc.
+  //          Red → Orange → Green with soft blending at every transition.
+  //  Top:    conic mask — transparent over [0, progressDeg] so the colour shows through,
+  //          #E5E7EB over the remaining track, white over the bottom half.
+  const colorLayer = `conic-gradient(from -90deg,
+    #9F0B1D   0deg,
+    #C95B2A  40deg,
+    #FFA153  80deg,
+    #FFC170 100deg,
+    #8DC96A 130deg,
+    #06A561 180deg,
+    white   180deg 360deg)`;
 
-  const dotColor = pct >= 75 ? '#4ADE80' : pct >= 50 ? '#FBBF24' : '#F87171';
+  const maskConic = pct <= 0
+    ? `conic-gradient(from -90deg, #E5E7EB 0deg, #E5E7EB 180deg, white 180deg, white 360deg)`
+    : `conic-gradient(from -90deg, transparent 0deg, transparent ${pd}deg, #E5E7EB ${pd}deg, #E5E7EB 180deg, white 180deg, white 360deg)`;
+
+  const bg = `${maskConic}, ${colorLayer}`;
 
   return (
-    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} aria-hidden="true">
-      <defs>
-        {/* Gradient aligned to the arc's x extent */}
-        <linearGradient id="scoreGaugeGrad" x1={startX} y1="0" x2={endX} y2="0" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#F87171" />
-          <stop offset="40%" stopColor="#FB923C" />
-          <stop offset="70%" stopColor="#FBBF24" />
-          <stop offset="100%" stopColor="#4ADE80" />
-        </linearGradient>
-      </defs>
+    <div className="relative w-full" style={{ maxWidth: "240px" }}>
+      {/* paddingTop 50% locks height = half the width — always a perfect semicircle */}
+      <div className="relative w-full overflow-hidden" style={{ paddingTop: '50%' }}>
 
-      {/* Track */}
-      <path
-        d={`M ${startX} ${cy} A ${r} ${r} 0 0 0 ${endX} ${cy}`}
-        fill="none"
-        stroke="#E5E7EB"
-        strokeWidth={sw}
-        strokeLinecap="round"
-      />
+        {/* Full circle; overflow-hidden on parent reveals only the top 160px */}
+        <div
+          className="absolute inset-x-0 top-0"
+          style={{ height: '200%', borderRadius: '50%', background: bg }}
+        >
+          {/* Donut hole — white inner circle creates the ring effect */}
+          <div
+            className="absolute rounded-full bg-white"
+            style={{
+              width: `${innerPct}%`,
+              aspectRatio: '1',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+            }}
+          />
+        </div>
 
-      {/* Progress arc */}
-      {pct > 0 && (
-        <path
-          d={`M ${startX} ${cy} A ${r} ${r} 0 0 0 ${px} ${py}`}
-          fill="none"
-          stroke="url(#scoreGaugeGrad)"
-          strokeWidth={sw}
-          strokeLinecap="round"
-        />
-      )}
+        {/* Handle at the arc tip — border colour matches the current zone */}
+        {pct > 0 && (
+          <div
+            className="absolute rounded-full"
+            style={{
+              width: 16,
+              height: 16,
+              background: '#ffffff',
+              border: `3px solid ${pct <= 33.33 ? '#9F0B1D' : pct <= 66.66 ? '#FFA153' : '#06A561'}`,
+              left: `${(handleX / (outerR * 2)) * 100}%`,
+              top: `${(handleY / outerR) * 100}%`,
+              transform: 'translate(-50%, -50%)',
+            }}
+          />
+        )}
 
-      {/* Progress dot */}
-      {pct > 0 && (
-        <circle cx={px} cy={py} r={sw * 0.58} fill={dotColor} />
-      )}
-    </svg>
+        {/* Percentage — floats in the open bowl near the bottom */}
+        <div className="absolute inset-x-0 bottom-0 flex justify-center">
+          <span className="font-inter font-medium text-[#232027] text-[38px]">
+            {percentage}%
+          </span>
+        </div>
+
+      </div>
+    </div>
   );
 };
 
@@ -294,27 +324,24 @@ const ExamResultsLoading = () => {
                 return (
                   <div
                     key={i}
-                    className={`flex items-center gap-[16px] p-[16px] rounded-[12px] border transition-all duration-300 ${
-                      stepActive
-                        ? 'border-[#E5E7EB] bg-white shadow-sm'
-                        : stepCompleted
+                    className={`flex items-center gap-[16px] p-[16px] rounded-[12px] border transition-all duration-300 ${stepActive
+                      ? 'border-[#E5E7EB] bg-white shadow-sm'
+                      : stepCompleted
                         ? 'border-[#E5E7EB] bg-white'
                         : 'border-[#F3F4F6] bg-[#FAFAFA]'
-                    }`}
+                      }`}
                   >
                     <step.Icon state={iconState} />
                     <div className="flex-1 min-w-0">
                       <h4
-                        className={`font-inter font-semibold text-[15px] leading-[20px] transition-colors duration-300 ${
-                          stepActive || stepCompleted ? 'text-[#1A1A2E]' : 'text-[#B0A3CC]'
-                        }`}
+                        className={`font-inter font-semibold text-[15px] leading-[20px] transition-colors duration-300 ${stepActive || stepCompleted ? 'text-[#1A1A2E]' : 'text-[#B0A3CC]'
+                          }`}
                       >
                         {step.title}
                       </h4>
                       <p
-                        className={`font-inter font-normal text-[13px] leading-[18px] mt-[2px] transition-colors duration-300 ${
-                          stepActive || stepCompleted ? 'text-[#6B7280]' : 'text-[#D1D5DB]'
-                        }`}
+                        className={`font-inter font-normal text-[13px] leading-[18px] mt-[2px] transition-colors duration-300 ${stepActive || stepCompleted ? 'text-[#6B7280]' : 'text-[#D1D5DB]'
+                          }`}
                       >
                         {step.description}
                       </p>
@@ -377,58 +404,53 @@ const ExamResultsLoading = () => {
       <DashNav />
       <main className={`${MAIN_CLASSES} pt-[24px] pb-[40px]`}>
         {breadcrumb}
-        <h1 className="font-inter font-medium text-[#45464E] text-[20px] mb-[20px]" data-aos="fade-up" data-aos-duration="400" data-aos-delay="25">{title}</h1>
-
         {/* ── Score Overview Card ───────────────────────────────────────── */}
         <section
-          className="bg-white rounded-[16px] px-[24px] py-[28px] sm:px-[32px] sm:py-[32px] mb-[16px]"
+          className="bg-white rounded-[12px] px-[24px] py-[24px] mb-[24px] max-w-[840px] mx-auto"
           data-aos="fade-up" data-aos-duration="400" data-aos-delay="50"
         >
           {/* Card header */}
-          <div className="flex items-start justify-between gap-4 mb-[28px]">
-            <h2 className="font-inter font-semibold text-[17px] text-[#1A1A2E] leading-snug">{title}</h2>
+          <div className="flex items-start justify-between gap-4 mb-[28px] items-center">
+            <h2 className="font-inter font-bold text-[16px] text-[#45464E] leading-snug">{title}</h2>
             <button
               type="button"
               onClick={handleOpenShare}
-              className="shrink-0 flex items-center gap-[6px] font-inter font-normal text-[13px] text-[#45464E] border border-[#D1D5DB] bg-white hover:bg-gray-50 transition-colors py-[7px] px-[14px] rounded-[8px]"
+              className="shrink-0 flex items-center gap-[6px] font-inter font-regular text-[14px] text-[#6C737F] border-[0.5px] border-[#6C737F] bg-white hover:bg-gray-50 transition-colors py-[8px] px-[12px] rounded-[8px]"
             >
-              <ShareOutIcon className="w-[15px] h-[15px]" />
+              <ShareOutIcon className="w-[16px] h-[16px]" />
               Share
             </button>
           </div>
 
           {/* Gauge + Stats */}
-          <div className="flex flex-col md:flex-row gap-[32px] md:gap-[48px]">
+          <div className="flex flex-col md:flex-row gap-[20px] md:gap-[24px] items-center">
             {/* Left: gauge */}
-            <div className="flex flex-col items-center md:w-[240px] shrink-0">
+            <div className="flex flex-col items-center w-full max-w-[320px] shrink-0">
               <SemiCircleGauge percentage={overallPercentage} />
-              <p className="font-inter font-bold text-[32px] text-[#1A1A2E] leading-none -mt-[6px]">
-                {overallPercentage}%
-              </p>
-              <p className="font-inter font-normal text-[13px] text-[#6B7280] mt-[6px]">Exam Score</p>
-              <p className="font-inter font-normal text-[11px] text-[#9CA3AF] mt-[4px] text-center max-w-[180px]">
+              <p className="font-inter font-regular text-[14px] text-[#0F172ABF]">Exam Score</p>
+              <p className="font-inter font-regular text-[14px] text-[#45464E80] mt-[4px] text-center max-w-[261px]">
                 This score is for this exam attempt only
               </p>
             </div>
 
             {/* Right: stats + status message */}
-            <div className="flex-1 min-w-0">
-              <div className="divide-y divide-[#F3F4F6]">
+            <div className="flex-1 min-w-0 max-w-[448px] w-full">
+              <div className="divide-y divide-[#181D1F1A]">
                 <div className="flex items-center justify-between py-[13px]">
-                  <span className="font-inter font-normal text-[14px] text-[#6B7280]">Exam Score</span>
-                  <span className="font-inter font-semibold text-[14px] text-[#1A1A2E]">{overallPercentage}%</span>
+                  <span className="font-inter font-regular text-[14px] text-[#181D1F]">Mock Exam Score</span>
+                  <span className="font-inter font-regular text-[14px] text-[#181D1F]">{overallPercentage}%</span>
                 </div>
                 <div className="flex items-center justify-between py-[13px]">
-                  <span className="font-inter font-normal text-[14px] text-[#6B7280]">Correct Items</span>
-                  <span className="font-inter font-semibold text-[14px] text-[#1A1A2E]">{totalCorrect} / {result.totalItems}</span>
+                  <span className="font-inter font-regular text-[14px] text-[#181D1F]">Correct Items</span>
+                  <span className="font-inter font-regular text-[14px] text-[#181D1F]">{totalCorrect} / {result.totalItems}</span>
                 </div>
                 <div className="flex items-center justify-between py-[13px]">
-                  <span className="font-inter font-normal text-[14px] text-[#6B7280]">Status</span>
-                  <span className={`font-inter font-semibold text-[14px] ${readiness.textColor}`}>{readiness.label}</span>
+                  <span className="font-inter font-regular text-[14px] text-[#181D1F]">Status</span>
+                  <span className="font-inter font-regular text-[14px] text-[#181D1F]">{readiness.label}</span>
                 </div>
                 <div className="flex items-center justify-between py-[13px]">
-                  <span className="font-inter font-normal text-[14px] text-[#6B7280]">Total Time</span>
-                  <span className="font-inter font-semibold text-[14px] text-[#1A1A2E]">{duration}</span>
+                  <span className="font-inter font-regular text-[14px] text-[#181D1F]">Total Time</span>
+                  <span className="font-inter font-regular text-[14px] text-[#181D1F]">{duration}</span>
                 </div>
               </div>
 
@@ -446,38 +468,38 @@ const ExamResultsLoading = () => {
 
         {/* ── Detailed Exam Breakdown Card ─────────────────────────────── */}
         <section
-          className="bg-white rounded-[16px] px-[24px] py-[28px] sm:px-[32px] sm:py-[32px] mb-[16px]"
+          className="bg-white rounded-[12px] px-[24px] py-[24px] mb-[24px] max-w-[840px] mx-auto"
           data-aos="fade-up" data-aos-duration="400" data-aos-delay="75"
         >
-          <h3 className="font-inter font-semibold text-[18px] text-[#1A1A2E] mb-[4px]">Detailed Exam Breakdown</h3>
-          <p className="font-inter font-normal text-[14px] text-[#6B7280] mb-[20px]">Your performance breakdown for this exam attempt.</p>
+          <h3 className="font-inter font-bold text-[16px] text-[#45464E] mb-[8px]">Detailed Exam Breakdown</h3>
+          <p className="font-inter font-regular text-[14px] text-[#0F172ABF] mb-[24px]">Your performance breakdown for this exam attempt.</p>
 
           <div className="overflow-x-auto mb-[28px]">
             <table className="w-full font-inter text-[14px] border-collapse">
               <thead>
-                <tr className="bg-[#F9FAFB] border-b border-[#E5E7EB]">
+                <tr className="border-b border-[#181D1F26]" style={{ background: "linear-gradient(0deg, #FAFAFB, #FAFAFB),linear-gradient(0deg, rgba(0, 0, 0, 0.02), rgba(0, 0, 0, 0.02))" }}>
                   {['Section', 'Items', 'Correct', 'Incorrect', 'Unanswered', 'Your Score'].map((h) => (
-                    <th key={h} className="text-left py-[11px] px-[14px] font-medium text-[#6B7280] text-[13px] whitespace-nowrap">{h}</th>
+                    <th key={h} className="text-left py-[11px] px-[14px] font-bold text-[#45464E] whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {breakdown.map((row, i) => (
-                  <tr key={i} className="border-b border-[#F3F4F6] hover:bg-[#FAFAFA] transition-colors">
-                    <td className="py-[12px] px-[14px] text-[#45464E]">{capitalize(row.section)}</td>
-                    <td className="py-[12px] px-[14px] text-[#45464E]">{row.totalItems}</td>
-                    <td className="py-[12px] px-[14px] text-[#45464E]">{row.correct}</td>
-                    <td className="py-[12px] px-[14px] text-[#45464E]">{row.incorrect}</td>
-                    <td className="py-[12px] px-[14px] text-[#45464E]">{row.unanswered}</td>
-                    <td className="py-[12px] px-[14px] font-semibold text-[#45464E]">{row.score} %</td>
+                  <tr key={i} className="border-b border-[#181D1F1A] hover:bg-[#FAFAFA] transition-colors">
+                    <td className="py-[12px] px-[14px] text-[#181D1F]">{capitalize(row.section)}</td>
+                    <td className="py-[12px] px-[14px] text-[#181D1F]">{row.totalItems}</td>
+                    <td className="py-[12px] px-[14px] text-[#181D1F]">{row.correct}</td>
+                    <td className="py-[12px] px-[14px] text-[#181D1F]">{row.incorrect}</td>
+                    <td className="py-[12px] px-[14px] text-[#181D1F]">{row.unanswered}</td>
+                    <td className="py-[12px] px-[14px] text-[#181D1F]">{row.score} %</td>
                   </tr>
                 ))}
-                <tr className="border-t-2 border-[#E5E7EB]">
-                  <td className="py-[12px] px-[14px] font-semibold text-[#1A1A2E]">Total</td>
-                  <td className="py-[12px] px-[14px] font-semibold text-[#1A1A2E]">{result.totalItems}</td>
-                  <td className="py-[12px] px-[14px] font-semibold text-[#1A1A2E]">{totalCorrect}</td>
-                  <td className="py-[12px] px-[14px] font-semibold text-[#1A1A2E]">{totalIncorrect}</td>
-                  <td className="py-[12px] px-[14px] font-semibold text-[#1A1A2E]">{totalUnanswered}</td>
+                <tr className="border-b border-[#181D1F1A]">
+                  <td className="py-[12px] px-[14px] font-bold text-[#1A1A2E]">Total</td>
+                  <td className="py-[12px] px-[14px] font-bold text-[#1A1A2E]">{result.totalItems}</td>
+                  <td className="py-[12px] px-[14px] font-bold text-[#1A1A2E]">{totalCorrect}</td>
+                  <td className="py-[12px] px-[14px] font-bold text-[#1A1A2E]">{totalIncorrect}</td>
+                  <td className="py-[12px] px-[14px] font-bold text-[#1A1A2E]">{totalUnanswered}</td>
                   <td className={`py-[12px] px-[14px] font-bold ${passed ? 'text-[#16A34A]' : 'text-[#DC2626]'}`}>{overallPercentage} %</td>
                 </tr>
               </tbody>
@@ -489,7 +511,7 @@ const ExamResultsLoading = () => {
             <button
               type="button"
               onClick={() => navigate(backUrl)}
-              className="font-inter font-bold text-[14px] text-[#421A83] bg-[#FFC92A] hover:opacity-95 transition-opacity py-[11px] px-[20px] rounded-[8px]"
+              className="font-inter font-regular text-[14px] text-[#421A83] bg-[#FFC92A] hover:opacity-95 transition-opacity py-[11px] px-[20px] rounded-[8px]"
             >
               Go to Dashboard
             </button>
@@ -500,8 +522,27 @@ const ExamResultsLoading = () => {
             >
               Review Answers
             </button>
-            {retakeMockRec && (() => {
-              const { showUpgrade, handleClick } = getRecAction(retakeMockRec);
+            {(() => {
+              if (retakeMockRec) {
+                const { showUpgrade, handleClick } = getRecAction(retakeMockRec);
+                return (
+                  <button
+                    type="button"
+                    onClick={handleClick}
+                    className="font-inter font-normal text-[14px] text-[#45464E] border border-[#D1D5DB] bg-white hover:bg-gray-50 transition-colors py-[11px] px-[20px] rounded-[8px] flex items-center gap-[6px]"
+                  >
+                    {showUpgrade && <LockIcon className="w-[14px] h-[14px] shrink-0" />}
+                    Retake Full Mock
+                  </button>
+                );
+              }
+              const reviewer = attempt.reviewer;
+              const reviewerId = reviewer?._id;
+              if (!reviewerId) return null;
+              const showUpgrade = !checkAccess(reviewer);
+              const handleClick = () => showUpgrade
+                ? navigate('/dashboard/settings/update-subscription')
+                : navigate(`/dashboard/exam/${reviewerId}${fromLibrary ? '?from=library' : ''}`);
               return (
                 <button
                   type="button"
@@ -518,16 +559,15 @@ const ExamResultsLoading = () => {
               onClick={handleOpenShare}
               className="font-inter font-normal text-[14px] text-[#45464E] border border-[#D1D5DB] bg-white hover:bg-gray-50 transition-colors py-[11px] px-[20px] rounded-[8px] flex items-center gap-[7px]"
             >
-              <ShareOutIcon className="w-[15px] h-[15px]" />
-              Share Score Card
+              Share Mock Score Card
             </button>
           </div>
 
-          <p className="font-inter font-normal text-[13px] text-[#9CA3AF]">
+          <p className="font-inter font-normal text-[14px] text-[#45464E80]">
             See your topic-level breakdown + Day 1 task on your Dashboard.
           </p>
           {!passed && passingScore > 0 && (
-            <p className="font-inter font-normal text-[13px] text-[#9CA3AF] mt-[2px]">
+            <p className="font-inter font-normal text-[14px] text-[#45464E80] mt-[4px]">
               Passing target: {passingScore} correct ({passingThreshold}%)
             </p>
           )}
@@ -536,37 +576,35 @@ const ExamResultsLoading = () => {
         {/* ── Recommended Focus Card ────────────────────────────────────── */}
         {!passed && lowestSection && (
           <section
-            className="bg-white rounded-[16px] px-[24px] py-[28px] sm:px-[32px] sm:py-[32px]"
+            className="bg-white rounded-[12px] px-[24px] py-[24px] mb-[24px] max-w-[840px] mx-auto"
             data-aos="fade-up" data-aos-duration="400" data-aos-delay="100"
           >
-            <h3 className="font-inter font-semibold text-[18px] text-[#1A1A2E] mb-[4px]">Recommended Focus</h3>
-            <p className="font-inter font-normal text-[14px] text-[#6B7280] mb-[24px]">
+            <h3 className="font-inter font-bold text-[16px] text-[#45464E] mb-[8px]">Recommended Focus</h3>
+            <p className="font-inter font-regular text-[14px] text-[#0F172ABF] mb-[16px]">
               Improving this section will raise your next mock score the fastest.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-[20px] sm:gap-[32px]">
+            <div className="flex flex-col sm:flex-row gap-[16px]">
               {/* Section to focus */}
-              <div className="flex items-center gap-[14px]">
-                <div className="w-[44px] h-[44px] rounded-[10px] bg-[#F5F4FF] flex items-center justify-center shrink-0">
+              <div className="flex items-center gap-[16px] max-w-[248px] w-full">
+                <div className="w-[48px] h-[48px] rounded-[8px] bg-[#F6F4F9] flex items-center justify-center shrink-0">
                   <SectionLogoByName sectionName={lowestSection.section} />
                 </div>
                 <div>
-                  <p className="font-inter font-semibold text-[15px] text-[#1A1A2E]">{capitalize(lowestSection.section)}</p>
-                  <p className="font-inter font-normal text-[13px] text-[#6B7280]">Section to focus</p>
+                  <p className="font-inter font-semibold text-[14px] text-[#0F172A]">{capitalize(lowestSection.section)}</p>
+                  <p className="font-inter font-normal text-[14px] text-[#45464E]">Section to focus</p>
                 </div>
               </div>
 
               {/* Items to pass */}
               {gapToPass > 0 && (
-                <div className="flex items-center gap-[14px]">
-                  <div className="w-[44px] h-[44px] rounded-[10px] bg-[#FFF9EC] flex items-center justify-center shrink-0">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                      <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m-6 9l2 2 4-4" stroke="#D97706" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
+                <div className="flex items-center gap-[16px] max-w-[248px] w-full">
+                  <div className="w-[48px] h-[48px] rounded-[8px] bg-[#F6F4F9] flex items-center justify-center shrink-0">
+                    <RulerIcon className="w-[24px] h-[24px] rotate-[7.8deg]" />
                   </div>
                   <div>
-                    <p className="font-inter font-semibold text-[15px] text-[#1A1A2E]">{gapToPass} item{gapToPass !== 1 ? 's' : ''}</p>
-                    <p className="font-inter font-normal text-[13px] text-[#6B7280]">To pass</p>
+                    <p className="font-inter font-semibold text-[14px] text-[#0F172A]">{gapToPass} item{gapToPass !== 1 ? 's' : ''}</p>
+                    <p className="font-inter font-normal text-[14px] text-[#45464E]">To pass</p>
                   </div>
                 </div>
               )}
@@ -574,11 +612,8 @@ const ExamResultsLoading = () => {
               {/* Section weight */}
               {focusSectionWeight > 0 && (
                 <div className="flex items-center gap-[14px]">
-                  <div className="w-[44px] h-[44px] rounded-[10px] bg-[#F0FDF4] flex items-center justify-center shrink-0">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                      <circle cx="12" cy="12" r="10" stroke="#16A34A" strokeWidth="1.5" />
-                      <path d="M12 2a10 10 0 0 1 10 10H12V2Z" fill="#16A34A" fillOpacity="0.2" stroke="#16A34A" strokeWidth="1.5" strokeLinejoin="round" />
-                    </svg>
+                  <div className="w-[48px] h-[48px] rounded-[8px] bg-[#F6F4F9] flex items-center justify-center shrink-0">
+                    <ChartPieIcon className="w-[24px] h-[24px]" />
                   </div>
                   <div>
                     <p className="font-inter font-semibold text-[15px] text-[#1A1A2E]">{focusSectionWeight}%</p>
@@ -588,7 +623,7 @@ const ExamResultsLoading = () => {
               )}
             </div>
 
-            <p className="font-inter font-normal text-[13px] text-[#9CA3AF] mt-[20px]">
+            <p className="font-inter font-normal text-[14px] text-[#45464E80] mt-[24px]">
               This is what your Sprint Plan will prioritize first.
             </p>
           </section>

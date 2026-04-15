@@ -380,7 +380,7 @@ const ExamDetails = () => {
                     </button>
                     <button
                       type="button"
-                      onClick={() => navigate(`/dashboard/review/${completedData.attemptId}${fromLibrary ? '?from=library' : ''}`)}
+                      onClick={() => navigate(`/dashboard/results/${completedData.attemptId}${fromLibrary ? '?from=library' : ''}`)}
                       className="h-[48px] font-inter font-regular text-[16px] text-[#737373] py-[11px] px-10 rounded-[4px] border border-[#737373] bg-white hover:bg-gray-50 transition-colors"
                     >
                       View Previous Result

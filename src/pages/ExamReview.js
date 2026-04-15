@@ -94,8 +94,8 @@ function ExamReview() {
 
   const sectionCoverage = result.sectionScores?.length
     ? result.sectionScores
-        .map(s => `${formatSection(s.section)} ${Math.round((s.totalItems / totalItems) * 100)}%`)
-        .join(', ')
+      .map(s => `${formatSection(s.section)} ${Math.round((s.totalItems / totalItems) * 100)}%`)
+      .join(', ')
     : '';
 
   const handlePrev = () => {
@@ -189,15 +189,13 @@ function ExamReview() {
                       </span>
                       <span className="font-inter text-[15px] text-[#45464E] flex-1 leading-snug">{option}</span>
                       {showCheck && (
-                        <svg className="shrink-0" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                          <circle cx="10" cy="10" r="9" stroke="#06A561" strokeWidth="1.5" />
-                          <path d="M6 10.5L8.5 13L14 7" stroke="#06A561" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M20 6L9 17L4 12" stroke="#14B8A6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                         </svg>
                       )}
                       {showX && (
-                        <svg className="shrink-0" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                          <circle cx="10" cy="10" r="9" stroke="#F0142F" strokeWidth="1.5" />
-                          <path d="M7 7L13 13M13 7L7 13" stroke="#F0142F" strokeWidth="2" strokeLinecap="round" />
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M18 6L6 18M6 6L18 18" stroke="#F3596D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                         </svg>
                       )}
                     </div>
@@ -246,17 +244,17 @@ function ExamReview() {
               </div>
               <button
                 type="button"
-                onClick={() => navigate(`/dashboard/exam/${reviewer._id}${fromLibrary ? '?from=library' : ''}`)}
+                onClick={() => navigate(`/dashboard/results/${attemptId}${fromLibrary ? '?from=library' : ''}`)}
                 className="font-inter font-normal text-[15px] text-[#6C737F] py-2.5 px-5 rounded-[8px] border border-[#D1D5DB] bg-white hover:bg-gray-50 transition-colors"
               >
-                Close
+                Back to Results
               </button>
             </div>
           </div>
 
           {/* ── Right: Score summary + question grid ── */}
-          <div className="order-2 lg:flex-shrink-0 lg:w-[320px] w-full">
-            <div className="bg-white rounded-[16px] shadow-sm p-[24px] lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto">
+          <div className="order-2 lg:flex-shrink-0 lg:w-[404px] w-full">
+            <div className="bg-white rounded-[12px] shadow-sm p-[24px] lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto">
 
               {/* Stat rows */}
               <div className="mb-5">
@@ -280,10 +278,10 @@ function ExamReview() {
 
               {/* Score message */}
               {scoreMessage && (
-                <p className="font-inter text-[13px] font-medium text-[#45464E] mb-1">{scoreMessage}</p>
+                <p className="font-inter text-[14px] font-medium text-[#45464E] mb-[8px]">{scoreMessage}</p>
               )}
               {sectionCoverage ? (
-                <p className="font-inter text-[12px] text-[#9CA3AF] mb-5">
+                <p className="font-inter text-[14px] text-[#45464E80] mb-[24px]">
                   Weighted by section coverage: {sectionCoverage}
                 </p>
               ) : (

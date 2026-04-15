@@ -44,12 +44,13 @@ const TrialNav = ({ user }) => {
 /* ── Step progress ──────────────────────────────── */
 const StepProgress = ({ current, total }) => (
   <div className="mb-8">
-    <p className="font-inter text-[13px] text-[#9CA3AF] mb-[10px]">Step {current} of {total}</p>
-    <div className="flex gap-[6px]">
+    <p className="font-inter text-[12px] text-[#737373] mb-[16px]">Step {current} of {total}</p>
+    <div className="flex gap-[4px]">
       {Array.from({ length: total }, (_, i) => (
         <div
           key={i}
-          className={`h-[3px] rounded-full flex-1 transition-colors duration-300 ${i < current ? 'bg-[#1A1A2E]' : 'bg-[#E5E7EB]'}`}
+          className="h-[2px] rounded-[8px] flex-1 transition-colors duration-300"
+          style={i < current ? { background: 'linear-gradient(98.48deg, #8156D1 2.51%, #421983 47.46%, #4945B3 107.59%)' } : { background: '#E5E7EB' }}
         />
       ))}
     </div>
@@ -151,7 +152,7 @@ const TrialAssessment = () => {
       <div className="min-h-screen bg-[#F5F3FF] flex flex-col">
         <TrialNav user={user} />
         <main className="flex-1 flex items-center justify-center px-6 py-12">
-          <div className="w-full max-w-[560px] bg-white rounded-[20px] p-8 sm:p-10 shadow-sm">
+          <div className="w-full max-w-[560px] bg-white rounded-[12px] p-[28px] sm:py-[40px] sm:px-[32px] shadow-sm">
             <div className="flex items-center gap-3 mb-5">
               <div className="w-10 h-10 bg-[#F5F3FF] rounded-[10px] flex items-center justify-center shrink-0">
                 <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="#6E43B9" strokeWidth={2}>
@@ -165,23 +166,23 @@ const TrialAssessment = () => {
               Find out your readiness — and exactly what to improve next.
             </p>
 
-            <h2 className="font-inter font-semibold text-[14px] text-[#1A1A2E] mb-3">What to expect</h2>
-            <ul className="font-inter text-[14px] text-[#45464E] mb-5 space-y-1.5 list-disc pl-5">
+            <h2 className="font-inter font-bold text-[16px] text-[#45464E] mb-1">What to expect</h2>
+            <ul className="font-inter text-[16px] text-[#45464E] mb-3 space-y-1.5 list-disc pl-5">
               <li>50 questions</li>
               <li>About 60 minutes</li>
               <li>Timed exam</li>
               <li>Covers major subject areas</li>
             </ul>
 
-            <h2 className="font-inter font-semibold text-[14px] text-[#1A1A2E] mb-3">After the assessment, you'll get:</h2>
-            <ul className="font-inter text-[14px] text-[#45464E] mb-5 space-y-1.5 list-disc pl-5">
+            <h2 className="font-inter font-bold text-[16px] text-[#45464E] mb-1">After the assessment, you'll get:</h2>
+            <ul className="font-inter text-[16px] text-[#45464E] mb-3 space-y-1.5 list-disc pl-5">
               <li>Your readiness score</li>
               <li>Your performance by subject</li>
               <li>Your weakest topics</li>
               <li>Clear next steps</li>
             </ul>
 
-            <p className="font-inter text-[13px] text-[#9CA3AF] mb-8">
+            <p className="font-inter text-[16px] text-[#45464E] mb-[30px]">
               This is not your final score — it's your starting point.
             </p>
 
@@ -190,7 +191,7 @@ const TrialAssessment = () => {
                 type="button"
                 onClick={handleStartExam}
                 disabled={starting}
-                className="font-inter font-bold text-[14px] text-[#421A83] bg-[#FFC92A] hover:bg-[#FFD54F] py-3 px-6 rounded-[8px] transition-colors disabled:opacity-60 flex items-center gap-2"
+                className="h-[48px] flex items-center justify-center font-inter font-regular text-[16px] text-[#421A83] bg-[#FFC92A] hover:bg-[#FFD54F] py-[14.5px] px-[32px] rounded-[4px] transition-colors disabled:opacity-60 flex items-center gap-2"
               >
                 {starting ? (
                   <>
@@ -203,7 +204,7 @@ const TrialAssessment = () => {
                 type="button"
                 onClick={() => setStep(2)}
                 disabled={starting}
-                className="font-inter font-medium text-[14px] text-[#45464E] bg-white border border-[#D1D5DB] hover:bg-gray-50 py-3 px-6 rounded-[8px] transition-colors"
+                className="h-[48px] flex items-center justify-center font-inter font-regular text-[16px] text-[#737373] border border-[#737373] py-[14.5px] px-[32px] rounded-[4px] transition-colors"
               >
                 Back
               </button>
@@ -216,26 +217,26 @@ const TrialAssessment = () => {
 
   /* Steps 1 & 2 — two-column layout */
   return (
-    <div className="min-h-screen bg-[#F5F3FF] flex flex-col">
+    <div className="min-h-screen lg:h-screen bg-[#F5F3FF] flex flex-col lg:overflow-hidden">
       <TrialNav user={user} />
-      <main className="flex-1 max-w-[1440px] w-full mx-auto px-6 sm:px-8 lg:px-20 py-10 lg:py-0">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center lg:min-h-[calc(100vh-64px)]">
+      <main className="flex-1 max-w-[1440px] w-full mx-auto px-6 sm:px-8 lg:px-20 py-8 lg:py-0 lg:flex lg:items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center w-full">
 
           {/* Left — content */}
-          <div className="max-w-[460px] py-10 lg:py-0">
+          <div className="max-w-[560px]">
             <StepProgress current={step} total={2} />
 
             {step === 1 ? (
               <>
-                <h1 className="font-inter font-bold text-[28px] sm:text-[32px] lg:text-[34px] text-[#1A1A2E] leading-[1.2] mb-4">
-                  <span role="img" aria-label="wave">👋</span> Hi, {firstName}! Which Civil Service Exam are you preparing for?
+                <h1 className="font-inter font-bold text-[20px] sm:text-[24px] lg:text-[28px] text-[#45464E] leading-[1.2] mb-[32px]">
+                  <span role="img" aria-label="wave">👋🏼</span> Hi, {firstName}! Which Civil Service Exam are you preparing for?
                 </h1>
-                <p className="font-inter text-[15px] text-[#6B7280] leading-relaxed mb-8">
-                  We'll use this to match the right coverage, mock exams, and feedback for you.
+                <p className="font-inter text-[16px] text-[#45464E] leading-relaxed mb-[40px]">
+                  We’ll use this to match the right coverage, mock exams, and feedback for you.
                 </p>
 
                 {/* Type cards */}
-                <div className="flex flex-col sm:flex-row gap-4 mb-8">
+                <div className="flex flex-col sm:flex-row gap-[20px] mb-[40px]">
                   {[
                     { key: 'professional', label: 'Professional', sub: 'Higher coverage / difficulty.', Icon: ProfessionalIcon },
                     { key: 'subprofessional', label: 'Sub-Professional', sub: 'Clerical / non-prof roles.', Icon: SubProfessionalIcon },
@@ -244,16 +245,15 @@ const TrialAssessment = () => {
                       key={key}
                       type="button"
                       onClick={() => setSelectedType(key)}
-                      className={`flex-1 flex flex-col items-start gap-3 p-5 rounded-[12px] border bg-white text-left transition-all duration-200 ${
-                        selectedType === key
-                          ? 'border-[#6E43B9] shadow-[0_0_0_1px_#6E43B9]'
-                          : 'border-[#E5E7EB] hover:border-[#C4B5FD]'
-                      }`}
+                      className={`flex-1 flex flex-col items-start gap-3 p-5 rounded-[12px] border text-left transition-all duration-200 hover:border-2 hover:border-[#C4B5FD] ${selectedType === key
+                        ? 'border-2 border-[#6E43B940] bg-[#6E43B91A]'
+                        : 'bg-white'
+                        }`}
                     >
                       <Icon />
                       <div>
-                        <p className="font-inter font-semibold text-[15px] text-[#1A1A2E]">{label}</p>
-                        <p className="font-inter text-[13px] text-[#6B7280] mt-0.5">{sub}</p>
+                        <p className="font-inter font-bold text-[18px] text-[#45464E]">{label}</p>
+                        <p className="font-inter text-[14px] text-[#45464E] mt-[8px]">{sub}</p>
                       </div>
                     </button>
                   ))}
@@ -263,36 +263,38 @@ const TrialAssessment = () => {
                   type="button"
                   onClick={() => selectedType && setStep(2)}
                   disabled={!selectedType}
-                  className={`font-inter font-bold text-[14px] flex items-center gap-2 py-3 px-6 rounded-[8px] transition-all duration-200 ${
-                    selectedType
-                      ? 'bg-[#FFC92A] text-[#421A83] hover:bg-[#FFD54F] cursor-pointer'
-                      : 'bg-[#F3F4F6] text-[#9CA3AF] cursor-not-allowed'
-                  }`}
+                  className={`font-inter font-regular text-[16px] flex items-center gap-2 py-[14.5px] px-[32px] rounded-[4px] transition-all duration-200 ${selectedType
+                    ? 'bg-[#FFC92A] text-[#421A83] hover:bg-[#FFD54F] cursor-pointer'
+                    : 'bg-[#F3F4F6] text-[#9CA3AF] cursor-not-allowed'
+                    }`}
                 >
                   Continue <span aria-hidden="true">→</span>
                 </button>
 
-                <p className="font-inter text-[13px] text-[#9CA3AF] mt-4">
+                <p className="font-inter text-[14px] text-[#45464EBF] mt-[24px]">
                   You can change this later in Account Settings.
                 </p>
               </>
             ) : (
               <>
-                <h1 className="font-inter font-bold text-[28px] sm:text-[32px] lg:text-[34px] text-[#1A1A2E] leading-[1.2] mb-4">
+                <h1 className="font-inter font-bold text-[20px] sm:text-[24px] lg:text-[28px] text-[#45464E] leading-[1.2] mb-[32px]">
                   Let's check your starting point.
                 </h1>
-                <p className="font-inter text-[15px] text-[#6B7280] leading-relaxed mb-5">
+                <p className="font-inter text-[16px] text-[#45464E] leading-relaxed mb-[16px]">
                   Before you start reviewing, take the CSE Assessment (50 items).
                 </p>
+                <p className="font-inter text-[16px] text-[#45464E] leading-relaxed mb-[16px]">
+                  ⏱️ Takes around 60 minutes.
+                </p>
 
-                <p className="font-inter text-[14px] text-[#6B7280] mb-2">You'll get:</p>
-                <ul className="font-inter text-[14px] text-[#45464E] space-y-1.5 list-disc pl-5 mb-5">
+                <p className="font-inter text-[16px] text-[#45464E] mb-[16px]">You'll get:</p>
+                <ul className="font-inter text-[16px] text-[#45464E] space-y-1.5 list-disc pl-5 mb-5">
                   <li>Your readiness score</li>
-                  <li>Your weakest subjects &amp; topics</li>
+                  <li>Your weakest subjects & topics</li>
                   <li>A clear next-step plan</li>
                 </ul>
 
-                <p className="font-inter text-[14px] text-[#6B7280] mb-8">
+                <p className="font-inter text-[16px] text-[#45464E] mb-[40px]">
                   No pressure — this is just your starting point.
                 </p>
 
@@ -300,14 +302,14 @@ const TrialAssessment = () => {
                   <button
                     type="button"
                     onClick={() => setStep(3)}
-                    className="font-inter font-bold text-[14px] text-[#421A83] bg-[#FFC92A] hover:bg-[#FFD54F] py-3 px-6 rounded-[8px] transition-colors"
+                    className="h-[48px] flex items-center justify-center font-inter font-regular text-[16px] text-[#421A83] bg-[#FFC92A] hover:bg-[#FFD54F] py-[14.5px] px-[32px] rounded-[4px] transition-colors"
                   >
                     Start Assessment
                   </button>
                   <button
                     type="button"
                     onClick={handleSkip}
-                    className="font-inter font-medium text-[14px] text-[#45464E] bg-white border border-[#D1D5DB] hover:bg-gray-50 py-3 px-6 rounded-[8px] transition-colors"
+                    className="h-[48px] flex items-center justify-center font-inter font-regular text-[16px] text-[#737373] border border-[#737373] py-[14.5px] px-[32px] rounded-[4px] transition-colors"
                   >
                     Skip for now
                   </button>

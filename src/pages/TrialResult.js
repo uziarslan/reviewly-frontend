@@ -56,77 +56,76 @@ const TrialNav = ({ user }) => {
 /* ── Semi-circle gauge ── */
 const SemiCircleGauge = ({ percentage }) => {
   const pct = Math.min(100, Math.max(0, Number(percentage) || 0));
-  // Dimensions — made larger to match Figma
-  const W = 260;
-  const cx = W / 2;
-  const cy = 120;
-  const r = 104;
-  const sw = 16;
 
-  const clampedPct = Math.min(99.9, Math.max(0.1, pct));
-  // 0% = left end, 100% = right end, sweeping clockwise along top
-  const angle = Math.PI - (clampedPct / 100) * Math.PI;
+  const outerR = 160;
+  const trackW = 15;
+  const midR = outerR - trackW / 2;
+  const innerPct = ((outerR - trackW) / outerR * 100).toFixed(3);
 
-  const startX = cx - r;
-  const startY = cy;
-  const dotX = cx + r * Math.cos(angle);
-  const dotY = cy - r * Math.sin(angle);
+  const progressDeg = (pct / 100) * 180;
+  const pd = progressDeg.toFixed(2);
 
-  const dotColor =
-    pct >= 75 ? '#4ADE80' : pct >= 50 ? '#FBBF24' : '#F87171';
+  const toRad = (d) => (d * Math.PI) / 180;
+  const angle = 180 - (pct / 100) * 180;
+  const handleX = outerR + midR * Math.cos(toRad(angle));
+  const handleY = outerR - midR * Math.sin(toRad(angle));
 
-  // Height = just enough to show the arc + stroke half
-  const H = cy + sw / 2 + 2;
+  const colorLayer = `conic-gradient(from -90deg,
+    #9F0B1D   0deg,
+    #C95B2A  40deg,
+    #FFA153  80deg,
+    #FFC170 100deg,
+    #8DC96A 130deg,
+    #06A561 180deg,
+    white   180deg 360deg)`;
+
+  const maskConic = pct <= 0
+    ? `conic-gradient(from -90deg, #E5E7EB 0deg, #E5E7EB 180deg, white 180deg, white 360deg)`
+    : `conic-gradient(from -90deg, transparent 0deg, transparent ${pd}deg, #E5E7EB ${pd}deg, #E5E7EB 180deg, white 180deg, white 360deg)`;
+
+  const bg = `${maskConic}, ${colorLayer}`;
 
   return (
-    <svg
-      width={W}
-      height={H}
-      viewBox={`0 0 ${W} ${H}`}
-      aria-hidden="true"
-      style={{ overflow: 'visible' }}
-    >
-      <defs>
-        <linearGradient
-          id="gaugeGrad"
-          x1={startX}
-          y1="0"
-          x2={cx + r}
-          y2="0"
-          gradientUnits="userSpaceOnUse"
+    <div className="relative w-full" style={{ maxWidth: "240px" }}>
+      <div className="relative w-full overflow-hidden" style={{ paddingTop: '50%' }}>
+        <div
+          className="absolute inset-x-0 top-0"
+          style={{ height: '200%', borderRadius: '50%', background: bg }}
         >
-          <stop offset="0%"   stopColor="#F87171" />
-          <stop offset="40%"  stopColor="#FB923C" />
-          <stop offset="70%"  stopColor="#FBBF24" />
-          <stop offset="100%" stopColor="#4ADE80" />
-        </linearGradient>
-      </defs>
+          <div
+            className="absolute rounded-full bg-white"
+            style={{
+              width: `${innerPct}%`,
+              aspectRatio: '1',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+            }}
+          />
+        </div>
 
-      {/* Background track */}
-      <path
-        d={`M ${startX} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`}
-        fill="none"
-        stroke="#E5E7EB"
-        strokeWidth={sw}
-        strokeLinecap="round"
-      />
+        {pct > 0 && (
+          <div
+            className="absolute rounded-full"
+            style={{
+              width: 16,
+              height: 16,
+              background: '#ffffff',
+              border: `3px solid ${pct <= 33.33 ? '#9F0B1D' : pct <= 66.66 ? '#FFA153' : '#06A561'}`,
+              left: `${(handleX / (outerR * 2)) * 100}%`,
+              top: `${(handleY / outerR) * 100}%`,
+              transform: 'translate(-50%, -50%)',
+            }}
+          />
+        )}
 
-      {/* Colored progress arc */}
-      {pct > 0 && (
-        <path
-          d={`M ${startX} ${startY} A ${r} ${r} 0 0 1 ${dotX} ${dotY}`}
-          fill="none"
-          stroke="url(#gaugeGrad)"
-          strokeWidth={sw}
-          strokeLinecap="round"
-        />
-      )}
-
-      {/* Dot at tip */}
-      {pct > 0 && (
-        <circle cx={dotX} cy={dotY} r={sw * 0.65} fill={dotColor} />
-      )}
-    </svg>
+        <div className="absolute inset-x-0 bottom-0 flex justify-center">
+          <span className="font-inter font-medium text-[#232027] text-[38px]">
+            {percentage}%
+          </span>
+        </div>
+      </div>
+    </div>
   );
 };
 
@@ -318,14 +317,8 @@ const TrialResult = () => {
 
             {/* ── Gauge column ── */}
             <div className="flex flex-col items-center shrink-0 md:w-[260px]">
-              {/* SVG gauge */}
               <SemiCircleGauge percentage={overallPercentage} />
-
-              {/* Percentage — sits right below gauge, negative margin pulls it up snug */}
-              <p className="font-inter font-bold text-[36px] leading-none text-[#1A1A2E] -mt-[4px]">
-                {overallPercentage}%
-              </p>
-              <p className="font-inter font-normal text-[13px] text-[#6B7280] mt-[6px]">
+              <p className="font-inter font-normal text-[13px] text-[#6B7280] mt-[8px]">
                 Initial Readiness
               </p>
             </div>
