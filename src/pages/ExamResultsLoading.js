@@ -21,7 +21,6 @@ import MockScoreCard from '../components/MockScoreCard';
 
 const PAGE_CLASSES = 'min-h-screen bg-[#F5F4FF]';
 const MAIN_CLASSES = 'max-w-[1440px] mx-auto px-6 sm:px-8 lg:px-20';
-const SECTION_CLASSES = 'bg-[#FFFFFF] rounded-[12px] px-[24px] py-[32px] sm:px-[32px] sm:py-[40px]';
 const BREADCRUMB_LINK = 'text-[#45464E] font-inter font-normal not-italic text-[14px] hover:text-[#6E43B9] transition-colors';
 const BREADCRUMB_ACTIVE = 'text-[#6E43B9] font-inter font-normal not-italic text-[14px]';
 
@@ -213,7 +212,6 @@ const ExamResultsLoading = () => {
   }
 
   const title = attempt.reviewer?.title || 'Exam';
-  const reviewerType = attempt.reviewer?.type || 'mock';
   const breakdown = result.sectionScores || [];
   const recommendations = result.recommendedNextStep?.ctas ?? [];
   const totalCorrect = result.correct || 0;
@@ -223,20 +221,12 @@ const ExamResultsLoading = () => {
   const passingThreshold = attempt.reviewer?.examConfig?.passingThreshold || 80;
   const passingScore = result.passingScore ?? Math.ceil((passingThreshold / 100) * (result.totalItems || 0));
   const passed = result.passed;
-  const quickSummary = result.quickSummary || null;
 
   const sortedSections = [...breakdown].sort((a, b) => b.score - a.score);
   const lowestSection = sortedSections[sortedSections.length - 1] || null;
   const gapToPass = passed ? 0 : Math.max(0, passingScore - totalCorrect);
 
   const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1);
-
-  const takenAt = attempt.submittedAt
-    ? new Date(attempt.submittedAt).toLocaleString('en-US', {
-      year: 'numeric', month: 'long', day: 'numeric',
-      hour: 'numeric', minute: '2-digit', timeZoneName: 'short',
-    })
-    : '—';
 
   const durationMs = attempt.submittedAt && attempt.startedAt
     ? new Date(attempt.submittedAt) - new Date(attempt.startedAt) : 0;
@@ -247,27 +237,6 @@ const ExamResultsLoading = () => {
     ? `${durationH} hour${durationH !== 1 ? 's' : ''} ${durationM} min${durationM !== 1 ? 's' : ''}`
     : `${durationM} minute${durationM !== 1 ? 's' : ''}`;
 
-  const performanceLevel = result.performanceLevel
-    || (parseFloat(overallPercentage) >= 85 ? 'Strong' : parseFloat(overallPercentage) >= 70 ? 'Developing' : 'Needs Improvement');
-  const timeInsight = result.timeInsight || null;
-  const durationSec = Math.round(durationMs / 1000);
-  const avgTimePerQ = result.totalItems > 0 ? Math.round(durationSec / result.totalItems) : 0;
-  const pacingNote = timeInsight
-    || (totalUnanswered === 0
-      ? 'Good pacing — you answered all questions within the time limit.'
-      : totalUnanswered <= 2
-        ? `${totalUnanswered} unanswered item${totalUnanswered > 1 ? 's' : ''} suggest slight pacing adjustments may help.`
-        : `${totalUnanswered} unanswered items suggest pacing adjustments may help.`);
-
-  const sectionLabel = breakdown.length === 1 ? breakdown[0].section : title;
-  const aiFailedMessage = aiStatus === 'failed'
-    ? 'AI summary unavailable — here are your scores.'
-    : null;
-  const practiceFallbackSummary = performanceLevel === 'Strong'
-    ? `You demonstrate a strong understanding of core ${sectionLabel.toLowerCase()} concepts. Accuracy is high across question types. Consider trying the full mock exam to test your overall readiness.`
-    : performanceLevel === 'Developing'
-      ? `You demonstrate a developing understanding of core ${sectionLabel.toLowerCase()} concepts. Accuracy decreases in multi-step and application-based questions. Improving structured problem-solving and pacing will increase consistency.`
-      : `You demonstrate a developing understanding of core ${sectionLabel.toLowerCase()} concepts. Focus on multi-step and application-based questions to improve.`;
 
   const getRecAction = (rec) => {
     const reviewerId = rec.reviewer?._id || rec.reviewerId;
@@ -290,35 +259,6 @@ const ExamResultsLoading = () => {
       <span className="mx-2">›</span>
       <span className={BREADCRUMB_ACTIVE}>{title}</span>
     </nav>
-  );
-
-  const ctaButton = (rec, { showUpgrade, handleClick }, isPrimary) => (
-    <button
-      key={rec.type}
-      type="button"
-      onClick={handleClick}
-      className={`font-inter text-[14px] py-[11.5px] px-5 rounded-[8px] transition-colors flex items-center gap-2 ${isPrimary || showUpgrade
-        ? 'font-bold text-[#421A83] bg-[#FFC92A] hover:opacity-95'
-        : 'font-normal text-[#6E43B9] border border-[#6E43B9] bg-white hover:bg-gray-50'
-        }`}
-    >
-      {showUpgrade && <LockIcon className="w-[16px] h-[16px] shrink-0" />}
-      {rec.label}
-    </button>
-  );
-
-  const recommendedButtons = (
-    <div className="pt-[28px] max-w-[800px] mx-auto">
-      <h3 className="font-inter font-semibold text-[18px] text-[#45464E] mb-[16px] flex items-center gap-2">
-        <span>📌</span> Recommended Next Step
-      </h3>
-      <div className="flex flex-wrap gap-3">
-        {recommendations.map((rec) => {
-          const action = getRecAction(rec);
-          return ctaButton(rec, action, rec.priority === 'primary');
-        })}
-      </div>
-    </div>
   );
 
   if (isProcessing) {
@@ -399,68 +339,6 @@ const ExamResultsLoading = () => {
     );
   }
 
-  const blockTitle = (emoji, text) => (
-    <h3 className="font-inter font-semibold text-[18px] text-[#45464E] mb-[12px] flex items-center gap-2">
-      <span>{emoji}</span> {text}
-    </h3>
-  );
-
-  if (reviewerType === 'practice' || reviewerType === 'demo') {
-    return (
-      <div className={PAGE_CLASSES}>
-        <DashNav />
-        <main className={`${MAIN_CLASSES} pt-[24px] pb-[40px]`}>
-          {breadcrumb}
-          <h1 className="font-inter font-medium text-[#45464E] text-[20px] mb-[24px]" data-aos="fade-up" data-aos-duration="400" data-aos-delay="25">{title}</h1>
-          <section className={SECTION_CLASSES} data-aos="fade-up" data-aos-duration="400" data-aos-delay="50">
-            <h2 className="font-inter font-medium text-[20px] text-[#45464E] text-center mb-[24px]">{title}</h2>
-            <p className="font-inter font-normal text-[16px] text-[#45464E] text-center mb-[24px]">Exam Taken On: {takenAt}</p>
-            <h3 className="font-inter font-semibold text-[16px] text-[#45464E] text-center uppercase tracking-wide mb-[22px]">Overall Performance</h3>
-            <div className="overflow-x-auto flex justify-center mb-[32px]">
-              <table className="w-full max-w-[800px] border-collapse border border-[#B0B0B0] font-inter text-[14px]">
-                <thead>
-                  <tr className="bg-[#431C86] text-white">
-                    {['Total Items', 'Correct', 'Incorrect', 'Unanswered', 'Percentage', 'Performance Level'].map((h) => (
-                      <th key={h} className="text-left py-3 px-3 font-semibold border border-[#B0B0B0]">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="bg-[#FAF9FF]">
-                    <td className="py-3 px-3 text-[#45464E] border-t border-l border-[#B0B0B0]">{result.totalItems}</td>
-                    <td className="py-3 px-3 text-[#45464E] border-t border-l border-[#B0B0B0]">{totalCorrect}</td>
-                    <td className="py-3 px-3 text-[#45464E] border-t border-l border-[#B0B0B0]">{totalIncorrect}</td>
-                    <td className="py-3 px-3 text-[#45464E] border-t border-l border-[#B0B0B0]">{totalUnanswered}</td>
-                    <td className="py-3 px-3 text-[#45464E] border-t border-l border-[#B0B0B0]">{overallPercentage}%</td>
-                    <td className="py-3 px-3 border-t border-l border-[#B0B0B0] font-inter font-semibold text-[14px] text-[#45464E]">{performanceLevel}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            <div className="pt-[28px] mb-[28px] max-w-[800px] mx-auto">
-              {blockTitle('⏱️', 'Time Insight')}
-              <p className="font-inter font-normal text-[15px] text-[#45464E] leading-[24px] mb-[4px]">Time Spent: <span className="font-medium">{duration}</span></p>
-              <p className="font-inter font-normal text-[15px] text-[#45464E] leading-[24px] mb-[4px]">Average Time per Question: <span className="font-medium">{avgTimePerQ} seconds</span></p>
-              <p className="font-inter font-normal text-[15px] text-[#45464E] leading-[24px]">{pacingNote}</p>
-            </div>
-            <div className="pt-[28px] mb-[32px] max-w-[800px] mx-auto">
-              {blockTitle('📊', 'Quick Summary')}
-              {aiFailedMessage && (
-                <p className="font-inter font-normal text-[15px] text-[#45464E] leading-[24px] mb-[12px] italic">
-                  {aiFailedMessage}
-                </p>
-              )}
-              {(quickSummary || practiceFallbackSummary).split(/(?<=[.!?])\s+/).filter(Boolean).map((s, i) => (
-                <p key={i} className="font-inter font-normal text-[15px] text-[#45464E] leading-[24px] mb-[4px]">{s}</p>
-              ))}
-            </div>
-            {recommendedButtons}
-          </section>
-        </main>
-      </div>
-    );
-  }
-
   const retakeMockRec = recommendations.find((r) => r.type === 'retake_full_mock') || null;
 
   // Section distribution for weight calculations
@@ -524,9 +402,9 @@ const ExamResultsLoading = () => {
               <p className="font-inter font-bold text-[32px] text-[#1A1A2E] leading-none -mt-[6px]">
                 {overallPercentage}%
               </p>
-              <p className="font-inter font-normal text-[13px] text-[#6B7280] mt-[6px]">Mock Exam Score</p>
+              <p className="font-inter font-normal text-[13px] text-[#6B7280] mt-[6px]">Exam Score</p>
               <p className="font-inter font-normal text-[11px] text-[#9CA3AF] mt-[4px] text-center max-w-[180px]">
-                This score is for this mock attempt only
+                This score is for this exam attempt only
               </p>
             </div>
 
@@ -534,7 +412,7 @@ const ExamResultsLoading = () => {
             <div className="flex-1 min-w-0">
               <div className="divide-y divide-[#F3F4F6]">
                 <div className="flex items-center justify-between py-[13px]">
-                  <span className="font-inter font-normal text-[14px] text-[#6B7280]">Mock Exam Score</span>
+                  <span className="font-inter font-normal text-[14px] text-[#6B7280]">Exam Score</span>
                   <span className="font-inter font-semibold text-[14px] text-[#1A1A2E]">{overallPercentage}%</span>
                 </div>
                 <div className="flex items-center justify-between py-[13px]">
@@ -569,7 +447,7 @@ const ExamResultsLoading = () => {
           data-aos="fade-up" data-aos-duration="400" data-aos-delay="75"
         >
           <h3 className="font-inter font-semibold text-[18px] text-[#1A1A2E] mb-[4px]">Detailed Exam Breakdown</h3>
-          <p className="font-inter font-normal text-[14px] text-[#6B7280] mb-[20px]">Your performance breakdown based on the mock exam.</p>
+          <p className="font-inter font-normal text-[14px] text-[#6B7280] mb-[20px]">Your performance breakdown for this exam attempt.</p>
 
           <div className="overflow-x-auto mb-[28px]">
             <table className="w-full font-inter text-[14px] border-collapse">
@@ -638,7 +516,7 @@ const ExamResultsLoading = () => {
               className="font-inter font-normal text-[14px] text-[#45464E] border border-[#D1D5DB] bg-white hover:bg-gray-50 transition-colors py-[11px] px-[20px] rounded-[8px] flex items-center gap-[7px]"
             >
               <ShareOutIcon className="w-[15px] h-[15px]" />
-              Share Mock Score Card
+              Share Score Card
             </button>
           </div>
 
