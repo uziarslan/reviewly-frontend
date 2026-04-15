@@ -76,8 +76,11 @@ export const examAPI = {
       method: "PUT",
       body: { remainingSeconds, currentIndex },
     }),
-  submit: (attemptId) =>
-    apiFetch(`/exams/attempts/${attemptId}/submit`, { method: "POST" }),
+  submit: (attemptId, remainingSeconds) =>
+    apiFetch(`/exams/attempts/${attemptId}/submit`, {
+      method: "POST",
+      body: remainingSeconds != null ? { remainingSeconds } : undefined,
+    }),
   getResult: (attemptId) =>
     apiFetch(`/exams/attempts/${attemptId}`),
   getReview: (attemptId) =>
@@ -114,8 +117,11 @@ export const trialAPI = {
       method: "PUT",
       body: { remainingSeconds, currentIndex },
     }),
-  submit: (attemptId) =>
-    apiFetch(`/trial-assessment/attempts/${attemptId}/submit`, { method: "POST" }),
+  submit: (attemptId, remainingSeconds) =>
+    apiFetch(`/trial-assessment/attempts/${attemptId}/submit`, {
+      method: "POST",
+      body: remainingSeconds != null ? { remainingSeconds } : undefined,
+    }),
   abandon: (attemptId) =>
     apiFetch(`/trial-assessment/attempts/${attemptId}/abandon`, { method: "POST" }),
   getResult: (attemptId) =>

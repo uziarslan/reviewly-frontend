@@ -228,9 +228,12 @@ const ExamResultsLoading = () => {
 
   const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1);
 
-  const durationMs = attempt.submittedAt && attempt.startedAt
-    ? new Date(attempt.submittedAt) - new Date(attempt.startedAt) : 0;
-  const durationMin = Math.floor(durationMs / 60000);
+  const durationSeconds = Number.isFinite(result.duration)
+    ? Math.max(0, Math.round(result.duration))
+    : attempt.submittedAt && attempt.startedAt
+      ? Math.max(0, Math.round((new Date(attempt.submittedAt) - new Date(attempt.startedAt)) / 1000))
+      : 0;
+  const durationMin = Math.floor(durationSeconds / 60);
   const durationH = Math.floor(durationMin / 60);
   const durationM = durationMin % 60;
   const duration = durationH > 0

@@ -395,7 +395,10 @@ function Exam({ isTrial = false }) {
           totalQuestions: totalQuestions,
         });
         setShowSubmitModal(false);
-        navigate(`${resultsPath}/${attemptId}${!isTrial && fromLibrary ? '?from=library' : ''}`);
+        navigate(
+          `${resultsPath}/${attemptId}${!isTrial && fromLibrary ? '?from=library' : ''}`,
+          isTrial ? { state: { showLoadingFlow: true } } : undefined
+        );
       }
     } catch (err) {
       console.error('Submit failed:', err);
@@ -407,7 +410,10 @@ function Exam({ isTrial = false }) {
 
   const handleViewResults = () => {
     if (!attemptId) return;
-    navigate(`${resultsPath}/${attemptId}${!isTrial && fromLibrary ? '?from=library' : ''}`);
+    navigate(
+      `${resultsPath}/${attemptId}${!isTrial && fromLibrary ? '?from=library' : ''}`,
+      isTrial ? { state: { showLoadingFlow: true } } : undefined
+    );
   };
 
   if (loadingExam) return <ExamSkeleton />;

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { NavLink } from 'react-router-dom';
 import logo from '../Assets/logo.png';
 import { useAuth } from '../context/AuthContext';
@@ -136,12 +136,14 @@ const SemiCircleGauge = ({ percentage }) => {
 const TrialResult = () => {
   const { attemptId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, setUser } = useAuth();
   const [attempt, setAttempt] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeStep, setActiveStep] = useState(0);
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareUrl, setShareUrl] = useState('');
+  const shouldPlayLoadingFlow = location.state?.showLoadingFlow === true;
 
   const handleOpenShare = useCallback(async () => {
     setShowShareModal(true);
@@ -174,10 +176,10 @@ const TrialResult = () => {
   }, [attemptId]);
 
   useEffect(() => {
-    if (!loading || activeStep >= 4) return;
+    if ((!loading && !shouldPlayLoadingFlow) || activeStep >= 4) return;
     const timer = setTimeout(() => setActiveStep((p) => Math.min(p + 1, 4)), 1800);
     return () => clearTimeout(timer);
-  }, [loading, activeStep]);
+  }, [loading, activeStep, shouldPlayLoadingFlow]);
 
   useEffect(() => {
     if (attempt && user && !user.trialAssessment) {
@@ -186,7 +188,7 @@ const TrialResult = () => {
   }, [attempt, user, setUser]);
 
   /* ── Loading state ── */
-  if (loading) {
+  if (loading || (shouldPlayLoadingFlow && activeStep < 4)) {
     const LOADING_STEPS = [
       { title: 'Saving your answers',    description: 'Securing your responses.',          Icon: SaveIcon },
       { title: 'Computing your score',   description: 'Calculating section scores.',        Icon: ComputeIcon },
@@ -279,9 +281,12 @@ const TrialResult = () => {
 
   const gapItems = weakest ? weakest.totalItems - weakest.correct : 0;
 
-  const durationMs  = attempt.submittedAt && attempt.startedAt
-    ? new Date(attempt.submittedAt) - new Date(attempt.startedAt) : 0;
-  const durationMin = Math.floor(durationMs / 60000);
+  const durationSeconds = Number.isFinite(result.duration)
+    ? Math.max(0, Math.round(result.duration))
+    : attempt.submittedAt && attempt.startedAt
+      ? Math.max(0, Math.round((new Date(attempt.submittedAt) - new Date(attempt.startedAt)) / 1000))
+      : 0;
+  const durationMin = Math.floor(durationSeconds / 60);
 
   /* ── Render ── */
   return (
