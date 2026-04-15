@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import DashNav from '../components/DashNav';
 import { ExamTimeInfoIcon } from '../components/Icons';
@@ -19,17 +19,59 @@ function secondsToTimeStr(totalSec) {
 
 const OPTION_LABELS = ['A', 'B', 'C', 'D'];
 
+function getTagStyle(value) {
+  const v = (value || '').toLowerCase();
+  let bgColor, textColor, darkText;
+
+  if (v.includes('verbal') || v.includes('word meaning') || v.includes('reading')) {
+    bgColor = '#14B8A6'; textColor = '#14B8A6'; darkText = true;
+  } else if (v.includes('clerical') || v.includes('filing') || v.includes('analytical') || v.includes('word analogy') || v.includes('grammar') || v.includes('spelling')) {
+    bgColor = '#3B82F6'; textColor = '#3B82F6'; darkText = true;
+  } else if (v.includes('numerical') || v.includes('basic operations') || v.includes('math') || v.includes('arithmetic') || v.includes('number')) {
+    bgColor = '#F59E0B'; textColor = '#F59E0B'; darkText = false;
+  } else if (v.includes('general') || v.includes('r.a.') || v.includes('civil service') || v.includes('law') || v.includes('ethics')) {
+    bgColor = '#EC4899'; textColor = '#EC4899'; darkText = false;
+  } else {
+    bgColor = '#14B8A6'; textColor = '#14B8A6'; darkText = true;
+  }
+
+  const containerStyle = {
+    background: `linear-gradient(rgba(255,255,255,0.95), rgba(255,255,255,0.95)), linear-gradient(${bgColor}, ${bgColor})`,
+    borderRadius: '8px',
+    border: 'none',
+    padding: '4px 12px',
+    display: 'inline-block',
+  };
+  const textStyle = darkText
+    ? {
+      background: `linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.2)), linear-gradient(${textColor}, ${textColor})`,
+      WebkitBackgroundClip: 'text',
+      WebkitTextFillColor: 'transparent',
+      backgroundClip: 'text',
+    }
+    : { color: textColor };
+
+  return { containerStyle, textStyle };
+}
+
 function Exam({ isTrial = false }) {
   const { id } = useParams(); // reviewer id
   const navigate = useNavigate();
   const location = useLocation();
   const fromLibrary = !isTrial && new URLSearchParams(location.search).get('from') === 'library';
+  const isRestart = useMemo(
+    () => new URLSearchParams(location.search).get('restart') === 'true',
+    [location.search]
+  );
 
   // API adapter: use trial endpoints when in trial mode
-  const api = isTrial
-    ? { start: trialAPI.start, saveAnswer: trialAPI.saveAnswer, pause: trialAPI.pause, submit: trialAPI.submit }
-    : { start: examAPI.start, saveAnswer: examAPI.saveAnswer, pause: examAPI.pause, submit: examAPI.submit };
-  const beaconPath = isTrial ? 'trial-assessment' : 'exams';
+  const api = useMemo(
+    () => isTrial
+      ? { start: trialAPI.start, saveAnswer: trialAPI.saveAnswer, pause: trialAPI.pause, submit: trialAPI.submit }
+      : { start: examAPI.start, saveAnswer: examAPI.saveAnswer, pause: examAPI.pause, submit: examAPI.submit },
+    [isTrial]
+  );
+  const beaconPath = useMemo(() => isTrial ? 'trial-assessment' : 'exams', [isTrial]);
   const resultsPath = isTrial ? '/trial/results' : '/dashboard/results';
 
   // Exam data from API
@@ -83,7 +125,7 @@ function Exam({ isTrial = false }) {
       console.error('Failed to save answers:', err);
       setSaveStatus(null);
     }
-  }, [attemptId]);
+  }, [attemptId, api]);
 
   // Start or resume exam on mount
   useEffect(() => {
@@ -92,7 +134,7 @@ function Exam({ isTrial = false }) {
       try {
         // Fetch reviewer info for display
         const [examRes, revRes] = await Promise.all([
-          api.start(id),
+          api.start(id, isRestart),
           isTrial ? Promise.resolve({ success: false }) : reviewerAPI.getById(id),
         ]);
         if (cancelled) return;
@@ -149,7 +191,7 @@ function Exam({ isTrial = false }) {
     }
     loadExam();
     return () => { cancelled = true; };
-  }, [id]);
+  }, [id, api, isRestart, isTrial, location.state?.reviewerTitle]);
 
   // Timer logic – starts after reload warning is dismissed
   useEffect(() => {
@@ -167,7 +209,7 @@ function Exam({ isTrial = false }) {
       if (remaining <= 0) {
         setTimeUp(true);
         if (attemptId) {
-          flushPendingAnswers().then(() => api.submit(attemptId, 0).catch(() => {}));
+          flushPendingAnswers().then(() => api.submit(attemptId, 0).catch(() => { }));
         }
         return true;
       }
@@ -182,7 +224,7 @@ function Exam({ isTrial = false }) {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [loadingExam, showReloadWarningModal, timeUp, remainingSeconds, attemptId, flushPendingAnswers]);
+  }, [loadingExam, showReloadWarningModal, timeUp, remainingSeconds, attemptId, flushPendingAnswers, api]);
 
   // beforeunload: send pending answers via beacon (sendBeacon survives tab close)
   useEffect(() => {
@@ -199,7 +241,7 @@ function Exam({ isTrial = false }) {
     };
     window.addEventListener('beforeunload', handler);
     return () => window.removeEventListener('beforeunload', handler);
-  }, [attemptId]);
+  }, [attemptId, beaconPath]);
 
   // When time's up, close any other modals
   useEffect(() => {
@@ -310,7 +352,7 @@ function Exam({ isTrial = false }) {
     }
     try {
       await api.submit(attemptId);
-    } catch (_) {}
+    } catch (_) { }
     setLoadingExam(true);
     endTimeRef.current = null;
     try {
@@ -589,16 +631,22 @@ function Exam({ isTrial = false }) {
                 </p>
                 {(currentQuestion?.section || currentQuestion?.module) && (
                   <div className="flex gap-2">
-                    {currentQuestion.section && (
-                      <span className="font-inter text-[13px] font-medium text-[#14B8A6] border border-[#14B8A6] rounded-full px-3 py-0.5 capitalize">
-                        {currentQuestion.section}
-                      </span>
-                    )}
-                    {currentQuestion.module && (
-                      <span className="font-inter text-[13px] font-medium text-[#14B8A6] border border-[#14B8A6] rounded-full px-3 py-0.5 capitalize">
-                        {currentQuestion.module}
-                      </span>
-                    )}
+                    {currentQuestion.section && (() => {
+                      const { containerStyle, textStyle } = getTagStyle(currentQuestion.section);
+                      return (
+                        <span className="font-inter text-[13px] font-normal capitalize" style={containerStyle}>
+                          <span style={textStyle}>{currentQuestion.section}</span>
+                        </span>
+                      );
+                    })()}
+                    {currentQuestion.module && (() => {
+                      const { containerStyle, textStyle } = getTagStyle(currentQuestion.module);
+                      return (
+                        <span className="font-inter text-[13px] font-normal capitalize" style={containerStyle}>
+                          <span style={textStyle}>{currentQuestion.module}</span>
+                        </span>
+                      );
+                    })()}
                   </div>
                 )}
               </div>
@@ -618,24 +666,21 @@ function Exam({ isTrial = false }) {
                       type="button"
                       onClick={() => handleOptionChange(idx)}
                       disabled={examFrozen}
-                      className={`w-full flex items-center gap-4 py-3.5 px-4 rounded-[12px] border-2 transition-all ${
-                        isSelected
-                          ? 'border-[#6E43B9] bg-[#F5F0FF]'
-                          : 'border-[#E5E7EB] bg-white hover:border-[#D1D5DB]'
-                      } ${examFrozen ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
+                      className={`w-full flex items-center gap-4 py-3.5 px-4 rounded-[12px] border-2 transition-all ${isSelected
+                        ? 'border-[#6E43B9] bg-[#F5F0FF]'
+                        : 'border-[#E5E7EB] bg-white hover:border-[#D1D5DB]'
+                        } ${examFrozen ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
                     >
                       <span
-                        className={`w-9 h-9 rounded-full flex items-center justify-center text-[14px] font-semibold shrink-0 transition-colors ${
-                          isSelected
-                            ? 'bg-[#6E43B9] text-white'
-                            : 'bg-[#F3F4F6] text-[#6B7280]'
-                        }`}
+                        className={`w-9 h-9 rounded-full flex items-center justify-center text-[14px] font-semibold shrink-0 transition-colors ${isSelected
+                          ? 'bg-[#6E43B9] text-white'
+                          : 'bg-[#F3F4F6] text-[#6B7280]'
+                          }`}
                       >
                         {OPTION_LABELS[idx]}
                       </span>
-                      <span className={`font-inter text-[15px] text-left ${
-                        isSelected ? 'text-[#0F172A] font-medium' : 'text-[#45464E]'
-                      }`}>
+                      <span className={`font-inter text-[15px] text-left ${isSelected ? 'text-[#0F172A] font-medium' : 'text-[#45464E]'
+                        }`}>
                         {option}
                       </span>
                     </button>
@@ -645,18 +690,16 @@ function Exam({ isTrial = false }) {
             </div>
 
             {/* Bottom actions */}
-            <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-[#F2F4F7]">
+            <div className="relative flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-[#F2F4F7]">
+              <span className={`absolute -top-5 right-0 font-inter text-[13px] text-[#45464E] transition-opacity duration-200 ${saveStatus ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                {saveStatus === 'saving' ? 'Saving...' : 'Saved ✓'}
+              </span>
               <div className="flex items-center gap-3">
-                {saveStatus && (
-                  <span className="font-inter text-[13px] text-[#45464E]">
-                    {saveStatus === 'saving' ? 'Saving...' : 'Saved ✓'}
-                  </span>
-                )}
                 <button
                   type="button"
                   onClick={handleNextOrSubmit}
                   disabled={examFrozen || submitting}
-                  className="font-inter font-semibold text-[14px] text-[#421A83] py-2.5 px-6 rounded-[8px] bg-[#FFC92A] hover:opacity-95 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="font-inter font-regular text-[14px] text-[#421A83] py-2.5 px-6 rounded-[8px] bg-[#FFC92A] hover:opacity-95 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {isLastQuestion && submitting && (
                     <svg className="animate-spin h-4 w-4 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
@@ -670,7 +713,7 @@ function Exam({ isTrial = false }) {
                   type="button"
                   onClick={handlePrev}
                   disabled={currentIndex === 0 || examFrozen}
-                  className="font-inter font-semibold text-[14px] text-[#45464E] py-2.5 px-4 rounded-[8px] border border-[#CFD3D4] bg-white hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="font-inter font-regular text-[14px] text-[#6C737F] py-2.5 px-4 rounded-[8px] border-[0.5px] border-[#6C737F] bg-white hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Previous
                 </button>
@@ -682,12 +725,12 @@ function Exam({ isTrial = false }) {
                   if (examFrozen) return;
                   setShowPauseModal(true);
                 }}
-                className="font-inter font-semibold text-[14px] text-[#45464E] py-2.5 px-4 rounded-[8px] border border-[#CFD3D4] bg-white hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="font-inter font-regular text-[14px] text-[#6C737F] py-2.5 px-4 rounded-[8px] border-[0.5px] border-[#6C737F] bg-white hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Save and Exit
               </button>
             </div>
-            <p className="font-inter text-[13px] text-[#14B8A6] mt-3">
+            <p className="font-inter italic text-[14px] text-[#45464E80] mt-3">
               You can skip questions and return to them anytime.
             </p>
           </div>

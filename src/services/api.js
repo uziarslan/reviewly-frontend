@@ -64,8 +64,8 @@ export const libraryAPI = {
 
 // ── Exams ──
 export const examAPI = {
-  start: (reviewerId) =>
-    apiFetch(`/exams/${reviewerId}/start`, { method: "POST" }),
+  start: (reviewerId, restart = false) =>
+    apiFetch(`/exams/${reviewerId}/start`, { method: "POST", body: restart ? { restart: true } : undefined }),
   saveAnswer: (attemptId, questionIndex, selectedAnswer) =>
     apiFetch(`/exams/attempts/${attemptId}/answer`, {
       method: "PUT",

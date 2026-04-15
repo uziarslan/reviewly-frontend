@@ -12,13 +12,13 @@ import { trackExamSelected } from '../services/analytics';
 /* ── Exam Breakdown helpers ──────────────────────────────── */
 
 const SECTION_CONFIG = {
-  verbal:       { label: 'Verbal',       color: '#14B8A6' },
-  analytical:   { label: 'Analytical',   color: '#3B82F6' },
-  numerical:    { label: 'Numerical',    color: '#F59E0B' },
+  verbal: { label: 'Verbal', color: '#14B8A6' },
+  analytical: { label: 'Analytical', color: '#3B82F6' },
+  numerical: { label: 'Numerical', color: '#F59E0B' },
   general_info: { label: 'General Info', color: '#EC4899' },
-  'general info':{ label: 'General Info',color: '#EC4899' },
+  'general info': { label: 'General Info', color: '#EC4899' },
 };
-const FALLBACK_COLORS = ['#8B5CF6','#06B6D4','#10B981','#F43F5E','#6366F1','#EF4444'];
+const FALLBACK_COLORS = ['#8B5CF6', '#06B6D4', '#10B981', '#F43F5E', '#6366F1', '#EF4444'];
 
 function getSectionConfig(sectionKey, index) {
   const key = (sectionKey || '').toLowerCase().trim();
@@ -47,7 +47,7 @@ function DonutChart({ segments, total }) {
   });
 
   return (
-    <svg viewBox="0 0 200 200" className="w-full max-w-[200px] mx-auto">
+    <svg viewBox="0 0 200 200" width={182} height={182} style={{ width: '182px', height: '182px', display: 'block', margin: '0 auto' }}>
       {/* background ring */}
       <circle
         cx={CX} cy={CY} r={R}
@@ -87,21 +87,21 @@ function ExamBreakdown({ sectionDistribution, totalItems, disclaimer }) {
 
   return (
     <section
-      className="mb-8"
+      className="mb-8 max-w-[808px]"
       data-aos="fade-up"
       data-aos-duration="500"
       data-aos-delay="120"
     >
-      <h2 className="font-inter font-bold text-[18px] text-[#45464E] mb-5">
+      <h2 className="font-inter font-bold text-[24px] text-[#45464E] mb-5">
         Exam Breakdown
       </h2>
       <div className="flex flex-col sm:flex-row items-center sm:items-start gap-8">
         {/* Donut chart */}
-        <div className="w-[180px] shrink-0">
+        <div style={{ width: 262, height: 214, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <DonutChart segments={segments} total={total} />
         </div>
         {/* Table */}
-        <div className="flex-1 min-w-0 w-full self-center">
+        <div className="flex-1 min-w-0 max-w-[448px] w-full self-center">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-[#E5E7EB]">
@@ -313,10 +313,10 @@ const ExamDetails = () => {
                 <div className="flex items-center gap-2">
                   <MetricTimeIcon className="w-[22px] h-[22px] shrink-0" />
                   <div className="flex flex-col">
-                    <span className="font-inter font-normal text-[12px] text-[#6C737F] leading-tight">
+                    <span className="font-inter font-medium text-[12px] text-[#45464E] leading-tight">
                       {inProgressData ? 'Remaining Time' : 'Time'}
                     </span>
-                    <strong className="font-inter font-bold text-[15px] text-[#421A83] leading-tight">
+                    <strong className="font-inter font-medium text-[16px] text-[#421A83] leading-tight">
                       {inProgressData && inProgressData.remainingSeconds != null
                         ? formatRemainingTime(inProgressData.remainingSeconds)
                         : exam.timeFormatted}
@@ -327,8 +327,8 @@ const ExamDetails = () => {
                 <div className="flex items-center gap-2">
                   <MetricItemsIcon className="w-[22px] h-[22px] shrink-0" />
                   <div className="flex flex-col">
-                    <span className="font-inter font-normal text-[12px] text-[#6C737F] leading-tight">Total Items</span>
-                    <strong className="font-inter font-bold text-[15px] text-[#421A83] leading-tight">
+                    <span className="font-inter font-medium text-[12px] text-[#45464E] leading-tight">Total Items</span>
+                    <strong className="font-inter font-medium text-[16px] text-[#421A83] leading-tight">
                       {completedData
                         ? `${completedData.correct}/${completedData.totalItems}`
                         : inProgressData
@@ -341,8 +341,8 @@ const ExamDetails = () => {
                 <div className="flex items-center gap-2">
                   <MetricPassingScoreIcon className="w-[22px] h-[22px] shrink-0" />
                   <div className="flex flex-col">
-                    <span className="font-inter font-normal text-[12px] text-[#6C737F] leading-tight">Passing Score</span>
-                    <strong className="font-inter font-bold text-[15px] text-[#421A83] leading-tight">
+                    <span className="font-inter font-medium text-[12px] text-[#45464E] leading-tight">Passing Score</span>
+                    <strong className="font-inter font-medium text-[16px] text-[#421A83] leading-tight">
                       {reviewer?.examConfig?.passingThreshold != null
                         ? `${reviewer.examConfig.passingThreshold}%`
                         : 'N/A'}
@@ -353,15 +353,15 @@ const ExamDetails = () => {
                 <div className="flex items-center gap-2">
                   <MetricStatusIcon className="w-[22px] h-[22px] shrink-0" />
                   <div className="flex flex-col">
-                    <span className="font-inter font-normal text-[12px] text-[#6C737F] leading-tight">Status</span>
+                    <span className="font-inter font-medium text-[12px] text-[#45464E] leading-tight">Status</span>
                     {completedData ? (
-                      <strong className="font-inter font-bold text-[15px] text-[#421A83] leading-tight">
+                      <strong className="font-inter font-medium text-[16px] text-[#421A83] leading-tight">
                         {completedData.passed ? 'PASSED! 🎉' : 'FAILED'}
                       </strong>
                     ) : inProgressData ? (
-                      <strong className="font-inter font-bold text-[15px] text-[#421A83] leading-tight">In Progress</strong>
+                      <strong className="font-inter font-medium text-[16px] text-[#421A83] leading-tight">In Progress</strong>
                     ) : (
-                      <strong className="font-inter font-bold text-[15px] text-[#421A83] leading-tight">{exam.progress}</strong>
+                      <strong className="font-inter font-medium text-[16px] text-[#421A83] leading-tight">{exam.progress}</strong>
                     )}
                   </div>
                 </div>
@@ -374,14 +374,14 @@ const ExamDetails = () => {
                     <button
                       type="button"
                       onClick={() => navigate(`/dashboard/exam/${id}/start${fromLibrary ? '?from=library' : ''}`)}
-                      className="font-inter font-bold text-[16px] text-[#421A83] py-[11px] px-10 rounded-[10px] bg-[#FFC92A] hover:opacity-95 transition-opacity"
+                      className="h-[48px] font-inter font-regular text-[16px] text-[#421A83] py-[11px] px-10 rounded-[4px] bg-[#FFC92A] hover:opacity-95 transition-opacity"
                     >
                       Retake Exam
                     </button>
                     <button
                       type="button"
                       onClick={() => navigate(`/dashboard/review/${completedData.attemptId}${fromLibrary ? '?from=library' : ''}`)}
-                      className="font-inter font-normal text-[16px] text-[#6C737F] py-[11px] px-10 rounded-[10px] border border-[#D5D5D5] bg-white hover:bg-gray-50 transition-colors"
+                      className="h-[48px] font-inter font-regular text-[16px] text-[#737373] py-[11px] px-10 rounded-[4px] border border-[#737373] bg-white hover:bg-gray-50 transition-colors"
                     >
                       View Previous Result
                     </button>
@@ -391,14 +391,14 @@ const ExamDetails = () => {
                     <button
                       type="button"
                       onClick={() => navigate(`/dashboard/exam/${id}/start${fromLibrary ? '?from=library' : ''}`)}
-                      className="font-inter font-bold text-[16px] text-[#421A83] py-[11px] px-10 rounded-[10px] bg-[#FFC92A] hover:opacity-95 transition-opacity"
+                      className="h-[48px] font-inter font-regular text-[16px] text-[#421A83] py-[11px] px-10 rounded-[4px] bg-[#FFC92A] hover:opacity-95 transition-opacity"
                     >
                       Resume Exam
                     </button>
                     <button
                       type="button"
                       onClick={() => navigate(`/dashboard/exam/${id}/start?restart=true${fromLibrary ? '&from=library' : ''}`)}
-                      className="font-inter font-normal text-[16px] text-[#6C737F] py-[11px] px-10 rounded-[10px] border border-[#D5D5D5] bg-white hover:bg-gray-50 transition-colors"
+                      className="h-[48px] font-inter font-regular text-[16px] text-[#737373] py-[11px] px-10 rounded-[4px] border border-[#737373] bg-white hover:bg-gray-50 transition-colors"
                     >
                       Restart
                     </button>
@@ -407,7 +407,7 @@ const ExamDetails = () => {
                   <button
                     type="button"
                     onClick={() => navigate(`/dashboard/exam/${id}/start${fromLibrary ? '?from=library' : ''}`)}
-                    className="font-inter font-bold text-[16px] text-[#421A83] py-[11px] px-10 rounded-[10px] bg-[#FFC92A] hover:opacity-95 transition-opacity"
+                    className="h-[48px] font-inter font-regular text-[16px] text-[#421A83] py-[11px] px-10 rounded-[4px] bg-[#FFC92A] hover:opacity-95 transition-opacity"
                   >
                     Start Exam
                   </button>
