@@ -18,7 +18,7 @@ const ProtectedRoute = ({ children, skipTrialGate = false }) => {
     return <Navigate to="/" replace />;
   }
 
-  if (!skipTrialGate && user && user.trialAssessment === false) {
+  if (!skipTrialGate && user && user.trialAssessment !== true) {
     return <Navigate to="/trial" replace />;
   }
 
