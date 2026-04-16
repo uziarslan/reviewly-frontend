@@ -189,30 +189,6 @@ const ExamResultsLoading = () => {
     return () => { cancelled = true; };
   }, [attemptId]);
 
-  // Track results_viewed once when final results are available (Survey A trigger)
-  useEffect(() => {
-    if (!attempt || hasTrackedResultsView) return;
-    if (attempt.status !== 'submitted' && attempt.status !== 'timed_out') return;
-
-    const reviewerType = attempt.reviewer?.type || 'mock';
-    const examType = reviewerType === 'practice' || reviewerType === 'demo' ? 'practice' : 'mock';
-    const result = attempt.result || {};
-    const breakdown = result.sectionScores || [];
-    const section =
-      breakdown.length === 1
-        ? breakdown[0].section
-        : 'overall';
-
-    trackResultsViewed({
-      examType,
-      section,
-      scorePercent: result.percentage,
-      attemptId: attempt._id,
-      reviewerId: attempt.reviewer?._id,
-    });
-    setHasTrackedResultsView(true);
-  }, [attempt, hasTrackedResultsView]);
-
   useEffect(() => {
     if (!attemptId || !isProcessing) return;
     let pollCount = 0;
@@ -678,4 +654,3 @@ const ExamResultsLoading = () => {
 };
 
 export default ExamResultsLoading;
-

@@ -193,9 +193,9 @@ function Exam({ isTrial = false }) {
     return () => { cancelled = true; };
   }, [id, api, isRestart, isTrial, location.state?.reviewerTitle]);
 
-  // Timer logic – starts after reload warning is dismissed (pauses when pause modal is open)
+  // Timer logic – starts after reload warning is dismissed
   useEffect(() => {
-    if (loadingExam || showReloadWarningModal || showPauseModal || timeUp) return;
+    if (loadingExam || showReloadWarningModal || timeUp) return;
     if (remainingSeconds == null || remainingSeconds <= 0) return;
 
     // Set end time from remaining seconds
@@ -477,7 +477,10 @@ function Exam({ isTrial = false }) {
             </button>
             <button
               type="button"
-              onClick={() => handlePauseAndExit()}
+              onClick={() => {
+                setShowPauseModal(false);
+                handlePauseAndExit();
+              }}
               className="font-inter font-bold text-[14px] text-[#421A83] py-[11.5px] px-6 rounded-[8px] bg-[#FACC15] hover:opacity-90 transition-opacity"
             >
               Save &amp; Exit
