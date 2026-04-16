@@ -139,6 +139,7 @@ const ExamResultsLoading = () => {
   const fromLibrary = new URLSearchParams(location.search).get('from') === 'library';
   const { isAuthenticated, user } = useAuth();
   const [attempt, setAttempt] = useState(null);
+  const [resultStatus, setResultStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeStep, setActiveStep] = useState(0);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -163,12 +164,7 @@ const ExamResultsLoading = () => {
 
   const checkAccess = (r) => canAccessReviewer(r, { isAuthenticated, user });
   const result = attempt?.result || {};
-  const aiStatus = result.aiStatus ?? null;
-  const isProcessing =
-    attempt &&
-    ((attempt.status !== 'submitted' && attempt.status !== 'timed_out') ||
-      aiStatus === 'pending' ||
-      aiStatus === 'processing');
+  const isProcessing = resultStatus === 'processing';
 
   useEffect(() => {
     const t = requestAnimationFrame(() => AOS.refresh());
@@ -182,7 +178,10 @@ const ExamResultsLoading = () => {
       try {
         const res = await examAPI.getResult(attemptId);
         if (cancelled) return;
-        if (res.success) setAttempt(res.data);
+        if (res.success) {
+          setAttempt(res.data);
+          setResultStatus(res.status);
+        }
       } catch (e) { console.error('Failed to load results:', e); }
       finally { if (!cancelled) setLoading(false); }
     })();
@@ -190,7 +189,7 @@ const ExamResultsLoading = () => {
   }, [attemptId]);
 
   useEffect(() => {
-    if (!attemptId || !isProcessing) return;
+    if (!attemptId || resultStatus !== 'processing') return;
     let pollCount = 0;
     const MAX_POLLS = 60;
     const POLL_INTERVAL_MS = 2500;
@@ -198,6 +197,7 @@ const ExamResultsLoading = () => {
       pollCount += 1;
       if (pollCount > MAX_POLLS) {
         clearInterval(iv);
+        setResultStatus('failed');
         setAttempt((prev) => {
           if (!prev?.result) return prev;
           return { ...prev, result: { ...prev.result, aiStatus: 'failed' } };
@@ -206,24 +206,26 @@ const ExamResultsLoading = () => {
       }
       try {
         const res = await examAPI.getResult(attemptId);
-        if (res.success && (res.data?.status === 'submitted' || res.data?.status === 'timed_out')) {
-          const status = res.data?.result?.aiStatus ?? null;
-          if (status === 'complete' || status === 'failed') clearInterval(iv);
+        if (res.success) {
           setAttempt(res.data);
+          setResultStatus(res.status);
+          if (res.status !== 'processing') {
+            clearInterval(iv);
+          }
         }
       } catch { /* ignore */ }
     }, POLL_INTERVAL_MS);
     return () => clearInterval(iv);
-  }, [attemptId, isProcessing]);
+  }, [attemptId, resultStatus]);
 
   useEffect(() => {
-    if (!isProcessing) return;
+    if (resultStatus !== 'processing') return;
     if (activeStep >= 4) return;
     const timer = setTimeout(() => {
       setActiveStep((prev) => Math.min(prev + 1, 4));
     }, 1800);
     return () => clearTimeout(timer);
-  }, [isProcessing, activeStep]);
+  }, [resultStatus, activeStep]);
 
   if (loading) return <ExamResultsLoadingSkeleton />;
 
