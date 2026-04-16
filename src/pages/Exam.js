@@ -635,26 +635,14 @@ function Exam({ isTrial = false }) {
                 <p className="font-inter font-medium text-[#0F172A] text-[16px]">
                   Question {questionNumber} of {totalQuestions}
                 </p>
-                {(currentQuestion?.section || currentQuestion?.module) && (
-                  <div className="flex gap-2">
-                    {currentQuestion.section && (() => {
-                      const { containerStyle, textStyle } = getTagStyle(currentQuestion.section);
-                      return (
-                        <span className="font-inter text-[13px] font-normal capitalize" style={containerStyle}>
-                          <span style={textStyle}>{currentQuestion.section}</span>
-                        </span>
-                      );
-                    })()}
-                    {currentQuestion.module && (() => {
-                      const { containerStyle, textStyle } = getTagStyle(currentQuestion.module);
-                      return (
-                        <span className="font-inter text-[13px] font-normal capitalize" style={containerStyle}>
-                          <span style={textStyle}>{currentQuestion.module}</span>
-                        </span>
-                      );
-                    })()}
-                  </div>
-                )}
+                {currentQuestion?.topic && (() => {
+                  const { containerStyle, textStyle } = getTagStyle(currentQuestion.topic);
+                  return (
+                    <span className="font-inter text-[13px] font-normal capitalize" style={containerStyle}>
+                      <span style={textStyle}>{currentQuestion.topic}</span>
+                    </span>
+                  );
+                })()}
               </div>
 
               {/* Question text */}

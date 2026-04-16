@@ -72,7 +72,6 @@ function ExamReview() {
   const explanationCorrect = currentQ.explanationCorrect || '';
   const explanationWrong = currentQ.explanationWrong || '';
   const tip = currentQ.reviewlyTip;
-  const sectionTag = formatSection(currentQ.section);
   const topicTag = currentQ.topic ? formatSection(currentQ.topic) : (currentQ.module ? formatSection(currentQ.module) : '');
 
   const totalCorrect = result.correct || 0;
@@ -143,11 +142,6 @@ function ExamReview() {
                   Question {questionNumber} of {totalQuestions}
                 </span>
                 <div className="flex items-center gap-2 flex-wrap justify-end">
-                  {sectionTag && (
-                    <span className="font-inter text-[12px] font-medium px-3 py-1 rounded-full bg-[#FDE7EA] text-[#E05C6E]">
-                      {sectionTag}
-                    </span>
-                  )}
                   {topicTag && (
                     <span className="font-inter text-[12px] font-medium px-3 py-1 rounded-full bg-[#EDE9FF] text-[#6E43B9]">
                       {topicTag}
