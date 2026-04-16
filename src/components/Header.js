@@ -4,7 +4,7 @@ import GoogleAuthButton from './GoogleAuthButton';
 import logo from '../Assets/logo.png';
 
 const navLinkClass = ({ isActive }) =>
-  `font-sans text-sm font-semibold px-4 py-2 border-b-[3px] transition-colors block ${isActive
+  `font-sans text-sm font-semibold px-3 py-2 border-b-[3px] transition-colors block ${isActive
     ? 'text-[#6E43B9] border-[#6E43B9]'
     : 'text-[#6C737F] border-transparent hover:text-[#6E43B9]'
   }`;
@@ -57,31 +57,32 @@ const Header = () => {
               <img src={logo} alt="Reviewly" width={150} height={56} className="h-9 w-auto max-w-[110px] object-contain md:h-[56px] md:w-[150px] md:max-w-none" />
             </Link>
 
-            {/* Desktop Navigation + Login */}
-            <div className="hidden md:flex items-center gap-12">
-              <nav className="flex space-x-8">
-                <NavLink to="/pricing" className={navLinkClass}>Pricing</NavLink>
-                <NavLink to="/contact" className={navLinkClass}>Contact Us</NavLink>
-              </nav>
-              <GoogleAuthButton
-                variant="withGoogleIcon"
-                label="Login"
-                redirectTo="/dashboard/all-reviewers"
-                className="flex items-center justify-center space-x-2 w-[157px] h-[56px] bg-white border-2 border-[#6137A8] rounded-lg hover:border-purple-700 transition-colors"
-              />
-            </div>
+            {/* Desktop Navigation */}
+            <nav className="hidden md:flex space-x-8">
+              <NavLink to="/pricing" className={navLinkClass}>Pricing</NavLink>
+              <NavLink to="/faq" className={navLinkClass}>FAQ</NavLink>
+              <NavLink to="/contact" className={navLinkClass}>Contact Us</NavLink>
+            </nav>
 
-              {/* Burger button - mobile only */}
-              <button
-                type="button"
-                aria-label="Open menu"
-                onClick={() => setDrawerOpen(true)}
-                className="md:hidden p-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
-              >
-                <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
+            {/* Desktop Login: Google button in wrapper with our styling only */}
+            <GoogleAuthButton
+              variant="withGoogleIcon"
+              label="Login"
+              redirectTo="/dashboard/all-reviewers"
+              className="hidden md:flex items-center justify-center space-x-2 w-[157px] h-[52px] bg-white border-2 border-[#6137A8] rounded-lg hover:border-purple-700 transition-colors"
+            />
+
+            {/* Burger button - mobile only */}
+            <button
+              type="button"
+              aria-label="Open menu"
+              onClick={() => setDrawerOpen(true)}
+              className="md:hidden p-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
+            >
+              <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
           </div>
         </div>
       </header>
@@ -118,6 +119,7 @@ const Header = () => {
         </div>
         <nav className="flex flex-col p-6 gap-1 bg-white">
           <NavLink to="/pricing" className={navLinkClass} onClick={() => setDrawerOpen(false)}>Pricing</NavLink>
+          <NavLink to="/faq" className={navLinkClass} onClick={() => setDrawerOpen(false)}>FAQ</NavLink>
           <NavLink to="/contact" className={navLinkClass} onClick={() => setDrawerOpen(false)}>Contact Us</NavLink>
         </nav>
         <div className="p-6 mt-auto border-t border-gray-100 bg-white flex justify-center w-full">
@@ -125,7 +127,7 @@ const Header = () => {
             variant="withGoogleIcon"
             label="Login"
             redirectTo="/dashboard/all-reviewers"
-            className="flex items-center justify-center space-x-2 w-full h-[40px] text-sm bg-white border-2 border-[#6137A8] rounded-lg hover:border-purple-700 transition-colors"
+            className="flex items-center justify-center space-x-2 w-full h-[52px] bg-white border-2 border-[#6137A8] rounded-lg hover:border-purple-700 transition-colors"
           />
         </div>
       </div>

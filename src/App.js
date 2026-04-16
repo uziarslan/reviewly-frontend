@@ -9,6 +9,7 @@ import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
 import Refund from './pages/Refund';
 import AllReviewers from './pages/AllReviewers';
+import FAQ from './pages/FAQ';
 import MyLibrary from './pages/MyLibrary';
 import AccountSettings from './pages/AccountSettings';
 import UpdateSubscription from './pages/UpdateSubscription';
@@ -43,6 +44,7 @@ function App() {
         <Route path="/refund" element={<Refund />} />
         <Route path="/pricing/upgrade" element={<UpgradeToPremium />} />
         <Route path="/share/:shareToken" element={<ShareResult />} />
+        <Route path="/faq" element={<FAQ />} />
 
         {/* Trial assessment flow (shown once for new/existing users) */}
         <Route path="/trial" element={<ProtectedRoute skipTrialGate><TrialAssessment /></ProtectedRoute>} />
