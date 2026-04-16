@@ -139,8 +139,8 @@ const ExamResultsLoading = () => {
   const fromLibrary = new URLSearchParams(location.search).get('from') === 'library';
   const { isAuthenticated, user } = useAuth();
   const [attempt, setAttempt] = useState(null);
+  const [progressStage, setProgressStage] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeStep, setActiveStep] = useState(0);
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareUrl, setShareUrl] = useState('');
   const cardRef = useRef(null);
@@ -162,13 +162,15 @@ const ExamResultsLoading = () => {
   }, [attemptId, shareUrl]);
 
   const checkAccess = (r) => canAccessReviewer(r, { isAuthenticated, user });
+  const stageToStep = {
+    saving: 0,
+    scoring: 1,
+    analyzing: 2,
+    finalizing: 3,
+  };
   const result = attempt?.result || {};
-  const aiStatus = result.aiStatus ?? null;
-  const isProcessing =
-    attempt &&
-    ((attempt.status !== 'submitted' && attempt.status !== 'timed_out') ||
-      aiStatus === 'pending' ||
-      aiStatus === 'processing');
+  const isProcessing = progressStage && progressStage !== 'completed' && progressStage !== 'failed';
+  const activeStep = stageToStep[progressStage] ?? 0;
 
   useEffect(() => {
     const t = requestAnimationFrame(() => AOS.refresh());
@@ -182,7 +184,10 @@ const ExamResultsLoading = () => {
       try {
         const res = await examAPI.getResult(attemptId);
         if (cancelled) return;
-        if (res.success) setAttempt(res.data);
+        if (res.success) {
+          setAttempt(res.data);
+          setProgressStage(res.progressStage || (res.status === 'processing' ? 'finalizing' : res.status));
+        }
       } catch (e) { console.error('Failed to load results:', e); }
       finally { if (!cancelled) setLoading(false); }
     })();
@@ -198,6 +203,7 @@ const ExamResultsLoading = () => {
       pollCount += 1;
       if (pollCount > MAX_POLLS) {
         clearInterval(iv);
+        setProgressStage('failed');
         setAttempt((prev) => {
           if (!prev?.result) return prev;
           return { ...prev, result: { ...prev.result, aiStatus: 'failed' } };
@@ -206,24 +212,17 @@ const ExamResultsLoading = () => {
       }
       try {
         const res = await examAPI.getResult(attemptId);
-        if (res.success && (res.data?.status === 'submitted' || res.data?.status === 'timed_out')) {
-          const status = res.data?.result?.aiStatus ?? null;
-          if (status === 'complete' || status === 'failed') clearInterval(iv);
+        if (res.success) {
           setAttempt(res.data);
+          setProgressStage(res.progressStage || (res.status === 'processing' ? 'finalizing' : res.status));
+          if (res.status !== 'processing') {
+            clearInterval(iv);
+          }
         }
       } catch { /* ignore */ }
     }, POLL_INTERVAL_MS);
     return () => clearInterval(iv);
   }, [attemptId, isProcessing]);
-
-  useEffect(() => {
-    if (!isProcessing) return;
-    if (activeStep >= 4) return;
-    const timer = setTimeout(() => {
-      setActiveStep((prev) => Math.min(prev + 1, 4));
-    }, 1800);
-    return () => clearTimeout(timer);
-  }, [isProcessing, activeStep]);
 
   if (loading) return <ExamResultsLoadingSkeleton />;
 
@@ -654,4 +653,3 @@ const ExamResultsLoading = () => {
 };
 
 export default ExamResultsLoading;
-
