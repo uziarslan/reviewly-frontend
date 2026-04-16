@@ -35,7 +35,7 @@ const Home = () => {
   useEffect(() => {
     reviewerAPI.getAll()
       .then((res) => { if (res.success) setReviewers(res.data); })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   return (

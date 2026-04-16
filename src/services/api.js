@@ -47,7 +47,8 @@ export const authAPI = {
 
 // ── Reviewers ──
 export const reviewerAPI = {
-  getAll: () => apiFetch("/reviewers"),
+  getAll: (page = 1, limit = 50) =>
+    apiFetch(`/reviewers?page=${page}&limit=${limit}`),
   getById: (id) => apiFetch(`/reviewers/${id}`),
   getBySlug: (slug) => apiFetch(`/reviewers/slug/${slug}`),
 };
@@ -63,8 +64,8 @@ export const libraryAPI = {
 
 // ── Exams ──
 export const examAPI = {
-  start: (reviewerId) =>
-    apiFetch(`/exams/${reviewerId}/start`, { method: "POST" }),
+  start: (reviewerId, restart = false) =>
+    apiFetch(`/exams/${reviewerId}/start`, { method: "POST", body: restart ? { restart: true } : undefined }),
   saveAnswer: (attemptId, questionIndex, selectedAnswer) =>
     apiFetch(`/exams/attempts/${attemptId}/answer`, {
       method: "PUT",
@@ -84,10 +85,47 @@ export const examAPI = {
     apiFetch(`/exams/attempts/${attemptId}`),
   getReview: (attemptId) =>
     apiFetch(`/exams/attempts/${attemptId}/review`),
-  getUserHistory: () =>
-    apiFetch(`/exams/attempts/user/history`),
+  getUserHistory: (page = 1, limit = 20) =>
+    apiFetch(`/exams/attempts/user/history?page=${page}&limit=${limit}`),
   getReviewerProgress: (reviewerId) =>
     apiFetch(`/exams/attempts/user/progress/${reviewerId}`),
+  generateShareLink: (attemptId) =>
+    apiFetch(`/exams/attempts/${attemptId}/share`, { method: "POST" }),
+};
+
+// ── Shared results (public, no auth) ──
+export const sharedAPI = {
+  getResult: (shareToken) =>
+    fetch(`${API_BASE}/exams/shared/${encodeURIComponent(shareToken)}`)
+      .then((r) => r.json()),
+};
+
+// ── Trial Assessment ──
+export const trialAPI = {
+  getStatus: () => apiFetch("/trial-assessment/status"),
+  getReviewers: () => apiFetch("/trial-assessment/reviewers"),
+  skip: () => apiFetch("/trial-assessment/skip", { method: "POST" }),
+  start: (reviewerId) =>
+    apiFetch(`/trial-assessment/${reviewerId}/start`, { method: "POST" }),
+  saveAnswer: (attemptId, questionIndex, selectedAnswer) =>
+    apiFetch(`/trial-assessment/attempts/${attemptId}/answer`, {
+      method: "PUT",
+      body: { questionIndex, selectedAnswer },
+    }),
+  pause: (attemptId, remainingSeconds, currentIndex) =>
+    apiFetch(`/trial-assessment/attempts/${attemptId}/pause`, {
+      method: "PUT",
+      body: { remainingSeconds, currentIndex },
+    }),
+  submit: (attemptId, remainingSeconds) =>
+    apiFetch(`/trial-assessment/attempts/${attemptId}/submit`, {
+      method: "POST",
+      body: remainingSeconds != null ? { remainingSeconds } : undefined,
+    }),
+  abandon: (attemptId) =>
+    apiFetch(`/trial-assessment/attempts/${attemptId}/abandon`, { method: "POST" }),
+  getResult: (attemptId) =>
+    apiFetch(`/trial-assessment/attempts/${attemptId}/result`),
 };
 
 // ── Support ──

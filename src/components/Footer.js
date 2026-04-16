@@ -41,8 +41,8 @@ const Footer = () => {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 items-center justify-items-center md:justify-items-end">
             <div className="flex flex-col items-center md:items-end" data-aos="fade-up" data-aos-duration="500" data-aos-delay="100">
               <div className="text-center md:text-right">
-<Link to="/pricing" className="block font-sans text-sm sm:text-base font-normal text-[#E2E8F0] hover:text-white mb-3">
-                Pricing
+                <Link to="/pricing" className="block font-sans text-sm sm:text-base font-normal text-[#E2E8F0] hover:text-white mb-3">
+                  Pricing
                 </Link>
                 <Link to="/faq" className="block font-sans text-sm sm:text-base font-normal text-[#E2E8F0] hover:text-white">
                   FAQ
@@ -51,8 +51,8 @@ const Footer = () => {
             </div>
             <div className="flex flex-col items-center md:items-end" data-aos="fade-up" data-aos-duration="500" data-aos-delay="150">
               <div className="text-center md:text-right">
-<Link to="/privacy" className="block font-sans text-sm sm:text-base font-normal text-[#E2E8F0] hover:text-white mb-3">
-                Privacy Policy
+                <Link to="/privacy" className="block font-sans text-sm sm:text-base font-normal text-[#E2E8F0] hover:text-white mb-3">
+                  Privacy Policy
                 </Link>
                 <Link to="/terms" className="block font-sans text-sm sm:text-base font-normal text-[#E2E8F0] hover:text-white">
                   Terms & Conditions

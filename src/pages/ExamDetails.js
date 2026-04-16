@@ -3,11 +3,145 @@ import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import AOS from 'aos';
 import DashNav from '../components/DashNav';
 import { reviewerAPI, examAPI } from '../services/api';
-import { ExamNotesLightningIcon } from '../components/Icons';
+import { ExamNotesLightningIcon, MetricTimeIcon, MetricItemsIcon, MetricPassingScoreIcon, MetricStatusIcon } from '../components/Icons';
 import { TextWithNewlines } from '../utils/text';
 import ExamDetailsSkeleton from '../components/skeletons/ExamDetailsSkeleton';
 import { BANNER_IMAGE_MAP } from '../data/reviewers';
 import { trackExamSelected } from '../services/analytics';
+
+/* ── Exam Breakdown helpers ──────────────────────────────── */
+
+const SECTION_CONFIG = {
+  verbal: { label: 'Verbal', color: '#14B8A6' },
+  analytical: { label: 'Analytical', color: '#3B82F6' },
+  numerical: { label: 'Numerical', color: '#F59E0B' },
+  general_info: { label: 'General Info', color: '#EC4899' },
+  'general info': { label: 'General Info', color: '#EC4899' },
+};
+const FALLBACK_COLORS = ['#8B5CF6', '#06B6D4', '#10B981', '#F43F5E', '#6366F1', '#EF4444'];
+
+function getSectionConfig(sectionKey, index) {
+  const key = (sectionKey || '').toLowerCase().trim();
+  return SECTION_CONFIG[key] || {
+    label: sectionKey.charAt(0).toUpperCase() + sectionKey.slice(1),
+    color: FALLBACK_COLORS[index % FALLBACK_COLORS.length],
+  };
+}
+
+/** Pure-SVG donut chart with centered total-items label. */
+function DonutChart({ segments, total }) {
+  const R = 70;
+  const CX = 100;
+  const CY = 100;
+  const STROKE = 28;
+  const C = 2 * Math.PI * R; // circumference ≈ 439.82
+
+  let cumulative = 0;
+  const arcs = segments.map((seg, i) => {
+    const fraction = total > 0 ? seg.count / total : 0;
+    const dashLen = fraction * C;
+    // SVG circles start at 3 o'clock; rotate -90deg to start at 12 o'clock
+    const offset = -(cumulative / (total || 1)) * C;
+    cumulative += seg.count;
+    return { ...seg, dashLen, offset };
+  });
+
+  return (
+    <svg viewBox="0 0 200 200" width={182} height={182} style={{ width: '182px', height: '182px', display: 'block', margin: '0 auto' }}>
+      {/* background ring */}
+      <circle
+        cx={CX} cy={CY} r={R}
+        fill="none"
+        stroke="#E5E7EB"
+        strokeWidth={STROKE}
+      />
+      {/* colored arcs */}
+      {arcs.map((arc, i) => (
+        <circle
+          key={i}
+          cx={CX} cy={CY} r={R}
+          fill="none"
+          stroke={arc.color}
+          strokeWidth={STROKE}
+          strokeDasharray={`${arc.dashLen} ${C}`}
+          strokeDashoffset={arc.offset}
+          transform={`rotate(-90 ${CX} ${CY})`}
+          style={{ transition: 'stroke-dasharray 0.4s ease' }}
+        />
+      ))}
+      {/* center label */}
+      <text x={CX} y={CY - 8} textAnchor="middle" className="font-inter" fontSize="11" fill="#6C737F">Total Items</text>
+      <text x={CX} y={CY + 14} textAnchor="middle" className="font-inter" fontSize="26" fontWeight="700" fill="#421A83">{total}</text>
+    </svg>
+  );
+}
+
+/** Exam Breakdown section: donut chart + table. */
+function ExamBreakdown({ sectionDistribution, totalItems, disclaimer }) {
+  const total = totalItems || sectionDistribution.reduce((s, x) => s + x.count, 0);
+  const segments = sectionDistribution.map((s, i) => ({
+    ...getSectionConfig(s.section, i),
+    count: s.count,
+    percent: total > 0 ? Math.round((s.count / total) * 100) : 0,
+  }));
+
+  return (
+    <section
+      className="mb-8 max-w-[808px]"
+      data-aos="fade-up"
+      data-aos-duration="500"
+      data-aos-delay="120"
+    >
+      <h2 className="font-inter font-bold text-[24px] text-[#45464E] mb-5">
+        Exam Breakdown
+      </h2>
+      <div className="flex flex-col sm:flex-row items-center sm:items-start gap-8">
+        {/* Donut chart */}
+        <div style={{ width: 262, height: 214, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <DonutChart segments={segments} total={total} />
+        </div>
+        {/* Table */}
+        <div className="flex-1 min-w-0 max-w-[448px] w-full self-center">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-[#E5E7EB]">
+                <th className="font-inter font-normal text-[13px] text-[#6C737F] pb-2 pr-4 w-1/2">Section</th>
+                <th className="font-inter font-normal text-[13px] text-[#6C737F] pb-2 pr-4 text-right">No. of Items</th>
+                <th className="font-inter font-normal text-[13px] text-[#6C737F] pb-2 text-right">%</th>
+              </tr>
+            </thead>
+            <tbody>
+              {segments.map((seg, i) => (
+                <tr key={i} className="border-b border-[#F3F4F6]">
+                  <td className="py-[10px] pr-4">
+                    <span className="flex items-center gap-2 font-inter font-normal text-[14px] text-[#45464E]">
+                      <span className="w-[10px] h-[10px] rounded-full shrink-0" style={{ backgroundColor: seg.color }} />
+                      {seg.label}
+                    </span>
+                  </td>
+                  <td className="py-[10px] pr-4 font-inter font-bold text-[14px] text-[#45464E] text-right">{seg.count}</td>
+                  <td className="py-[10px] font-inter font-bold text-[14px] text-[#45464E] text-right">{seg.percent}%</td>
+                </tr>
+              ))}
+              <tr>
+                <td className="pt-[10px] pr-4 font-inter font-bold text-[14px] text-[#45464E]">Total</td>
+                <td className="pt-[10px] pr-4 font-inter font-bold text-[14px] text-[#45464E] text-right">{total}</td>
+                <td className="pt-[10px] font-inter font-bold text-[14px] text-[#45464E] text-right">100%</td>
+              </tr>
+            </tbody>
+          </table>
+          {disclaimer && (
+            <p className="font-inter font-normal italic text-[11px] text-[#6C737F] mt-3 leading-[18px]">
+              {disclaimer}
+            </p>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────── */
 
 const ExamDetails = () => {
   const { id } = useParams();
@@ -26,7 +160,7 @@ const ExamDetails = () => {
       try {
         const [revRes, histRes] = await Promise.all([
           reviewerAPI.getById(id),
-          examAPI.getUserHistory(),
+          examAPI.getUserHistory(1, 5),
         ]);
         if (cancelled) return;
         if (revRes.success) {
@@ -141,7 +275,7 @@ const ExamDetails = () => {
             </div>
 
             <h1
-              className="font-inter font-medium not-italic text-[20px] text-[#45464E] mt-6 mb-[8px]"
+              className="font-inter font-semibold not-italic text-[22px] text-[#45464E] mt-6 mb-[10px]"
               data-aos="fade-up"
               data-aos-duration="500"
               data-aos-delay="50"
@@ -149,85 +283,146 @@ const ExamDetails = () => {
               {title}
             </h1>
 
-            {/* Metrics + Start/Resume Exam button */}
+            {/* Description (introShort + introFull) — shown right after title per Figma */}
+            {(exam.introShort || exam.introFull) && (
+              <section
+                className="mb-6"
+                data-aos="fade-up"
+                data-aos-duration="500"
+                data-aos-delay="70"
+              >
+                {exam.introShort && (
+                  <TextWithNewlines as="p" className="font-inter font-bold text-[15px] text-[#45464E] mb-2">{exam.introShort}</TextWithNewlines>
+                )}
+                {exam.introFull && (
+                  <TextWithNewlines as="p" className="font-inter font-normal text-[15px] text-[#45464E] leading-[26px]">{exam.introFull}</TextWithNewlines>
+                )}
+              </section>
+            )}
+
+            {/* Metrics + Buttons */}
             <div
-              className="flex flex-wrap items-center justify-between gap-4 sm:gap-0 mb-[24px]"
+              className="mb-[32px]"
               data-aos="fade-up"
               data-aos-duration="500"
               data-aos-delay="100"
             >
-              <div className="flex flex-wrap items-center gap-4 sm:gap-[96px] font-inter text-sm">
-                <span className="font-inter font-medium text-[14px] text-[#45464E]">
-                  {inProgressData ? 'Remaining Time' : 'Time'}:<br />
-                  <strong className="font-inter font-medium text-[18px] text-[#421A83]">
-                    {inProgressData && inProgressData.remainingSeconds != null
-                      ? formatRemainingTime(inProgressData.remainingSeconds)
-                      : exam.timeFormatted}
-                  </strong>
-                </span>
-                <span className="font-inter font-medium text-[14px] text-[#45464E]">
-                  {completedData ? 'Previous Score' : 'No. of items'}:<br />
-                  <strong className="font-inter font-medium text-[18px] text-[#421A83]">
-                    {completedData
-                      ? `${completedData.correct}/${completedData.totalItems}`
-                      : inProgressData
-                        ? `${inProgressData.answeredCount}/${inProgressData.totalQuestions}`
-                        : exam.itemsCount}
-                  </strong>
-                </span>
-                <div className="font-inter font-medium text-[14px] text-[#45464E]">
-                  {completedData ? 'Status' : 'Progress'}:<br />
-                  {completedData ? (
-                    <strong className="font-inter font-medium text-[18px] text-[#421A83]">
-                      {completedData.passed ? 'PASSED! 🎉' : 'FAILED'}
+              {/* 4 inline metrics */}
+              <div className="flex flex-wrap gap-x-28 gap-y-3 mb-4">
+                {/* Time */}
+                <div className="flex items-center gap-2">
+                  <MetricTimeIcon className="w-[22px] h-[22px] shrink-0" />
+                  <div className="flex flex-col">
+                    <span className="font-inter font-medium text-[12px] text-[#45464E] leading-tight">
+                      {inProgressData ? 'Remaining Time' : 'Time'}
+                    </span>
+                    <strong className="font-inter font-medium text-[16px] text-[#421A83] leading-tight">
+                      {inProgressData && inProgressData.remainingSeconds != null
+                        ? formatRemainingTime(inProgressData.remainingSeconds)
+                        : exam.timeFormatted}
                     </strong>
-                  ) : inProgressData ? (
-                    <div className="mt-1 w-full min-w-[120px] max-w-[200px]">
-                      <div className="flex justify-between font-inter font-normal text-[10px] text-[#45464E] mb-1">
-                        <span>In Progress</span>
-                        <span>{inProgressData.progressPercent}%</span>
-                      </div>
-                      <div className="h-2 w-full rounded-[20px] bg-[#D9D9D9] overflow-hidden">
-                        <div
-                          className="h-full rounded-[20px] bg-[#FFC92A] transition-all duration-300"
-                          style={{ width: `${inProgressData.progressPercent}%` }}
-                        />
-                      </div>
-                    </div>
-                  ) : (
-                    <strong className="font-inter font-medium text-[18px] text-[#421A83]">{exam.progress}</strong>
-                  )}
+                  </div>
+                </div>
+                {/* Total Items */}
+                <div className="flex items-center gap-2">
+                  <MetricItemsIcon className="w-[22px] h-[22px] shrink-0" />
+                  <div className="flex flex-col">
+                    <span className="font-inter font-medium text-[12px] text-[#45464E] leading-tight">Total Items</span>
+                    <strong className="font-inter font-medium text-[16px] text-[#421A83] leading-tight">
+                      {completedData
+                        ? `${completedData.correct}/${completedData.totalItems}`
+                        : inProgressData
+                          ? `${inProgressData.answeredCount}/${inProgressData.totalQuestions}`
+                          : exam.itemsCount}
+                    </strong>
+                  </div>
+                </div>
+                {/* Passing Score */}
+                <div className="flex items-center gap-2">
+                  <MetricPassingScoreIcon className="w-[22px] h-[22px] shrink-0" />
+                  <div className="flex flex-col">
+                    <span className="font-inter font-medium text-[12px] text-[#45464E] leading-tight">Passing Score</span>
+                    <strong className="font-inter font-medium text-[16px] text-[#421A83] leading-tight">
+                      {reviewer?.examConfig?.passingThreshold != null
+                        ? `${reviewer.examConfig.passingThreshold}%`
+                        : 'N/A'}
+                    </strong>
+                  </div>
+                </div>
+                {/* Status */}
+                <div className="flex items-center gap-2">
+                  <MetricStatusIcon className="w-[22px] h-[22px] shrink-0" />
+                  <div className="flex flex-col">
+                    <span className="font-inter font-medium text-[12px] text-[#45464E] leading-tight">Status</span>
+                    {completedData ? (
+                      <strong className="font-inter font-medium text-[16px] text-[#421A83] leading-tight">
+                        {completedData.passed ? 'PASSED! 🎉' : 'FAILED'}
+                      </strong>
+                    ) : inProgressData ? (
+                      <strong className="font-inter font-medium text-[16px] text-[#421A83] leading-tight">In Progress</strong>
+                    ) : (
+                      <strong className="font-inter font-medium text-[16px] text-[#421A83] leading-tight">{exam.progress}</strong>
+                    )}
+                  </div>
                 </div>
               </div>
-              <div className="w-full sm:w-auto shrink-0">
+
+              {/* Buttons — vary by state */}
+              <div className="flex flex-wrap gap-3">
                 {completedData ? (
-                  <div className="flex flex-wrap gap-3 w-full sm:w-auto">
+                  <>
                     <button
                       type="button"
                       onClick={() => navigate(`/dashboard/exam/${id}/start${fromLibrary ? '?from=library' : ''}`)}
-                      className="font-inter font-bold text-[16px] text-[#421A83] py-[10.5px] px-8 rounded-[8px] bg-[#FFC92A] hover:opacity-95 transition-opacity flex-1 sm:flex-initial"
+                      className="h-[48px] font-inter font-regular text-[16px] text-[#421A83] py-[11px] px-10 rounded-[4px] bg-[#FFC92A] hover:opacity-95 transition-opacity"
                     >
                       Retake Exam
                     </button>
                     <button
                       type="button"
-                      onClick={() => navigate(`/dashboard/review/${completedData.attemptId}${fromLibrary ? '?from=library' : ''}`)}
-                      className="font-inter font-bold text-[16px] text-[#421A83] py-[10.5px] px-8 rounded-[8px] bg-[#FFC92A] hover:opacity-95 transition-opacity flex-1 sm:flex-initial"
+                      onClick={() => navigate(`/dashboard/results/${completedData.attemptId}${fromLibrary ? '?from=library' : ''}`)}
+                      className="h-[48px] font-inter font-regular text-[16px] text-[#737373] py-[11px] px-10 rounded-[4px] border border-[#737373] bg-white hover:bg-gray-50 transition-colors"
                     >
-                      Review Answers
+                      View Previous Result
                     </button>
-                  </div>
+                  </>
+                ) : inProgressData ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/dashboard/exam/${id}/start${fromLibrary ? '?from=library' : ''}`)}
+                      className="h-[48px] font-inter font-regular text-[16px] text-[#421A83] py-[11px] px-10 rounded-[4px] bg-[#FFC92A] hover:opacity-95 transition-opacity"
+                    >
+                      Resume Exam
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/dashboard/exam/${id}/start?restart=true${fromLibrary ? '&from=library' : ''}`)}
+                      className="h-[48px] font-inter font-regular text-[16px] text-[#737373] py-[11px] px-10 rounded-[4px] border border-[#737373] bg-white hover:bg-gray-50 transition-colors"
+                    >
+                      Restart
+                    </button>
+                  </>
                 ) : (
                   <button
                     type="button"
                     onClick={() => navigate(`/dashboard/exam/${id}/start${fromLibrary ? '?from=library' : ''}`)}
-                    className={`font-inter font-bold text-[16px] text-[#421A83] py-[10.5px] px-8 rounded-[8px] w-full sm:w-auto bg-[#FFC92A] hover:opacity-95 transition-opacity ${!inProgressData ? 'sm:max-w-[150px]' : ''}`}
+                    className="h-[48px] font-inter font-regular text-[16px] text-[#421A83] py-[11px] px-10 rounded-[4px] bg-[#FFC92A] hover:opacity-95 transition-opacity"
                   >
-                    {inProgressData ? 'Resume Exam' : 'Start Exam'}
+                    Start Exam
                   </button>
                 )}
               </div>
             </div>
+
+            {/* Exam Breakdown */}
+            {reviewer?.examConfig?.sectionDistribution?.length > 0 && (
+              <ExamBreakdown
+                sectionDistribution={reviewer.examConfig.sectionDistribution}
+                totalItems={reviewer.examConfig.totalItems || exam.itemsCount}
+                disclaimer={exam.disclaimer}
+              />
+            )}
 
             {/* Applicable for */}
             {exam.applicableFor && (
@@ -253,31 +448,15 @@ const ExamDetails = () => {
               </p>
             )}
 
-            {/* Intro (short + full) */}
-            {(exam.introShort || exam.introFull) && (
-              <section
-                className="mb-6"
-                data-aos="fade-up"
-                data-aos-duration="500"
-                data-aos-delay="100"
-              >
-                {exam.introShort && (
-                  <TextWithNewlines as="p" className="font-inter font-semibold text-[16px] text-[#45464E] mb-2">{exam.introShort}</TextWithNewlines>
-                )}
-                {exam.introFull && (
-                  <TextWithNewlines as="p" className="font-inter font-normal text-[16px] text-[#45464E] leading-[24px]">{exam.introFull}</TextWithNewlines>
-                )}
-              </section>
-            )}
-
-            {/* Coverage / Subjects */}
+            {/* Section and Topics */}
             <section
+              className="pt-2"
               data-aos="fade-up"
               data-aos-duration="500"
               data-aos-delay="150"
             >
-              <h2 className="font-inter font-semibold text-[16px] text-[#45464E] mb-4">
-                Coverage/Subjects:
+              <h2 className="font-inter font-bold text-[18px] text-[#45464E] mb-4">
+                Section and Topics
               </h2>
               <ol className="list-decimal list-inside space-y-4 font-inter font-normal text-[16px] text-[#45464E]">
                 {(exam.coverage || []).map((item, idx) => (
@@ -306,13 +485,6 @@ const ExamDetails = () => {
               {exam.difficultyText && (
                 <TextWithNewlines as="p" className="font-inter font-normal text-[16px] text-[#45464E] mt-4 leading-[24px]">
                   {exam.difficultyText}
-                </TextWithNewlines>
-              )}
-
-              {/* Disclaimer */}
-              {exam.disclaimer && (
-                <TextWithNewlines as="p" className="font-inter font-normal italic text-[12px] text-[#6C737F] mt-6 leading-[22px]">
-                  {exam.disclaimer}
                 </TextWithNewlines>
               )}
             </section>
