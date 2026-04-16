@@ -1,5 +1,49 @@
 import React from 'react';
 
+export const LevelUpUnderline = ({ className = "w-full h-[15px]" }) => (
+  <svg className={className} viewBox="0 0 148 15" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M0.297852 6.0167C19.1955 4.40398 87.9829 1.26735 144.298 6.01672C115.066 6.01672 76.9785 6.49696 52.4553 11.5" stroke="#FFC92A" strokeWidth="7" strokeLinejoin="round" />
+  </svg>
+);
+
+export const WhyReviewlyPlaneIcon = ({ className = "w-16 h-16" }) => (
+  <svg className={className} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <g clipPath="url(#clip0_why_reviewly_plane)">
+      <path d="M39.0374 27.3531L51.9164 23.9022C53.2827 23.5361 54.7385 23.7278 55.9635 24.435C57.1884 25.1423 58.0823 26.3072 58.4484 27.6735C58.8145 29.0397 58.6228 30.4955 57.9156 31.7205C57.2084 32.9455 56.0435 33.8393 54.6772 34.2054L16.0401 44.5582L4.17162 31.1739L11.899 29.1034L18.431 32.8746L26.1584 30.8041L16.1755 14.1538L23.9029 12.0833L39.0374 27.3531Z" stroke="#7D52CC" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M8 56H56" stroke="#7D52CC" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+    </g>
+    <defs>
+      <clipPath id="clip0_why_reviewly_plane">
+        <rect width="64" height="64" fill="white" />
+      </clipPath>
+    </defs>
+  </svg>
+);
+
+export const SendIcon = ({ className = "w-[23px] h-[23px]" }) => (
+  <svg className={className} viewBox="0 0 23 23" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M10.8936 11.9944L21.968 0.919922" stroke="#FFC92A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    <path fillRule="evenodd" clipRule="evenodd" d="M10.8931 11.9945C10.8931 11.9945 -3.07966 9.104 1.77595 6.30102C5.87346 3.93584 19.9947 -0.130638 21.9676 0.920062C23.0183 2.8929 18.9518 17.0142 16.5866 21.1117C13.7836 25.9673 10.8931 11.9945 10.8931 11.9945Z" stroke="#6E43B9" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+export const DocumentIcon = ({ className = "w-[22px] h-6" }) => (
+  <svg className={className} viewBox="0 0 22 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M14.7339 15.8529H6.31055" stroke="#FFC92A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M14.7339 11.4661H6.31055" stroke="#FFC92A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M9.52471 7.08138H6.31055" stroke="#FFC92A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    <path fillRule="evenodd" clipRule="evenodd" d="M0.75 11.5417C0.75 19.6348 3.19767 22.3333 10.5395 22.3333C17.8825 22.3333 20.329 19.6348 20.329 11.5417C20.329 3.4485 17.8825 0.75 10.5395 0.75C3.19767 0.75 0.75 3.4485 0.75 11.5417Z" stroke="#6E43B9" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+export const TwoToneStarIcon = ({ className = "w-6 h-6" }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 3C9.96385 3 9.77134 6.54652 8.55911 7.79957C7.34689 9.05263 3.5782 7.61992 3.05459 9.84403C2.53207 12.0693 5.92235 12.8243 6.34036 14.7334C6.76057 16.6426 4.68922 19.3249 6.45916 20.6598C8.22911 21.9936 10.1343 18.9747 12 18.9747" stroke="#6E43B9" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    <path opacity="0.4" d="M12 3C14.0361 3 14.2298 6.54652 15.442 7.79957C16.6531 9.05263 20.4229 7.61992 20.9454 9.84403C21.4679 12.0693 18.0787 12.8243 17.6596 14.7334C17.2405 16.6426 19.3108 19.3249 17.5408 20.6598C15.7709 21.9936 13.8656 18.9747 12 18.9747" stroke="#FFC92A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+
 /** Wavy yellow underline for "level up" in the hero headline. Use under the text. */
 export const YellowUnderline = ({ className = "w-full h-[15px]" }) => (
   <svg className={className} viewBox="0 0 361 14" fill="none" xmlns="http://www.w3.org/2000/svg">

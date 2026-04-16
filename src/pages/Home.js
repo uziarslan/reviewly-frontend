@@ -1,31 +1,41 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import AOS from 'aos';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import GoogleAuthButton from '../components/GoogleAuthButton';
-import FAQ from '../components/FAQ';
 import {
-  RulerIcon,
-  ChartPieIcon,
-  BookOpenIcon,
-  TimerIcon,
-  FileChartIcon,
-  RocketIcon,
-  YellowUnderline
+  LevelUpUnderline,
+  CubeIcon,
+  CloudThunderIcon,
+  CodeSampleIcon,
+  WhyReviewlyPlaneIcon,
 } from '../components/Icons';
-import heroImg from '../Assets/heroImg.png';
-import heroSprintCard from '../Assets/heroSprintCard.png';
-import featureReadiness from '../Assets/featureReadiness.png';
-import featureAnswerReview from '../Assets/featureAnswerReview.png';
-import featureDashboard from '../Assets/featureDashboard.png';
-import featureNextSteps from '../Assets/featureNextSteps.png';
-import heroReadinessCard from '../Assets/heroReadinessCard.png';
-import whyImg from '../Assets/whyImg.png';
+import heroImage1 from '../Assets/heroImg1.png';
+import heroImage2 from '../Assets/heroImg2.png';
+import whyImg1 from '../Assets/why1.png';
+import whyImg2 from '../Assets/why2.png';
+import whyImg3 from '../Assets/why3.png';
+import whyImg4 from '../Assets/why4.png';
+import whyImg5 from '../Assets/why5.png';
+import whyImg6 from '../Assets/why6.png';
+import whyImg7 from '../Assets/why7.png';
+import whyImg8 from '../Assets/why8.png';
+import whyImg9 from '../Assets/why9.png';
+import whyImg10 from '../Assets/why10.png';
+import { REVIEWER_LOGO_MAP, COMING_SOON_EXAMS } from '../data/reviewers';
+import { reviewerAPI } from '../services/api';
 
 const Home = () => {
+  const [reviewers, setReviewers] = useState([]);
 
   useEffect(() => {
     AOS.refresh();
+  }, []);
+
+  useEffect(() => {
+    reviewerAPI.getAll()
+      .then((res) => { if (res.success) setReviewers(res.data); })
+      .catch(() => { });
   }, []);
 
   return (
@@ -33,208 +43,75 @@ const Home = () => {
       <Header />
 
       <main>
-        {/* Hero Section */}
+        {/* Hero Section - gradient bg, min-height 704.53px, stars/plus pattern, two-column layout */}
         <section
-          className="relative overflow-hidden"
+          className="relative min-h-0 lg:min-h-[704.5323486328125px] overflow-hidden"
           style={{ background: 'linear-gradient(98.48deg, #8156D1 2.51%, #421983 47.46%, #4945B3 107.59%)' }}
         >
-          <div className="relative max-w-[1440px] mx-auto px-6 sm:px-8 lg:px-20 py-16 lg:py-[80px]">
+
+          <div className="relative max-w-[1440px] mx-auto p-6 sm:p-8 lg:p-20">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-[80px] items-center">
-
-              {/* Left: Headline, subtext, CTAs, stats */}
+              {/* Left: Headline, paragraphs, CTA, disclaimer */}
               <div className="text-left">
-                <h1 className="font-inter text-white font-semi-bold text-[36px] sm:text-[44px] lg:text-[52px] leading-[1.15] mb-[40px]" data-aos="fade-up" data-aos-duration="600" data-aos-delay="0">
-                  <span className="relative inline-block pb-[15px]">
-                    Stop guessing
-                    <YellowUnderline className="absolute left-0 bottom-0 w-full h-[15px]" />
-                  </span>{' '}what<br />
-                  to study for the CSE.
+                <h1 className="font-inter text-white font-extrabold text-[28px] sm:text-[32px] md:text-[36px] lg:text-[40px] leading-tight sm:leading-[0.6] mb-6 sm:mb-8 lg:mb-10 max-w-[586.88px]" data-aos="fade-up" data-aos-duration="600" data-aos-delay="0">
+                  Ready to{" "}
+                  <span className="inline-block">
+                    <span>level up</span>
+                    <LevelUpUnderline className="block w-100 h-auto mt-[10px]" />
+                  </span> your exam review?
                 </h1>
-
-                <p className="font-inter text-white text-[16px] sm:text-[18px] lg:text-[22px] leading-[1.7] mb-[40px] max-w-[500px]" data-aos="fade-up" data-aos-duration="600" data-aos-delay="100">
-                  Take a free mock exam, see your weak topics, and get clearer next steps — at your own pace.
+                <p className="font-inter text-white text-[14px] sm:text-[16px] lg:text-[18px] font-normal leading-[1.6] mb-6 sm:mb-8 lg:mb-10 max-w-[520px]" data-aos="fade-up" data-aos-duration="600" data-aos-delay="100">
+                  Start smarter reviewing with AI-powered tools designed for the Civil Service Exam — and soon, other Philippine exams, board tests, and professional certifications like CHRA.
                 </p>
-
-                <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-[24px] mb-[40px]" data-aos="fade-up" data-aos-duration="600" data-aos-delay="150">
-                  <GoogleAuthButton
-                    label="Take a Free CSE Mock"
-                    redirectTo="/dashboard/all-reviewers"
-                    className="inline-flex items-center justify-center bg-[#FFC92A] text-[#3B1A71] font-semibold text-[16px] sm:text-[18px] lg:text-[20px] rounded-[8px] py-[12px] sm:py-[14px] lg:h-[56px] lg:py-0 px-[20px] sm:px-[22px] lg:px-[24px] hover:opacity-90 transition-opacity whitespace-nowrap w-full sm:w-auto"
-                  />
-                  <button className="inline-flex items-center justify-center border-[1px] border-white text-white font-semibold text-[16px] sm:text-[18px] lg:text-[20px] rounded-[8px] py-[12px] sm:py-[14px] lg:h-[56px] lg:py-0 px-[24px] sm:px-[28px] lg:px-[32px] hover:bg-white/10 transition-colors whitespace-nowrap w-full sm:w-auto">
-                    See How It Works
-                  </button>
-                </div>
-
-                {/* Stats */}
-                <div className="flex flex-wrap gap-8 sm:gap-[52px]" data-aos="fade-up" data-aos-duration="600" data-aos-delay="200">
-                  <div>
-                    <div className="font-inter font-regular text-[20px] sm:text-[24px] text-[#FFC92A] leading-none mb-[4px]">5,900+</div>
-                    <div className="font-inter text-white text-[14px] sm:text-[18px]">CSE Aspirants</div>
-                  </div>
-                  <div>
-                    <div className="font-inter font-regular text-[20px] sm:text-[24px] text-[#FFC92A] leading-none mb-[4px]">7,300+</div>
-                    <div className="font-inter text-white text-[14px] sm:text-[18px]">Mock Exams Taken</div>
-                  </div>
-                  <div>
-                    <div className="font-inter font-regular text-[20px] sm:text-[24px] text-[#FFC92A] leading-none mb-[4px]">4,350+</div>
-                    <div className="font-inter text-white text-[14px] sm:text-[18px]">Full Mocks Completed</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Right: Circle + person image + floating card images + icon badges */}
-              <div className="relative hidden lg:flex items-center justify-center w-[520px] h-[520px] rounded-full" style={{ background: '#7064A4' }}>
-
-                {/* Person image */}
-                <img src={heroImg} alt="CSE Aspirant" className="relative z-10 h-[520px] w-auto object-contain bottom-[-23px]" />
-
-                {/* 7-Day Sprint Progress card image */}
-                <img
-                  src={heroSprintCard}
-                  alt="7-Day Sprint Progress"
-                  className="absolute top-[-12.41px] right-[5.7px] z-9 w-[257px] h-auto"
-                  style={{ transform: 'rotate(1.68deg)', boxShadow: '0px 6px 8px 0px rgba(0, 0, 0, 0.15)' }}
-                  data-aos="fade-left" data-aos-duration="500" data-aos-delay="200"
+                <p className="font-inter text-white text-[14px] sm:text-[16px] lg:text-[18px] font-normal leading-[1.6] mb-6 sm:mb-8 lg:mb-10 max-w-[520px]" data-aos="fade-up" data-aos-duration="600" data-aos-delay="150">
+                  Try sample reviewers for free. Upgrade anytime for full access to dynamic questions, mock exams, and insights.
+                </p>
+                <GoogleAuthButton
+                  label="Start for Free"
+                  redirectTo="/dashboard/all-reviewers"
+                  className="inline-flex items-center justify-center bg-[#FFC92A] text-[#421A83] font-bold text-[16px] sm:text-[20px] lg:text-[24px] tracking-[0.5px] rounded-lg py-3 px-6 sm:py-4 sm:px-8 lg:py-[20px] lg:px-[48px] hover:opacity-95 transition-opacity"
                 />
+                <p className="font-sans text-white text-[14px] sm:text-[16px] lg:text-[18px] font-normal mt-6 sm:mt-8 text-white/90" data-aos="fade-up" data-aos-duration="600" data-aos-delay="250">
+                  No credit card. No stress. Just smarter studying.
+                </p>
+              </div>
 
-                {/* Readiness Checker card image */}
-                <img
-                  src={heroReadinessCard}
-                  alt="Readiness Checker"
-                  className="absolute bottom-[185.3px] left-[-10px] z-20 w-[163px] h-auto"
-                  data-aos="fade-right" data-aos-duration="500" data-aos-delay="200"
-                />
-
-                {/* RulerIcon badge — left middle */}
-                <div
-                  className="absolute left-[45px] bottom-[50.57px] z-20 bg-white rounded-[8px] w-[48px] h-[48px] flex items-center justify-center"
-                  style={{ transform: 'rotate(-7.8deg)' }}
-                  data-aos="fade-up" data-aos-duration="500" data-aos-delay="300"
-                >
-                  <RulerIcon className="w-7 h-7" />
+              {/* Right: Circular images, speech bubbles, decorative icons - each with its own AOS */}
+              <div className="relative hidden lg:block min-h-[544.53px]">
+                {/* Top circular image - man with phone */}
+                <div className="absolute top-[3px] right-0" data-aos="fade-down" data-aos-duration="400" data-aos-delay="0">
+                  <img src={heroImage1} alt="" className="w-full h-full max-w-[270.86px] max-h-[344.68px] object-cover" />
+                </div>
+                {/* Bottom circular image - woman with tablet - offset so it triggers on load with hero (not after scroll) */}
+                <div className="absolute bottom-0 left-0" data-aos="fade-up" data-aos-duration="400" data-aos-delay="0" data-aos-offset="50">
+                  <img src={heroImage2} alt="" className="w-full h-full max-w-[349.6px] max-h-[345.53px] object-cover" />
                 </div>
 
-                {/* ChartPieIcon badge — right upper */}
-                <div
-                  className="absolute left-[65.15px] top-[67.03px] z-20 bg-white rounded-[8px] w-[48px] h-[48px] flex items-center justify-center"
-                  data-aos="fade-down" data-aos-duration="500" data-aos-delay="300"
-                >
-                  <ChartPieIcon className="w-6 h-6" />
+                {/* Speech bubbles - man (white), tails point down-left toward circle */}
+                <div className="absolute top-0 left-[42.6px] max-w-[393px] bg-white py-[8px] px-[16px] rounded-tl-[15px] rounded-tr-[15px] rounded-br-[3px] rounded-bl-[15px]" data-aos="fade-up" data-aos-duration="400" data-aos-delay="0">
+                  <p className="font-roboto text-[17px] font-regular text-[#0F172A] m-0">May mura nang alternative sa review centers!</p>
                 </div>
-
-                {/* BookOpenIcon badge — right lower */}
-                <div
-                  className="absolute right-[17.77px] bottom-[215.74px] z-20 bg-white rounded-[8px] w-[48px] h-[48px] flex items-center justify-center"
-                  style={{ transform: 'rotate(5.3deg)' }}
-                  data-aos="fade-down" data-aos-duration="500" data-aos-delay="300"
-                >
-                  <BookOpenIcon className="w-7 h-7" />
+                <div className="absolute top-[58px] left-[134.6px] max-w-[301px] bg-white py-[8px] px-[16px] rounded-tl-[15px] rounded-tr-[15px] rounded-br-[3px] rounded-bl-[15px]" data-aos="fade-up" data-aos-duration="400" data-aos-delay="0">
+                  <p className="font-roboto text-[17px] font-regular text-[#0F172A] m-0">May exam result AI evaluation pa!</p>
                 </div>
-
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* How It Works Section */}
-        <section className="bg-white pt-16 lg:pt-[64px] lg:pb-[24px] pb-[20px]">
-          <div className="max-w-[1440px] mx-auto px-6 sm:px-8 lg:px-20">
-            <div className="text-center mb-10 lg:mb-[56px]" data-aos="fade-up" data-aos-duration="500" data-aos-delay="0">
-              <h2 className="font-inter text-[#0F172A] font-regular text-[22px] sm:text-[26px] lg:text-[32px] leading-tight mb-[24px]">How it works</h2>
-              <p className="font-inter text-[#0F172A80] text-[14px] sm:text-[17px] lg:text-[20px]">How Reviewly helps you review smarter</p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 lg:gap-[24px]">
-              {/* Card 1 */}
-              <div className="border border-[#EFF0F6] rounded-[12px] p-[24px]" data-aos="fade-up" data-aos-duration="500" data-aos-delay="0">
-                <div className="w-[56px] h-[56px] rounded-[16px] bg-[#F6F4F9] flex items-center justify-center mb-[16px]">
-                  <TimerIcon className="w-7 h-7" />
+                {/* Speech bubbles - woman (yellow), tails point down-right toward circle */}
+                <div className="absolute top-[119px] left-[42.6px] max-w-[232px] bg-[#FFC92A] px-[16px] py-[8px] rounded-tl-[15px] rounded-tr-[15px] rounded-bl-[3px] rounded-br-[15px]" data-aos="fade-up" data-aos-duration="400" data-aos-delay="0">
+                  <p className="font-roboto text-[17px] font-regular text-[#0F172A] m-0">Oo nga! Ang galing!</p>
                 </div>
-                <h3 className="font-inter font-bold text-[#45464E] text-[15px] sm:text-[16px] lg:text-[18px] mb-[16px]">Take a mock → see where you stand</h3>
-                <p className="font-inter text-[#0F172A] text-[13px] sm:text-[14px] lg:text-[16px] leading-[1.6]">Start with a free CSE mock exam to check where you currently stand.</p>
-              </div>
-
-              {/* Card 2 */}
-              <div className="border border-[#EFF0F6] rounded-[12px] p-[24px]" data-aos="fade-up" data-aos-duration="500" data-aos-delay="100">
-                <div className="w-[56px] h-[56px] rounded-[16px] bg-[#F6F4F9] flex items-center justify-center mb-[16px]">
-                  <FileChartIcon className="w-7 h-7" />
+                <div className="absolute top-[180px] left-[42.6px] max-w-[232px] bg-[#FFC92A] px-[16px] py-[8px] rounded-tl-[15px] rounded-tr-[15px] rounded-bl-[3px] rounded-br-[15px]" data-aos="fade-up" data-aos-duration="400" data-aos-delay="0">
+                  <p className="font-roboto text-[17px] font-regular text-[#0F172A] m-0">Mapapadali review natin!</p>
                 </div>
-                <h3 className="font-inter font-bold text-[#45464E] text-[15px] sm:text-[16px] lg:text-[18px] mb-[16px]">Spot weak subjects & topics</h3>
-                <p className="font-inter text-[#0F172A] text-[13px] sm:text-[14px] lg:text-[16px] leading-[1.6]">Get your Readiness Score, gap-to-pass, and the subjects/topics pulling your score down.</p>
-              </div>
-
-              {/* Card 3 */}
-              <div className="border border-[#EFF0F6] rounded-[12px] p-[24px]" data-aos="fade-up" data-aos-duration="500" data-aos-delay="200">
-                <div className="w-[56px] h-[56px] rounded-[16px] bg-[#F6F4F9] flex items-center justify-center mb-[16px]">
-                  <RocketIcon className="w-7 h-7" />
+                {/* Decorative icons - placed separately, each with own AOS */}
+                <div className="absolute bottom-[64.89px] right-[201px] w-[64px] h-[66px]" data-aos="fade-down" data-aos-duration="400" data-aos-delay="0">
+                  <CubeIcon className="w-full h-full" />
                 </div>
-                <h3 className="font-inter font-bold text-[#45464E] text-[15px] sm:text-[16px] lg:text-[18px] mb-[16px]">Study with clearer next steps</h3>
-                <p className="font-inter text-[#0F172A] text-[13px] sm:text-[14px] lg:text-[16px] leading-[1.6]">Review explanations, focus on weak areas, and follow a guided review path at your own pace.</p>
+                <div className="absolute bottom-[99.53px] right-[127.33px] w-[53.33px] h-[56px]" data-aos="fade-down" data-aos-duration="400" data-aos-delay="0">
+                  <CloudThunderIcon className="w-full h-full" />
+                </div>
+                <div className="absolute bottom-[42.88px] right-[147.98px] w-[37px] h-[27px]" data-aos="fade-down" data-aos-duration="400" data-aos-delay="0">
+                  <CodeSampleIcon className="w-full h-full" />
+                </div>
               </div>
-            </div>
-          </div>
-        </section>
-
-        {/* See How Reviewly Guides Your Review */}
-        <section className="bg-white py-16 lg:py-[80px]">
-          <div className="max-w-[1440px] mx-auto px-6 sm:px-8 lg:px-20">
-            <h2 className="font-inter text-[#0F172A] font-normal text-[20px] sm:text-[26px] lg:text-[32px] text-center mb-8 sm:mb-10 lg:mb-[56px]" data-aos="fade-up" data-aos-duration="500" data-aos-delay="0">
-              See how Reviewly guides your review
-            </h2>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-[24px]">
-              {/* Card 1 — Results / Readiness */}
-              <div className="rounded-[16px] px-[24px] pt-[24px] sm:px-[40px] sm:pt-[40px] bg-[#F5F4FF] max-h-[480px] overflow-hidden" data-aos="fade-up" data-aos-duration="500" data-aos-delay="0">
-                <p className="font-inter font-semibold text-[11px] sm:text-[14px] text-[#6E43B9] uppercase tracking-wider mb-[8px] sm:mb-[12px]">Results / Readiness</p>
-                <h3 className="font-inter font-bold text-[#45464E] text-[16px] sm:text-[19px] lg:text-[22px] mb-[8px] sm:mb-[12px]">See your Readiness Score after every mock.</h3>
-                <p className="font-inter text-[#0F172A] text-[13px] sm:text-[15px] lg:text-[16px] leading-[1.6] mb-[20px] sm:mb-[32px]">Know how close you are to passing see where you stand.</p>
-                <img src={featureReadiness} alt="Readiness Score" className="w-full sm:max-w-[430px] mx-auto h-auto rounded-[8px]" />
-              </div>
-
-              {/* Card 2 — Answer Review / Explanations */}
-              <div className="rounded-[16px] px-[24px] pt-[24px] sm:px-[40px] sm:pt-[40px] bg-[#F5F4FF] max-h-[480px] overflow-hidden" data-aos="fade-up" data-aos-duration="500" data-aos-delay="100">
-                <p className="font-inter font-semibold text-[11px] sm:text-[14px] text-[#6E43B9] uppercase tracking-wider mb-[8px] sm:mb-[12px]">Answer Review / Explanations</p>
-                <h3 className="font-inter font-bold text-[#45464E] text-[16px] sm:text-[19px] lg:text-[22px] mb-[8px] sm:mb-[12px]">Understand your mistakes better.</h3>
-                <p className="font-inter text-[#0F172A] text-[13px] sm:text-[15px] lg:text-[16px] leading-[1.6] mb-[20px] sm:mb-[32px]">Learn why an answer is correct and where your thinking went wrong.</p>
-                <img src={featureAnswerReview} alt="Answer Review" className="w-full sm:max-w-[548px] mx-auto h-auto rounded-[8px]" />
-              </div>
-
-              {/* Card 3 — Dashboard / Weak Topics */}
-              <div className="rounded-[16px] px-[24px] pt-[24px] sm:px-[40px] sm:pt-[40px] bg-[#F5F4FF] max-h-[480px] overflow-hidden" data-aos="fade-up" data-aos-duration="500" data-aos-delay="0">
-                <p className="font-inter font-semibold text-[11px] sm:text-[14px] text-[#6E43B9] uppercase tracking-wider mb-[8px] sm:mb-[12px]">Dashboard / Weak Topics</p>
-                <h3 className="font-inter font-bold text-[#45464E] text-[16px] sm:text-[19px] lg:text-[22px] mb-[8px] sm:mb-[12px]">Spot your weak topics faster.</h3>
-                <p className="font-inter text-[#0F172A] text-[13px] sm:text-[15px] lg:text-[16px] leading-[1.6] mb-[20px] sm:mb-[32px]">See which sections and topics need the most attention.</p>
-                <img src={featureDashboard} alt="Dashboard Weak Topics" className="w-full sm:max-w-[430px] mx-auto h-auto rounded-[8px]" />
-              </div>
-
-              {/* Card 4 — Next Steps / Review Plan */}
-              <div className="rounded-[16px] px-[24px] pt-[24px] sm:px-[40px] sm:pt-[40px] bg-[#F5F4FF] max-h-[480px] overflow-hidden" data-aos="fade-up" data-aos-duration="500" data-aos-delay="100">
-                <p className="font-inter font-semibold text-[11px] sm:text-[14px] text-[#6E43B9] uppercase tracking-wider mb-[8px] sm:mb-[12px]">Next Steps / Review Plan</p>
-                <h3 className="font-inter font-bold text-[#45464E] text-[16px] sm:text-[19px] lg:text-[22px] mb-[8px] sm:mb-[12px]">Get clearer next steps for your next review.</h3>
-                <p className="font-inter text-[#0F172A] text-[13px] sm:text-[15px] lg:text-[16px] leading-[1.6] mb-[20px] sm:mb-[32px]">Turn weak areas into a simple, guided review path.</p>
-                <img src={featureNextSteps} alt="Next Steps Review Plan" className="w-full sm:max-w-[430px] mx-auto h-auto rounded-[8px]" />
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* CTA Banner */}
-        <section className="bg-white py-8 px-6 sm:px-0">
-          <div className="max-w-[840px] mx-auto">
-            <div
-              className="flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-[80px] rounded-[16px] px-6 py-8 sm:px-0 sm:py-[24px]"
-              style={{ background: 'linear-gradient(98.48deg, #8156D1 2.51%, #421983 47.46%, #4945B3 107.59%), linear-gradient(0deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2))' }}
-              data-aos="fade-up" data-aos-duration="500" data-aos-delay="0"
-            >
-              <p className="font-inter text-white font-normal text-[18px] sm:text-[24px] lg:text-[32px] text-center sm:text-left">
-                Ready to try it?
-              </p>
-              <GoogleAuthButton
-                label="Take a Free CSE Mock"
-                redirectTo="/dashboard/all-reviewers"
-                className="inline-flex items-center justify-center bg-[#FFC92A] text-[#3B1A71] font-semibold text-[14px] sm:text-[16px] lg:text-[20px] rounded-[8px] py-[13px] sm:py-[16px] lg:h-[56px] lg:py-0 px-[20px] sm:px-[24px] hover:opacity-90 transition-opacity whitespace-nowrap w-full sm:w-auto"
-              />
             </div>
           </div>
         </section>
@@ -243,37 +120,192 @@ const Home = () => {
         <section>
           <div className="max-w-[1440px] mx-auto px-6 sm:px-8 lg:px-20 py-12 lg:py-16">
             <div className="flex flex-wrap justify-center gap-6 sm:gap-8 lg:gap-[58.85px] items-center">
-              {/* Left: single image */}
-              <div data-aos="fade-up" data-aos-duration="500" data-aos-delay="0">
-                <img src={whyImg} alt="" className="w-full max-w-[540px] h-auto rounded-[12px]" />
+              {/* Left: 10-image collage. Tailwind w/h; responsive below lg, desktop exact at lg. Shadow via class. */}
+              <div className="flex flex-row gap-2 sm:gap-3 md:gap-[10px] lg:gap-[15.5px] w-max max-w-full overflow-hidden" aria-hidden>
+                <div className="flex flex-col gap-2 sm:gap-3 md:gap-[10px] lg:gap-[15.5px] justify-center items-end">
+                  <div data-aos="fade-up" data-aos-duration="400" data-aos-delay="0">
+                    <img src={whyImg1} alt="" className="object-cover rounded-lg w-[75px] h-[112px] sm:w-[93px] sm:h-[140px] md:w-[109px] md:h-[164px] lg:w-[124.23529815673828px] lg:h-[186.1818084716797px] shadow-why-collage" />
+                  </div>
+                  <div data-aos="fade-down" data-aos-duration="400" data-aos-delay="0">
+                    <img src={whyImg2} alt="" className="object-cover rounded-lg w-[100px] h-[150px] sm:w-[125px] sm:h-[188px] md:w-[147px] md:h-[220px] lg:w-[166.94117736816406px] lg:h-[250.18182373046875px] shadow-why-collage" />
+                  </div>
+                </div>
+                <div className="flex flex-col gap-2 sm:gap-3 md:gap-[10px] lg:gap-[15.5px] justify-center">
+                  <div data-aos="fade-up" data-aos-duration="400" data-aos-delay="0">
+                    <img src={whyImg3} alt="" className="object-cover rounded-lg w-[75px] h-[123px] sm:w-[93px] sm:h-[148px] md:w-[109px] md:h-[164px] lg:w-[124.23529815673828px] lg:h-[205.5757598876953px] shadow-why-collage" />
+                  </div>
+                  <div data-aos="fade-down" data-aos-duration="400" data-aos-delay="0">
+                    <img src={whyImg4} alt="" className="object-cover rounded-lg w-[75px] h-[100px] sm:w-[93px] sm:h-[125px] md:w-[109px] md:h-[150px] lg:w-[124.23529815673828px] lg:h-[166.78787231445312px] shadow-why-collage" />
+                  </div>
+                  <div data-aos="fade-down" data-aos-duration="400" data-aos-delay="0">
+                    <img src={whyImg5} alt="" className="object-cover rounded-lg w-[75px] h-[125px] sm:w-[93px] sm:h-[156px] md:w-[109px] md:h-[187px] lg:w-[124.23529815673828px] lg:h-[208.48484802246094px] shadow-why-collage" />
+                  </div>
+                </div>
+                <div className="flex flex-col gap-2 sm:gap-3 md:gap-[10px] lg:gap-[15.5px] justify-center">
+                  <div data-aos="fade-up" data-aos-duration="400" data-aos-delay="0">
+                    <img src={whyImg6} alt="" className="object-cover rounded-lg w-[75px] h-[93px] sm:w-[93px] sm:h-[116px] md:w-[109px] md:h-[136px] lg:w-[124.23529815673828px] lg:h-[155.15151977539062px] shadow-why-collage" />
+                  </div>
+                  <div data-aos="fade-up" data-aos-duration="400" data-aos-delay="0">
+                    <img src={whyImg7} alt="" className="object-cover rounded-lg w-[75px] h-[100px] sm:w-[93px] sm:h-[124px] md:w-[109px] md:h-[149px] lg:w-[124.23529815673828px] lg:h-[165.8181915283203px] shadow-why-collage" />
+                  </div>
+                  <div data-aos="fade-down" data-aos-duration="400" data-aos-delay="0">
+                    <img src={whyImg8} alt="" className="object-cover rounded-lg w-[75px] h-[112px] sm:w-[93px] sm:h-[140px] md:w-[109px] md:h-[164px] lg:w-[124.23529815673828px] lg:h-[186.1818084716797px] shadow-why-collage" />
+                  </div>
+                </div>
+                <div className="flex flex-col gap-2 sm:gap-3 md:gap-[10px] lg:gap-[15.5px] justify-center">
+                  <div data-aos="fade-down" data-aos-duration="400" data-aos-delay="0">
+                    <img src={whyImg9} alt="" className="object-cover rounded-lg w-[93px] h-[148px] sm:w-[116px] sm:h-[185px] md:w-[136px] md:h-[217px] lg:w-[155.29412841796875px] lg:h-[247.27273559570312px] shadow-why-collage" />
+                  </div>
+                  <div data-aos="fade-up" data-aos-duration="400" data-aos-delay="0">
+                    <img src={whyImg10} alt="" className="object-cover rounded-lg w-[75px] h-[96px] sm:w-[93px] sm:h-[120px] md:w-[109px] md:h-[144px] lg:w-[124.23529815673828px] lg:h-[160px] shadow-why-collage" />
+                  </div>
+                </div>
               </div>
 
               {/* Right: Heading + plane icon, 3 paragraphs */}
               <div className="text-left max-w-[589px]" data-aos="fade-up" data-aos-duration="500" data-aos-delay="100">
-                <div className="flex items-center">
-                  <h2 className="font-inter text-[#0F172A] font-normal text-[28px] leading-tight max-w-[450px] mb-[24px]">
-                    Built for the way Filipino learners actually review
+                <div className="flex items-center gap-3 mb-6 sm:mb-8">
+                  <h2 className="font-sans text-[#0F172A] font-normal text-[24px] sm:text-[30px] md:text-[36px] lg:text-[40px] leading-tight">
+                    Why Reviewly?
                   </h2>
+                  <WhyReviewlyPlaneIcon className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 " />
                 </div>
-                <p className="font-inter text-[#0F172A] text-[14px] sm:text-[16px] font-normal leading-[1.6] mb-6 sm:mb-8">
-                  Reviewly is made for CSE takers who want a simpler, more guided way to prepare.
+                <p className="font-sans text-[#0F172A] text-[14px] sm:text-[16px] font-normal leading-[1.6] mb-6 sm:mb-8">
+                  Studying for exams in the Philippines — big or small — is never easy.
                 </p>
-                <p className='font-inter text-[#0F172A] text-[14px] sm:text-[16px] font-normal leading-[1.6]'>Whether you’re:</p>
-                <ul className="font-inter text-[#0F172A] text-[14px] sm:text-[16px] font-normal leading-[1.6] mb-6 sm:mb-8 list-disc list-inside ps-3">
-                  <li>reviewing on your own,</li>
-                  <li>fitting review around work or school,</li>
-                  <li>or using it alongside a review center,</li>
-                </ul>
+                <p className="font-sans text-[#0F172A] text-[14px] sm:text-[16px] font-normal leading-[1.6] mb-6 sm:mb-8">
+                  That's why Reviewly is designed for everyday Pinoy reviewers: practical, flexible, and built to scale from CSE to LET, NLE, Psychometrician, Criminology, UPCAT, and even professional certifications like CHRA.
+                </p>
                 <p className="font-sans text-[#0F172A] text-[14px] sm:text-[16px] font-normal leading-[1.6]">
-                  Reviewly helps you focus on what matters most.
+                  Whether you're preparing for government service, a board license, a job qualification, or a skills exam, Reviewly grows with you.<br />
+                  We're laser-focused on the Civil Service Exam today — but we're building the ultimate study buddy for all types of Philippine exams and certifications. 💜
                 </p>
               </div>
             </div>
           </div>
         </section>
 
-        {/* FAQ Section */}
-        <FAQ />
+        {/* Current Reviewers & Coming Soon - light purple bg, centered content */}
+        <section className="bg-[#F5F4FF]">
+          <div className="max-w-[1440px] mx-auto px-6 sm:px-8 lg:px-20 py-10 sm:py-12 lg:py-[56px]">
+            {/* Current Reviewers */}
+            <div className="mb-4 sm:mb-6 lg:mb-[32px]" data-aos="fade-up" data-aos-duration="500" data-aos-delay="0">
+              <h2 className="font-inter text-[#0F172A] font-bold text-xl sm:text-2xl md:text-3xl lg:text-4xl leading-tight mb-4 sm:mb-6 lg:mb-[32px]">
+                📚 Current Reviewers
+              </h2>
+              <p className="font-inter text-[#0F172A] text-sm sm:text-base leading-[1.6]">
+                All full reviewers below are available with Premium. Free users get sample 20-item versions to try out.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[24px] justify-items-center mb-4 sm:mb-6 lg:mb-[32px]">
+              {reviewers.map((card, index) => {
+                const logoSrc = card.logo?.filename && REVIEWER_LOGO_MAP[card.logo.filename]
+                  ? REVIEWER_LOGO_MAP[card.logo.filename]
+                  : (card.logo?.path ?? null);
+                const details = card.details || {};
+                return (
+                  <div
+                    key={card._id}
+                    className="w-full max-w-[410.67px] min-w-0 bg-white rounded-[12px] p-[24px] text-left shadow-[0px_2px_4px_0px_#00000026]"
+                    data-aos="fade-up"
+                    data-aos-duration="500"
+                    data-aos-delay={100 + index * 50}
+                  >
+                    {logoSrc ? (
+                      <img src={logoSrc} alt="" className="w-[48px] h-[48px] mb-[16px]" />
+                    ) : (
+                      <div className="w-[48px] h-[48px] rounded bg-[#6E43B9] flex items-center justify-center text-white font-inter font-bold text-xs mb-[16px]">
+                        CSE
+                      </div>
+                    )}
+                    <h3 className="font-inter text-[#45464E] font-medium text-[16px] mb-[16px]">
+                      {card.title}
+                    </h3>
+                    <p className="font-inter text-[#64748B] text-[15px] leading-[20px] mb-[16px] font-regular">
+                      <span className="font-semibold">{card.description?.short ?? ''}</span>
+                      <br />
+                      {card.description?.full ?? ''}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-[5px] text-sm text-[#0F172A]">
+                      <span className="inline-flex items-center gap-1.5 font-inter font-normal not-italic text-[14px] text-[#45464E] mb-0">
+                        📝 {details.items ?? (card.examDetails?.itemsCount ? `${card.examDetails.itemsCount} items` : '—')}
+                      </span>
+                      <span className="text-[#45464E] font-inter font-normal not-italic text-[14px]">•</span>
+                      <span className="inline-flex items-center gap-1.5 font-inter font-normal not-italic text-[14px] text-[#45464E] mb-0">
+                        ⏱️ {details.duration ?? '—'}
+                      </span>
+                      {details.passingRate != null && (
+                        <>
+                          <span className="text-[#45464E] font-inter font-normal not-italic text-[14px]">•</span>
+                          <span className="inline-flex items-center gap-1.5 font-inter font-normal not-italic text-[14px] text-[#45464E] mb-0">
+                            🎯 Passing rate: {details.passingRate}
+                          </span>
+                        </>
+                      )}
+                      {details.accessLevel != null && (
+                        <>
+                          <span className="text-[#45464E] font-inter font-normal not-italic text-[14px]">•</span>
+                          <span className="inline-flex items-center gap-1.5 font-inter font-normal not-italic text-[14px] text-[#45464E] mb-0">
+                            📘 {details.accessLevel}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Coming Soon */}
+            <div className="mb-4 sm:mb-6 lg:mb-[32px]" data-aos="fade-up" data-aos-duration="500" data-aos-delay="0">
+              <h2 className="font-inter text-[#0F172A] font-bold text-xl sm:text-2xl md:text-3xl lg:text-4xl leading-tight mb-4 sm:mb-6 lg:mb-[32px]">
+                ⭐️ Coming Soon...
+              </h2>
+              <p className="font-inter text-[#0F172A] text-sm sm:text-base leading-[1.6]">
+                We’re expanding Reviewly to cover more Philippine exams — academic, licensure, and professional certifications.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[24px] justify-items-center mb-4 sm:mb-6 lg:mb-[32px]">
+              {COMING_SOON_EXAMS.map(({ name }, index) => (
+                <div
+                  key={name}
+                  className="w-full max-w-[410.67px] min-w-0 bg-white rounded-[12px] p-[24px] flex items-center gap-3 shadow-[0px_2px_4px_0px_#00000026]"
+                  data-aos="fade-up"
+                  data-aos-duration="500"
+                  data-aos-delay={100 + index * 50}
+                >
+                  <span className="font-inter text-[#0F172A] text-[14px] font-regular">
+                    {name}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <p className="font-inter text-[#0F172A] text-[16px] font-normal not-italic mt-4 sm:mt-6 lg:mt-[32px]" data-aos="fade-up" data-aos-duration="500" data-aos-delay="100">
+              and many more!!!
+            </p>
+          </div>
+        </section>
+
+        {/* Why We Keep It Simple? */}
+        <section className="bg-white py-12 sm:py-16 lg:py-[40px]">
+          <div className="max-w-[880px] mx-auto px-6 sm:px-8">
+            <h2 className="font-inter text-[#0F172A] font-normal text-[28px] text-center mb-[24px]" data-aos="fade-up" data-aos-duration="500" data-aos-delay="0">
+              Why We Keep It Simple?
+            </h2>
+            <p className="font-inter text-[#0F172A] font-normal text-[16px] text-center mb-[40px] leading-[180%]" data-aos="fade-up" data-aos-duration="500" data-aos-delay="50">
+              At Reviewly, we believe that quality review tools should be accessible to every Filipino learner. That's why you can start with free sample reviewers to explore how Reviewly works — no pressure, no commitment.
+            </p>
+            <p className="font-inter text-[#0F172A] font-normal text-[16px] text-center mb-[40px] leading-[180%]" data-aos="fade-up" data-aos-duration="500" data-aos-delay="100">
+              When you're ready to unlock the full experience, Premium gives you complete access to all reviewers, dynamic AI-generated questions, mock exams, and explanations across all current and future exam modules.
+            </p>
+            <p className="font-inter text-[#0F172A] font-normal text-[16px] text-center mb-0 leading-[180%]" data-aos="fade-up" data-aos-duration="500" data-aos-delay="150">
+              No confusing tiers. No complicated upgrades.<br /> Just one full-access Premium experience — you simply choose how long you want it. Clear, flexible, and designed to grow with you.💜
+            </p>
+          </div>
+        </section>
       </main>
 
       <Footer />
