@@ -19,24 +19,26 @@ function secondsToTimeStr(totalSec) {
 
 const OPTION_LABELS = ['A', 'B', 'C', 'D'];
 
-function getTagStyle(value) {
-  const v = (value || '').toLowerCase();
-  let bgColor, textColor, darkText;
+/** Section → color map (matches Figma design). */
+const SECTION_TAG_COLORS = {
+  verbal:               { color: '#14B8A6', darkText: true },
+  analytical:           { color: '#3B82F6', darkText: true },
+  clerical:             { color: '#3B82F6', darkText: true },
+  numerical:            { color: '#F59E0B', darkText: false },
+  'general information':{ color: '#EC4899', darkText: false },
+  general_info:         { color: '#EC4899', darkText: false },
+};
 
-  if (v.includes('verbal') || v.includes('word meaning') || v.includes('reading')) {
-    bgColor = '#14B8A6'; textColor = '#14B8A6'; darkText = true;
-  } else if (v.includes('clerical') || v.includes('filing') || v.includes('analytical') || v.includes('word analogy') || v.includes('grammar') || v.includes('spelling')) {
-    bgColor = '#3B82F6'; textColor = '#3B82F6'; darkText = true;
-  } else if (v.includes('numerical') || v.includes('basic operations') || v.includes('math') || v.includes('arithmetic') || v.includes('number')) {
-    bgColor = '#F59E0B'; textColor = '#F59E0B'; darkText = false;
-  } else if (v.includes('general') || v.includes('r.a.') || v.includes('civil service') || v.includes('law') || v.includes('ethics')) {
-    bgColor = '#EC4899'; textColor = '#EC4899'; darkText = false;
-  } else {
-    bgColor = '#14B8A6'; textColor = '#14B8A6'; darkText = true;
-  }
+/**
+ * Returns containerStyle + textStyle for a tag based on the question's section key.
+ * Pass the raw section string (e.g. "verbal", "general information").
+ */
+function getTagStyleBySection(sectionKey) {
+  const key = (sectionKey || '').toLowerCase().trim();
+  const { color, darkText } = SECTION_TAG_COLORS[key] || { color: '#14B8A6', darkText: true };
 
   const containerStyle = {
-    background: `linear-gradient(rgba(255,255,255,0.95), rgba(255,255,255,0.95)), linear-gradient(${bgColor}, ${bgColor})`,
+    background: `linear-gradient(rgba(255,255,255,0.95), rgba(255,255,255,0.95)), linear-gradient(${color}, ${color})`,
     borderRadius: '8px',
     border: 'none',
     padding: '4px 12px',
@@ -44,12 +46,12 @@ function getTagStyle(value) {
   };
   const textStyle = darkText
     ? {
-      background: `linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.2)), linear-gradient(${textColor}, ${textColor})`,
+      background: `linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.2)), linear-gradient(${color}, ${color})`,
       WebkitBackgroundClip: 'text',
       WebkitTextFillColor: 'transparent',
       backgroundClip: 'text',
     }
-    : { color: textColor };
+    : { color };
 
   return { containerStyle, textStyle };
 }
@@ -631,18 +633,38 @@ function Exam({ isTrial = false }) {
           <div className="order-1 w-full lg:w-auto lg:flex-1 lg:min-w-0 bg-[#FFFFFF] p-[24px] rounded-[12px]" data-aos="fade-up" data-aos-duration="400" data-aos-delay="50">
             <div key={currentIndex} className="animate-question-change">
               {/* Question header with counter and tags */}
-              <div className="flex items-center justify-between mb-5">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-5 gap-2">
                 <p className="font-inter font-medium text-[#0F172A] text-[16px]">
                   Question {questionNumber} of {totalQuestions}
                 </p>
-                {currentQuestion?.topic && (() => {
-                  const { containerStyle, textStyle } = getTagStyle(currentQuestion.topic);
-                  return (
-                    <span className="font-inter text-[13px] font-normal capitalize" style={containerStyle}>
-                      <span style={textStyle}>{currentQuestion.topic}</span>
-                    </span>
-                  );
-                })()}
+                <div className="flex items-center gap-2 flex-wrap sm:justify-end">
+                  {currentQuestion?.section && (() => {
+                    const sectionLabel = (() => {
+                      const s = (currentQuestion.section || '').toLowerCase().trim();
+                      if (s === 'verbal') return 'Verbal';
+                      if (s === 'analytical') return 'Analytical';
+                      if (s === 'clerical') return 'Clerical';
+                      if (s === 'numerical') return 'Numerical';
+                      if (s === 'general information' || s === 'general_info') return 'Gen Info';
+                      return currentQuestion.section.charAt(0).toUpperCase() + currentQuestion.section.slice(1);
+                    })();
+                    const { containerStyle, textStyle } = getTagStyleBySection(currentQuestion.section);
+                    return (
+                      <span className="font-inter text-[13px] font-normal capitalize" style={containerStyle}>
+                        <span style={textStyle}>{sectionLabel}</span>
+                      </span>
+                    );
+                  })()}
+                  {currentQuestion?.topic && (() => {
+                    // Topic tag always uses the same section color for consistency
+                    const { containerStyle, textStyle } = getTagStyleBySection(currentQuestion.section);
+                    return (
+                      <span className="font-inter text-[13px] font-normal capitalize" style={containerStyle}>
+                        <span style={textStyle}>{currentQuestion.topic}</span>
+                      </span>
+                    );
+                  })()}
+                </div>
               </div>
 
               {/* Question text */}
@@ -684,45 +706,47 @@ function Exam({ isTrial = false }) {
             </div>
 
             {/* Bottom actions */}
-            <div className="relative flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-[#F2F4F7]">
+            <div className="relative flex flex-col gap-3 pt-4">
               <span className={`absolute -top-5 right-0 font-inter text-[13px] text-[#45464E] transition-opacity duration-200 ${saveStatus ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
                 {saveStatus === 'saving' ? 'Saving...' : 'Saved ✓'}
               </span>
+              {/* Row 1: Next / Submit (full-width primary) */}
+              <button
+                type="button"
+                onClick={handleNextOrSubmit}
+                disabled={examFrozen || submitting}
+                className="w-full font-inter font-regular text-[14px] text-[#421A83] py-2.5 px-6 rounded-[8px] bg-[#FFC92A] hover:opacity-95 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {isLastQuestion && submitting && (
+                  <svg className="animate-spin h-4 w-4 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                )}
+                {isLastQuestion ? 'Submit' : 'Next'}
+              </button>
+              {/* Row 2: Previous + Save and Exit side by side */}
               <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={handleNextOrSubmit}
-                  disabled={examFrozen || submitting}
-                  className="font-inter font-regular text-[14px] text-[#421A83] py-2.5 px-6 rounded-[8px] bg-[#FFC92A] hover:opacity-95 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  {isLastQuestion && submitting && (
-                    <svg className="animate-spin h-4 w-4 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
-                  )}
-                  {isLastQuestion ? 'Submit' : 'Next'}
-                </button>
                 <button
                   type="button"
                   onClick={handlePrev}
                   disabled={currentIndex === 0 || examFrozen}
-                  className="font-inter font-regular text-[14px] text-[#6C737F] py-2.5 px-4 rounded-[8px] border-[0.5px] border-[#6C737F] bg-white hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 font-inter font-regular text-[14px] text-[#6C737F] py-2.5 px-4 rounded-[8px] border-[0.5px] border-[#6C737F] bg-white hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Previous
                 </button>
+                <button
+                  type="button"
+                  disabled={examFrozen}
+                  onClick={() => {
+                    if (examFrozen) return;
+                    setShowPauseModal(true);
+                  }}
+                  className="flex-1 font-inter font-regular text-[14px] text-[#6C737F] py-2.5 px-4 rounded-[8px] border-[0.5px] border-[#6C737F] bg-white hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Save and Exit
+                </button>
               </div>
-              <button
-                type="button"
-                disabled={examFrozen}
-                onClick={() => {
-                  if (examFrozen) return;
-                  setShowPauseModal(true);
-                }}
-                className="font-inter font-regular text-[14px] text-[#6C737F] py-2.5 px-4 rounded-[8px] border-[0.5px] border-[#6C737F] bg-white hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Save and Exit
-              </button>
             </div>
             <p className="font-inter italic text-[14px] text-[#45464E80] mt-3">
               You can skip questions and return to them anytime.

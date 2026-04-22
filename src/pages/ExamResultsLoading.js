@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import AOS from 'aos';
+import html2canvas from 'html2canvas';
 import DashNav from '../components/DashNav';
 import {
   LockIcon,
@@ -141,8 +142,10 @@ const ExamResultsLoading = () => {
   const [attempt, setAttempt] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeStep, setActiveStep] = useState(0);
+  const [processingDone, setProcessingDone] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareUrl, setShareUrl] = useState('');
+  const [minTimeDone, setMinTimeDone] = useState(false);
   const cardRef = useRef(null);
 
   const backUrl = fromLibrary ? '/dashboard/library' : '/dashboard/all-reviewers';
@@ -151,24 +154,47 @@ const ExamResultsLoading = () => {
     setShowShareModal(true);
     if (shareUrl) return; // already fetched
     try {
-      const res = await examAPI.generateShareLink(attemptId);
+      // Run share-link generation and card capture in parallel for speed
+      const captureCard = cardRef.current
+        ? html2canvas(cardRef.current, { scale: 1, useCORS: true, backgroundColor: '#FFFFFF' })
+            .catch(() => null)
+        : Promise.resolve(null);
+
+      const [res, canvas] = await Promise.all([
+        examAPI.generateShareLink(attemptId),
+        captureCard,
+      ]);
+
       if (res.success && res.shareToken) {
-        const origin = window.location.origin;
-        setShareUrl(`${origin}/share/${res.shareToken}`);
+        const url = res.shareUrl || `${window.location.origin}/share/${res.shareToken}`;
+        setShareUrl(url);
+
+        // Upload the score-card image in the background so the Facebook OG preview
+        // shows the actual breakdown image instead of a generic icon.
+        if (canvas) {
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+          examAPI.uploadShareImage(attemptId, dataUrl).catch(() => {/* non-critical */});
+        }
       }
     } catch (err) {
       console.error('Failed to generate share link', err);
     }
-  }, [attemptId, shareUrl]);
+  }, [attemptId, shareUrl, cardRef]);
 
   const checkAccess = (r) => canAccessReviewer(r, { isAuthenticated, user });
   const result = attempt?.result || {};
-  const aiStatus = result.aiStatus ?? null;
-  const isProcessing =
-    attempt &&
-    ((attempt.status !== 'submitted' && attempt.status !== 'timed_out') ||
-      aiStatus === 'pending' ||
-      aiStatus === 'processing');
+  // Still processing if attempt hasn't loaded or AI analysis is in progress
+  const aiStatus = attempt?.result?.aiStatus ?? null;
+  const isProcessing = !processingDone && (!attempt || aiStatus === 'pending' || aiStatus === 'processing');
+  // activeStep is driven by the auto-advance useEffect below
+
+  // Always show the loading steps screen for at least MIN_LOADING_MS,
+  // so users see the calculation steps even when the API responds quickly.
+  const MIN_LOADING_MS = 3500;
+  useEffect(() => {
+    const t = setTimeout(() => setMinTimeDone(true), MIN_LOADING_MS);
+    return () => clearTimeout(t);
+  }, []);
 
   useEffect(() => {
     const t = requestAnimationFrame(() => AOS.refresh());
@@ -182,7 +208,13 @@ const ExamResultsLoading = () => {
       try {
         const res = await examAPI.getResult(attemptId);
         if (cancelled) return;
-        if (res.success) setAttempt(res.data);
+        if (res.success) {
+          setAttempt(res.data);
+          const status = res.data?.result?.aiStatus ?? null;
+          if (status === 'complete' || status === 'failed' || status === null) {
+            setProcessingDone(true);
+          }
+        }
       } catch (e) { console.error('Failed to load results:', e); }
       finally { if (!cancelled) setLoading(false); }
     })();
@@ -198,6 +230,7 @@ const ExamResultsLoading = () => {
       pollCount += 1;
       if (pollCount > MAX_POLLS) {
         clearInterval(iv);
+        setProcessingDone(true);
         setAttempt((prev) => {
           if (!prev?.result) return prev;
           return { ...prev, result: { ...prev.result, aiStatus: 'failed' } };
@@ -208,7 +241,10 @@ const ExamResultsLoading = () => {
         const res = await examAPI.getResult(attemptId);
         if (res.success && (res.data?.status === 'submitted' || res.data?.status === 'timed_out')) {
           const status = res.data?.result?.aiStatus ?? null;
-          if (status === 'complete' || status === 'failed') clearInterval(iv);
+          if (status === 'complete' || status === 'failed') {
+            clearInterval(iv);
+            setProcessingDone(true);
+          }
           setAttempt(res.data);
         }
       } catch { /* ignore */ }
@@ -216,14 +252,20 @@ const ExamResultsLoading = () => {
     return () => clearInterval(iv);
   }, [attemptId, isProcessing]);
 
+  // Auto-advance step indicator while loading screen is visible.
+  // When processing completes, snap to 4 so all steps show as done.
   useEffect(() => {
-    if (!isProcessing) return;
+    if (!isProcessing && minTimeDone) return; // loading screen hidden, nothing to drive
+    if (!isProcessing) {
+      setActiveStep(4); // snap all steps to complete
+      return;
+    }
     if (activeStep >= 4) return;
     const timer = setTimeout(() => {
       setActiveStep((prev) => Math.min(prev + 1, 4));
     }, 1800);
     return () => clearTimeout(timer);
-  }, [isProcessing, activeStep]);
+  }, [isProcessing, activeStep, minTimeDone]);
 
   if (loading) return <ExamResultsLoadingSkeleton />;
 
@@ -294,7 +336,7 @@ const ExamResultsLoading = () => {
     </nav>
   );
 
-  if (isProcessing) {
+  if (isProcessing || !minTimeDone) {
     const LOADING_STEPS = [
       { title: 'Saving your answers', description: 'Securing your responses for this attempt.', Icon: SaveIcon },
       { title: 'Computing your score', description: 'Calculating your latest score using CSE section weights.', Icon: ComputeIcon },

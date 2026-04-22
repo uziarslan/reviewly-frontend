@@ -197,8 +197,8 @@ function ExamReview() {
                 })}
               </div>
 
-              {/* Explanation box */}
-              <div className={`rounded-[10px] py-4 px-4 mb-4 ${isCorrectAnswer ? 'bg-[#F0FBF6]' : 'bg-[#FEF2F3]'}`}>
+              {/* Explanation box — always neutral violet, not colour-coded as right/wrong */}
+              <div className="rounded-[10px] py-4 px-4 mb-4 bg-[#F5F4FF]">
                 <p className="font-inter text-[14px] text-[#45464E] leading-relaxed whitespace-pre-line">
                   <span className="font-semibold">Correct Answer: {correctLetter}</span>
                   {explanationCorrect ? ` — ${explanationCorrect}` : ''}

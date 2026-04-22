@@ -168,7 +168,7 @@ function ShareModal({ isOpen, onClose, shareUrl, cardRef }) {
           {/* Link row */}
           <div className="bg-[#FCFBFC] gap-[16px] p-[16px] rounded-[8px] border border-[#EBEBEB]">
             <div className='flex flex-row'>
-              <div className='max-w-[300px] flex items-center gap-[8px] border border-[#EBEBEB] rounded-bl-[8px] rounded-tl-[8px] p-[9px]'>
+              <div className='flex-1 min-w-0 flex items-center gap-[8px] border border-[#EBEBEB] rounded-bl-[8px] rounded-tl-[8px] p-[9px]'>
                 <ShareLinkSmallIcon className="w-[16px] h-[16px] shrink-0 text-[#6B7280]" />
                 <span className="flex-1 font-inter font-normal text-[12px] text-[#45464E] truncate">
                   {shareUrl || 'Link unavailable'}

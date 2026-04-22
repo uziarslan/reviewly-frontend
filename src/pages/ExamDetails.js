@@ -14,6 +14,7 @@ import { trackExamSelected } from '../services/analytics';
 const SECTION_CONFIG = {
   verbal: { label: 'Verbal', color: '#14B8A6' },
   analytical: { label: 'Analytical', color: '#3B82F6' },
+  clerical: { label: 'Clerical', color: '#3B82F6' },
   numerical: { label: 'Numerical', color: '#F59E0B' },
   general_info: { label: 'General Info', color: '#EC4899' },
   'general info': { label: 'General Info', color: '#EC4899' },
@@ -26,6 +27,20 @@ function getSectionConfig(sectionKey, index) {
     label: sectionKey.charAt(0).toUpperCase() + sectionKey.slice(1),
     color: FALLBACK_COLORS[index % FALLBACK_COLORS.length],
   };
+}
+
+/**
+ * Maps a subject name (e.g., "Verbal Ability") to its section key.
+ */
+function getSectionKeyFromSubject(subject) {
+  if (!subject) return null;
+  const lower = subject.toLowerCase();
+  if (lower.includes('verbal')) return 'verbal';
+  if (lower.includes('analytical')) return 'analytical';
+  if (lower.includes('clerical')) return 'clerical';
+  if (lower.includes('numerical')) return 'numerical';
+  if (lower.includes('general')) return 'general information';
+  return null;
 }
 
 /** Pure-SVG donut chart with centered total-items label. */
@@ -257,23 +272,26 @@ const ExamDetails = () => {
           <span className="text-[#6E43B9] font-inter font-normal not-italic text-[14px]">{title}</span>
         </nav>
 
-        <div className="flex flex-col lg:flex-row gap-8 lg:gap-[24px] items-start">
-          {/* Left column: banner, title, metrics, button, coverage — first on mobile (top), left on lg */}
-          <div className="order-1 lg:order-1 w-full lg:w-auto lg:flex-1 lg:min-w-0 bg-[#FFFFFF] p-[24px] rounded-[12px]">
-            {/* Banner */}
-            <div
-              className="w-full h-[225px] rounded-tl-[8px] rounded-tr-[8px] bg-gradient-to-br from-[#6E43B9]/20 to-[#421983]/30 flex items-center justify-center"
-              data-aos="fade-up"
-              data-aos-duration="500"
-            >
-              {console.log(exam.bannerImage)}
-              {exam.bannerImage ? (
-                <img src={BANNER_IMAGE_MAP[exam.bannerImage]} alt="" className="w-full h-full object-cover object-center rounded-[12px]" />
-              ) : (
-                <span className="font-inter text-[#6E43B9]/60 text-sm">Banner image placeholder</span>
-              )}
-            </div>
+        {/* Top banner (spans above all cards) */}
+        <div
+          className="w-full h-[190px] rounded-[8px] bg-gradient-to-br from-[#6E43B9]/20 to-[#421983]/30 flex items-center justify-center mb-[16px] overflow-hidden"
+          data-aos="fade-up"
+          data-aos-duration="500"
+        >
+          {exam.bannerImage ? (
+            <img
+              src={BANNER_IMAGE_MAP[exam.bannerImage]}
+              alt=""
+              className="w-full h-full object-cover object-center"
+            />
+          ) : (
+            <span className="font-inter text-[#6E43B9]/60 text-sm">Banner image placeholder</span>
+          )}
+        </div>
 
+        <div className="flex flex-col lg:flex-row gap-8 lg:gap-[24px] items-start">
+          {/* Left column: title, metrics, button, coverage — first on mobile (top), left on lg */}
+          <div className="order-1 lg:order-1 w-full lg:w-auto lg:flex-1 lg:min-w-0 bg-[#FFFFFF] p-[24px] rounded-[12px]">
             <h1
               className="font-inter font-semibold not-italic text-[22px] text-[#45464E] mt-6 mb-[10px]"
               data-aos="fade-up"
@@ -308,7 +326,7 @@ const ExamDetails = () => {
               data-aos-delay="100"
             >
               {/* 4 inline metrics */}
-              <div className="flex flex-wrap gap-x-28 gap-y-3 mb-4">
+              <div className="grid grid-cols-2 gap-x-6 gap-y-3 mb-4 sm:flex sm:flex-wrap sm:gap-x-28 sm:gap-y-3">
                 {/* Time */}
                 <div className="flex items-center gap-2">
                   <MetricTimeIcon className="w-[22px] h-[22px] shrink-0" />
@@ -391,14 +409,14 @@ const ExamDetails = () => {
                     <button
                       type="button"
                       onClick={() => navigate(`/dashboard/exam/${id}/start${fromLibrary ? '?from=library' : ''}`)}
-                      className="h-[48px] font-inter font-regular text-[16px] text-[#421A83] py-[11px] px-10 rounded-[4px] bg-[#FFC92A] hover:opacity-95 transition-opacity"
+                      className="w-full sm:w-auto h-[48px] font-inter font-regular text-[16px] text-[#421A83] py-[11px] px-10 rounded-[4px] bg-[#FFC92A] hover:opacity-95 transition-opacity"
                     >
                       Resume Exam
                     </button>
                     <button
                       type="button"
                       onClick={() => navigate(`/dashboard/exam/${id}/start?restart=true${fromLibrary ? '&from=library' : ''}`)}
-                      className="h-[48px] font-inter font-regular text-[16px] text-[#737373] py-[11px] px-10 rounded-[4px] border border-[#737373] bg-white hover:bg-gray-50 transition-colors"
+                      className="w-full sm:w-auto h-[48px] font-inter font-regular text-[16px] text-[#737373] py-[11px] px-10 rounded-[4px] border border-[#737373] bg-white hover:bg-gray-50 transition-colors"
                     >
                       Restart
                     </button>
@@ -420,7 +438,7 @@ const ExamDetails = () => {
               <ExamBreakdown
                 sectionDistribution={reviewer.examConfig.sectionDistribution}
                 totalItems={reviewer.examConfig.totalItems || exam.itemsCount}
-                disclaimer={exam.disclaimer}
+                disclaimer={exam.breakdownFootnote || exam.disclaimer}
               />
             )}
 
@@ -459,19 +477,35 @@ const ExamDetails = () => {
                 Section and Topics
               </h2>
               <ol className="list-decimal list-inside space-y-4 font-inter font-normal text-[16px] text-[#45464E]">
-                {(exam.coverage || []).map((item, idx) => (
-                  <li key={idx}>
-                    <span>
-                      <TextWithNewlines>{item.subject}</TextWithNewlines>
-                      {item.itemCount ? ` (${item.itemCount})` : ''}
-                    </span>
-                    <ul className="list-disc list-inside font-normal text-[16px] pl-4">
-                      {(item.topics || []).map((topic, i) => (
-                        <li key={i}><TextWithNewlines>{topic}</TextWithNewlines></li>
-                      ))}
-                    </ul>
-                  </li>
-                ))}
+                {(exam.coverage || []).map((item, idx) => {
+                  const sectionKey = getSectionKeyFromSubject(item.subject);
+                  const sectionConfig = sectionKey ? getSectionConfig(sectionKey, idx) : null;
+                  return (
+                    <li key={idx}>
+                      <span>
+                        <TextWithNewlines>{item.subject}</TextWithNewlines>
+                        {item.itemCount ? ` (${item.itemCount})` : ''}
+                      </span>
+                      <ul className="list-none font-normal text-[16px] pl-4 space-y-2">
+                        {(item.topics || []).map((topic, i) => (
+                          <li key={i} className="flex items-center gap-2">
+                            <span className="flex-1">
+                              <TextWithNewlines>{topic}</TextWithNewlines>
+                            </span>
+                            {sectionConfig && (
+                              <span
+                                className="inline-flex items-center px-[8px] py-[4px] rounded-[4px] text-[12px] font-medium whitespace-nowrap flex-shrink-0"
+                                style={{ backgroundColor: sectionConfig.color + '20', color: sectionConfig.color }}
+                              >
+                                {sectionConfig.label}
+                              </span>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    </li>
+                  );
+                })}
               </ol>
 
               {/* Coverage end text */}
@@ -485,6 +519,13 @@ const ExamDetails = () => {
               {exam.difficultyText && (
                 <TextWithNewlines as="p" className="font-inter font-normal text-[16px] text-[#45464E] mt-4 leading-[24px]">
                   {exam.difficultyText}
+                </TextWithNewlines>
+              )}
+
+              {/* Long disclaimer at page bottom (separate from chart footnote) */}
+              {exam.disclaimer && exam.disclaimer !== exam.breakdownFootnote && (
+                <TextWithNewlines as="p" className="font-inter font-normal italic text-[11px] text-[#6C737F] mt-4 leading-[18px]">
+                  {exam.disclaimer}
                 </TextWithNewlines>
               )}
             </section>
@@ -506,14 +547,28 @@ const ExamDetails = () => {
                 </div>
                 Important Notes:
               </h2>
-              <ul className="list-disc list-inside space-y-4 pl-1 font-inter text-sm">
-                {(exam.importantNotes || []).map((note, idx) => (
-                  <li key={idx}>
-                    <span className="font-inter font-semibold text-[16px] text-[#45464E] leading-[20px]">{note.title}:{" "}</span>
-                    <span className="font-inter font-normal text-[16px] text-[#45464E] leading-[20px]">{note.text}</span>
-                  </li>
-                ))}
-              </ul>
+              {(() => {
+                const notes = exam.importantNotes || [];
+                const listNotes = notes.slice(0, -1);
+                const footerNote = notes[notes.length - 1];
+                return (
+                  <>
+                    <ul className="list-none space-y-4 pl-0 font-inter text-sm">
+                      {listNotes.map((note, idx) => (
+                        <li key={idx}>
+                          <span className="font-inter font-semibold text-[16px] text-[#45464E] leading-[20px]">{note.title}:{" "}</span>
+                          <span className="font-inter font-normal text-[16px] text-[#45464E] leading-[20px]">{note.text}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    {footerNote && (
+                      <p className="font-inter font-normal italic text-[12px] text-[#6C737F] mt-4 leading-[18px]">
+                        {footerNote.text}
+                      </p>
+                    )}
+                  </>
+                );
+              })()}
             </section>
           </div>
         </div>

@@ -91,6 +91,11 @@ export const examAPI = {
     apiFetch(`/exams/attempts/user/progress/${reviewerId}`),
   generateShareLink: (attemptId) =>
     apiFetch(`/exams/attempts/${attemptId}/share`, { method: "POST" }),
+  uploadShareImage: (attemptId, imageDataUrl) =>
+    apiFetch(`/exams/attempts/${attemptId}/share-image`, {
+      method: "POST",
+      body: { imageData: imageDataUrl },
+    }),
 };
 
 // ── Shared results (public, no auth) ──
