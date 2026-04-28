@@ -17,12 +17,12 @@ export default function ExamDetailsSkeleton() {
           <SkeletonBlock className="h-4 w-48" />
         </nav>
 
+        {/* Top banner */}
+        <SkeletonBlock className="w-full h-[190px] rounded-[8px] mb-[16px]" />
+
         <div className="flex flex-col lg:flex-row gap-8 lg:gap-[24px] items-start">
           {/* Left column */}
-          <div className="order-2 lg:order-1 w-full lg:flex-1 lg:min-w-0 bg-white p-[24px] rounded-[12px]">
-            {/* Banner */}
-            <SkeletonBlock className="w-full h-[225px] rounded-[8px] mb-6" />
-
+          <div className="order-1 lg:order-1 w-full lg:flex-1 lg:min-w-0 bg-white p-[24px] rounded-[12px]">
             {/* Title */}
             <SkeletonBlock className="h-6 w-3/4 mb-6" />
 

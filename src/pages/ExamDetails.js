@@ -29,20 +29,6 @@ function getSectionConfig(sectionKey, index) {
   };
 }
 
-/**
- * Maps a subject name (e.g., "Verbal Ability") to its section key.
- */
-function getSectionKeyFromSubject(subject) {
-  if (!subject) return null;
-  const lower = subject.toLowerCase();
-  if (lower.includes('verbal')) return 'verbal';
-  if (lower.includes('analytical')) return 'analytical';
-  if (lower.includes('clerical')) return 'clerical';
-  if (lower.includes('numerical')) return 'numerical';
-  if (lower.includes('general')) return 'general information';
-  return null;
-}
-
 /** Pure-SVG donut chart with centered total-items label. */
 function DonutChart({ segments, total }) {
   const R = 70;
@@ -386,20 +372,20 @@ const ExamDetails = () => {
               </div>
 
               {/* Buttons — vary by state */}
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-col sm:flex-row flex-wrap gap-3">
                 {completedData ? (
                   <>
                     <button
                       type="button"
                       onClick={() => navigate(`/dashboard/exam/${id}/start${fromLibrary ? '?from=library' : ''}`)}
-                      className="h-[48px] font-inter font-regular text-[16px] text-[#421A83] py-[11px] px-10 rounded-[4px] bg-[#FFC92A] hover:opacity-95 transition-opacity"
+                      className="w-full sm:w-auto h-[48px] font-inter font-regular text-[16px] text-[#421A83] py-[11px] px-10 rounded-[4px] bg-[#FFC92A] hover:opacity-95 transition-opacity"
                     >
                       Retake Exam
                     </button>
                     <button
                       type="button"
                       onClick={() => navigate(`/dashboard/results/${completedData.attemptId}${fromLibrary ? '?from=library' : ''}`)}
-                      className="h-[48px] font-inter font-regular text-[16px] text-[#737373] py-[11px] px-10 rounded-[4px] border border-[#737373] bg-white hover:bg-gray-50 transition-colors"
+                      className="w-full sm:w-auto h-[48px] font-inter font-regular text-[16px] text-[#737373] py-[11px] px-10 rounded-[4px] border border-[#737373] bg-white hover:bg-gray-50 transition-colors"
                     >
                       View Previous Result
                     </button>
@@ -434,7 +420,7 @@ const ExamDetails = () => {
             </div>
 
             {/* Exam Breakdown */}
-            {reviewer?.examConfig?.sectionDistribution?.length > 0 && (
+            {!(String(reviewer?.type || '').toLowerCase().includes('practice')) && reviewer?.examConfig?.sectionDistribution?.length > 0 && (
               <ExamBreakdown
                 sectionDistribution={reviewer.examConfig.sectionDistribution}
                 totalItems={reviewer.examConfig.totalItems || exam.itemsCount}
@@ -478,28 +464,19 @@ const ExamDetails = () => {
               </h2>
               <ol className="list-decimal list-inside space-y-4 font-inter font-normal text-[16px] text-[#45464E]">
                 {(exam.coverage || []).map((item, idx) => {
-                  const sectionKey = getSectionKeyFromSubject(item.subject);
-                  const sectionConfig = sectionKey ? getSectionConfig(sectionKey, idx) : null;
                   return (
                     <li key={idx}>
                       <span>
                         <TextWithNewlines>{item.subject}</TextWithNewlines>
                         {item.itemCount ? ` (${item.itemCount})` : ''}
                       </span>
-                      <ul className="list-none font-normal text-[16px] pl-4 space-y-2">
+                      <ul className="list-none font-normal text-[16px] pl-6">
                         {(item.topics || []).map((topic, i) => (
-                          <li key={i} className="flex items-center gap-2">
-                            <span className="flex-1">
+                          <li key={i} className="relative pl-3">
+                            <span className="absolute left-0 top-[10px] inline-block h-[6px] w-[6px] rounded-full bg-[#45464E]" />
+                            <span className="block">
                               <TextWithNewlines>{topic}</TextWithNewlines>
                             </span>
-                            {sectionConfig && (
-                              <span
-                                className="inline-flex items-center px-[8px] py-[4px] rounded-[4px] text-[12px] font-medium whitespace-nowrap flex-shrink-0"
-                                style={{ backgroundColor: sectionConfig.color + '20', color: sectionConfig.color }}
-                              >
-                                {sectionConfig.label}
-                              </span>
-                            )}
                           </li>
                         ))}
                       </ul>

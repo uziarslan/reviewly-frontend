@@ -4,7 +4,6 @@ import AOS from 'aos';
 import html2canvas from 'html2canvas';
 import DashNav from '../components/DashNav';
 import {
-  LockIcon,
   ShareOutIcon,
   VerbalAbilityLogoIcon,
   AnalyticalAbilityLogoIcon,
@@ -15,12 +14,36 @@ import {
   ChartPieIcon
 } from '../components/Icons';
 import { examAPI } from '../services/api';
-import { useAuth } from '../context/AuthContext';
 import ExamResultsLoadingSkeleton from '../components/skeletons/ExamResultsLoadingSkeleton';
-import { canAccessReviewer } from '../utils/subscription';
 import { SaveIcon, ComputeIcon, FindIcon, PrepareIcon } from '../components/LoadingStepIcons';
 import ShareModal from '../components/ShareModal';
 import MockScoreCard from '../components/MockScoreCard';
+
+const getRetakeLabel = (reviewer = {}) => {
+  const title = String(reviewer.title || '');
+  const type = String(reviewer.type || '').toLowerCase();
+  const normalizedTitle = title.trim();
+
+  if (type === 'mock') {
+    const lower = normalizedTitle.toLowerCase();
+    if (lower.includes('sub-professional') || lower.includes('subprofessional') || lower.includes('sub professional') || lower.includes('sub prof')) {
+      return 'Retake Sub Prof';
+    }
+    if (lower.includes('professional')) return 'Retake Full Mock';
+  }
+
+  if (type === 'practice' || type === 'demo') {
+    const match = normalizedTitle.match(/\(([^)]+)\)/);
+    if (match && match[1]) {
+      const firstWord = match[1].trim().split(/\s+/)[0];
+      return `Retake ${firstWord} Exam`;
+    }
+  }
+
+  const baseTitle = normalizedTitle.replace(/\s*\([^)]*\)/, '').trim();
+  if (baseTitle) return `Retake ${baseTitle}`;
+  return 'Retake Exam';
+};
 
 const PAGE_CLASSES = 'min-h-screen bg-[#F5F4FF]';
 const MAIN_CLASSES = 'max-w-[1440px] mx-auto px-6 sm:px-8 lg:px-20';
@@ -133,20 +156,25 @@ const SemiCircleGauge = ({ percentage }) => {
   );
 };
 
+const STEP_TIME_OPTIONS = [3, 3.5, 4, 4.5, 5];
+const getRandomStepDurations = () => Array.from({ length: 4 }, () => STEP_TIME_OPTIONS[Math.floor(Math.random() * STEP_TIME_OPTIONS.length)]);
+
 const ExamResultsLoading = () => {
   const { attemptId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const fromLibrary = new URLSearchParams(location.search).get('from') === 'library';
-  const { isAuthenticated, user } = useAuth();
   const [attempt, setAttempt] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeStep, setActiveStep] = useState(0);
-  const [processingDone, setProcessingDone] = useState(false);
+  const [stepDurations, setStepDurations] = useState([]);
+  const [stepIndex, setStepIndex] = useState(0);
+  const [stepTimerDone, setStepTimerDone] = useState(false);
+  const [backendStatus, setBackendStatus] = useState(null);
+  const [backendReady, setBackendReady] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareUrl, setShareUrl] = useState('');
-  const [minTimeDone, setMinTimeDone] = useState(false);
   const cardRef = useRef(null);
+  const [shouldPlayLoadingFlow] = useState(() => location.state?.showLoadingFlow === true);
 
   const backUrl = fromLibrary ? '/dashboard/library' : '/dashboard/all-reviewers';
 
@@ -157,7 +185,7 @@ const ExamResultsLoading = () => {
       // Run share-link generation and card capture in parallel for speed
       const captureCard = cardRef.current
         ? html2canvas(cardRef.current, { scale: 1, useCORS: true, backgroundColor: '#FFFFFF' })
-            .catch(() => null)
+          .catch(() => null)
         : Promise.resolve(null);
 
       const [res, canvas] = await Promise.all([
@@ -166,14 +194,14 @@ const ExamResultsLoading = () => {
       ]);
 
       if (res.success && res.shareToken) {
-        const url = res.shareUrl || `${window.location.origin}/share/${res.shareToken}`;
+        const url = `${window.location.origin}/share/${res.shareToken}`;
         setShareUrl(url);
 
         // Upload the score-card image in the background so the Facebook OG preview
         // shows the actual breakdown image instead of a generic icon.
         if (canvas) {
           const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-          examAPI.uploadShareImage(attemptId, dataUrl).catch(() => {/* non-critical */});
+          examAPI.uploadShareImage(attemptId, dataUrl).catch(() => {/* non-critical */ });
         }
       }
     } catch (err) {
@@ -181,20 +209,22 @@ const ExamResultsLoading = () => {
     }
   }, [attemptId, shareUrl, cardRef]);
 
-  const checkAccess = (r) => canAccessReviewer(r, { isAuthenticated, user });
   const result = attempt?.result || {};
-  // Still processing if attempt hasn't loaded or AI analysis is in progress
-  const aiStatus = attempt?.result?.aiStatus ?? null;
-  const isProcessing = !processingDone && (!attempt || aiStatus === 'pending' || aiStatus === 'processing');
-  // activeStep is driven by the auto-advance useEffect below
+  const retakeLabel = getRetakeLabel(attempt?.reviewer);
+  // stepIndex is driven by the step timer and backend completion state.
 
-  // Always show the loading steps screen for at least MIN_LOADING_MS,
-  // so users see the calculation steps even when the API responds quickly.
-  const MIN_LOADING_MS = 3500;
   useEffect(() => {
-    const t = setTimeout(() => setMinTimeDone(true), MIN_LOADING_MS);
-    return () => clearTimeout(t);
-  }, []);
+    setStepDurations(getRandomStepDurations());
+    setStepIndex(0);
+    setStepTimerDone(false);
+    setBackendStatus(null);
+    setBackendReady(false);
+  }, [attemptId]);
+
+  useEffect(() => {
+    if (location.state?.showLoadingFlow !== true) return;
+    navigate(`${location.pathname}${location.search}`, { replace: true, state: {} });
+  }, [location.pathname, location.search, location.state, navigate]);
 
   useEffect(() => {
     const t = requestAnimationFrame(() => AOS.refresh());
@@ -209,11 +239,9 @@ const ExamResultsLoading = () => {
         const res = await examAPI.getResult(attemptId);
         if (cancelled) return;
         if (res.success) {
+          setBackendStatus(res.status);
+          setBackendReady(res.status === 'completed');
           setAttempt(res.data);
-          const status = res.data?.result?.aiStatus ?? null;
-          if (status === 'complete' || status === 'failed' || status === null) {
-            setProcessingDone(true);
-          }
         }
       } catch (e) { console.error('Failed to load results:', e); }
       finally { if (!cancelled) setLoading(false); }
@@ -222,52 +250,106 @@ const ExamResultsLoading = () => {
   }, [attemptId]);
 
   useEffect(() => {
-    if (!attemptId || !isProcessing) return;
-    let pollCount = 0;
-    const MAX_POLLS = 60;
-    const POLL_INTERVAL_MS = 2500;
+    if (!attemptId || backendStatus !== 'processing') return;
+    let cancelled = false;
     const iv = setInterval(async () => {
-      pollCount += 1;
-      if (pollCount > MAX_POLLS) {
-        clearInterval(iv);
-        setProcessingDone(true);
-        setAttempt((prev) => {
-          if (!prev?.result) return prev;
-          return { ...prev, result: { ...prev.result, aiStatus: 'failed' } };
-        });
-        return;
-      }
+      if (cancelled) return;
       try {
         const res = await examAPI.getResult(attemptId);
-        if (res.success && (res.data?.status === 'submitted' || res.data?.status === 'timed_out')) {
-          const status = res.data?.result?.aiStatus ?? null;
-          if (status === 'complete' || status === 'failed') {
-            clearInterval(iv);
-            setProcessingDone(true);
-          }
-          setAttempt(res.data);
+        if (!res.success) return;
+        if (cancelled) return;
+        setBackendStatus(res.status);
+        setBackendReady(res.status === 'completed');
+        setAttempt(res.data);
+        if (res.status === 'completed') {
+          clearInterval(iv);
         }
-      } catch { /* ignore */ }
-    }, POLL_INTERVAL_MS);
-    return () => clearInterval(iv);
-  }, [attemptId, isProcessing]);
+      } catch (_) {
+        // ignore polling errors
+      }
+    }, 2500);
+    return () => { cancelled = true; clearInterval(iv); };
+  }, [attemptId, backendStatus]);
 
   // Auto-advance step indicator while loading screen is visible.
   // When processing completes, snap to 4 so all steps show as done.
   useEffect(() => {
-    if (!isProcessing && minTimeDone) return; // loading screen hidden, nothing to drive
-    if (!isProcessing) {
-      setActiveStep(4); // snap all steps to complete
-      return;
-    }
-    if (activeStep >= 4) return;
-    const timer = setTimeout(() => {
-      setActiveStep((prev) => Math.min(prev + 1, 4));
-    }, 1800);
+    if (!attemptId || (!shouldPlayLoadingFlow && backendStatus !== 'processing')) return;
+    if (stepIndex >= stepDurations.length) return;
+    setStepTimerDone(false);
+    const timer = setTimeout(() => setStepTimerDone(true), stepDurations[stepIndex] * 1000);
     return () => clearTimeout(timer);
-  }, [isProcessing, activeStep, minTimeDone]);
+  }, [attemptId, backendStatus, stepIndex, stepDurations, shouldPlayLoadingFlow]);
+
+  useEffect(() => {
+    if (!stepTimerDone || !backendReady) return;
+    if (stepIndex >= stepDurations.length) return;
+    setStepIndex((prev) => Math.min(prev + 1, stepDurations.length));
+    setStepTimerDone(false);
+  }, [stepTimerDone, backendReady, stepIndex, stepDurations.length]);
 
   if (loading) return <ExamResultsLoadingSkeleton />;
+
+  const showLoadingScreen = shouldPlayLoadingFlow && stepIndex < stepDurations.length;
+
+  if (showLoadingScreen) {
+    return (
+      <div className={PAGE_CLASSES}>
+        <DashNav />
+        <main className={`${MAIN_CLASSES} pt-[24px] pb-[40px]`}>
+          <section className="bg-white rounded-[16px] p-[24px] sm:p-[40px] max-w-[620px] mx-auto shadow-sm" data-aos="fade-up" data-aos-duration="400" data-aos-delay="50">
+            <h2 className="font-inter font-bold text-[18px] text-[#1A1A2E] mb-[4px]">Checking your results...</h2>
+            <p className="font-inter font-normal text-[14px] text-[#6B7280] mb-[24px]">Submitting your answers and generating your breakdown.</p>
+            <div className="flex flex-col gap-[12px] mb-[24px]">
+              {['Saving your answers', 'Computing your score', 'Finding your weak sections', 'Preparing your next steps'].map((title, i) => {
+                const allDone = stepIndex >= 4;
+                const stepCompleted = i < stepIndex || allDone;
+                const stepActive = i === stepIndex && !allDone;
+                const iconState = stepCompleted ? 'done' : stepActive ? 'active' : 'idle';
+                const stepDescriptions = [
+                  'Securing your responses for this attempt.',
+                  'Calculating your latest score using CSE section weights.',
+                  'Spotting the areas that pulled your score down.',
+                  'Building your recommended focus and Sprint Plan starting point.',
+                ];
+                const StepIcon = [SaveIcon, ComputeIcon, FindIcon, PrepareIcon][i];
+                return (
+                  <div
+                    key={i}
+                    className={`flex items-center gap-[16px] p-[16px] rounded-[12px] border transition-all duration-300 ${stepActive
+                      ? 'border-[#E5E7EB] bg-white shadow-sm'
+                      : stepCompleted
+                        ? 'border-[#E5E7EB] bg-white'
+                        : 'border-[#F3F4F6] bg-[#FAFAFA]'
+                      }`}
+                  >
+                    <StepIcon state={iconState} />
+                    <div className="flex-1 min-w-0">
+                      <h4 className={`font-inter font-semibold text-[15px] leading-[20px] transition-colors duration-300 ${stepActive || stepCompleted ? 'text-[#1A1A2E]' : 'text-[#B0A3CC]'}`}>
+                        {title}
+                      </h4>
+                      <p className={`font-inter font-normal text-[13px] leading-[18px] mt-[2px] transition-colors duration-300 ${stepActive || stepCompleted ? 'text-[#6B7280]' : 'text-[#D1D5DB]'}`}>
+                        {stepDescriptions[i]}
+                      </p>
+                    </div>
+                    <div className="w-[24px] h-[24px] flex items-center justify-center shrink-0">
+                      {stepActive && <div className="w-[22px] h-[22px] border-[2px] border-[#E5E7EB] border-t-[#6E43B9] rounded-full animate-spin" />}
+                      {stepCompleted && (
+                        <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                          <path d="M6 11.5l3.5 3.5L16 8" stroke="#10B981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="font-inter font-normal text-[13px] text-[#9CA3AF]">No pressure – this usually takes a few seconds.</p>
+          </section>
+        </main>
+      </div>
+    );
+  }
 
   if (!attempt) {
     return (
@@ -285,7 +367,6 @@ const ExamResultsLoading = () => {
 
   const title = attempt.reviewer?.title || 'Exam';
   const breakdown = result.sectionScores || [];
-  const recommendations = result.recommendedNextStep?.ctas ?? [];
   const totalCorrect = result.correct || 0;
   const totalIncorrect = result.incorrect || 0;
   const totalUnanswered = result.unanswered || 0;
@@ -313,21 +394,6 @@ const ExamResultsLoading = () => {
     : `${durationM} minute${durationM !== 1 ? 's' : ''}`;
 
 
-  const getRecAction = (rec) => {
-    const reviewerId = rec.reviewer?._id || rec.reviewerId;
-    const route = rec.type === 'review_answers'
-      ? `/dashboard/review/${attemptId}`
-      : rec.type === 'go_to_dashboard' ? backUrl
-        : reviewerId ? `/dashboard/exam/${reviewerId}${fromLibrary ? '?from=library' : ''}` : null;
-    const showUpgrade = rec.reviewer != null && !checkAccess(rec.reviewer);
-    const handleClick = () => {
-      if (showUpgrade) navigate('/dashboard/settings/update-subscription');
-      else if (rec.type === 'go_to_dashboard') navigate(backUrl);
-      else if (route) navigate(route);
-    };
-    return { route, showUpgrade, handleClick };
-  };
-
   const breadcrumb = (
     <nav className="mb-[24px]" aria-label="Breadcrumb" data-aos="fade-up" data-aos-duration="400" data-aos-delay="0">
       <Link to={backUrl} className={BREADCRUMB_LINK}>{fromLibrary ? 'My Library' : 'All Reviewers'}</Link>
@@ -336,7 +402,7 @@ const ExamResultsLoading = () => {
     </nav>
   );
 
-  if (isProcessing || !minTimeDone) {
+  if (!attempt || backendStatus === 'processing' || showLoadingScreen) {
     const LOADING_STEPS = [
       { title: 'Saving your answers', description: 'Securing your responses for this attempt.', Icon: SaveIcon },
       { title: 'Computing your score', description: 'Calculating your latest score using CSE section weights.', Icon: ComputeIcon },
@@ -359,9 +425,9 @@ const ExamResultsLoading = () => {
             </p>
             <div className="flex flex-col gap-[12px] mb-[24px]">
               {LOADING_STEPS.map((step, i) => {
-                const allDone = activeStep >= 4;
-                const stepCompleted = i < activeStep || allDone;
-                const stepActive = i === activeStep && !allDone;
+                const allDone = stepIndex >= 4;
+                const stepCompleted = i < stepIndex || allDone;
+                const stepActive = i === stepIndex && !allDone;
                 const iconState = stepCompleted ? 'done' : stepActive ? 'active' : 'idle';
                 return (
                   <div
@@ -410,8 +476,6 @@ const ExamResultsLoading = () => {
       </div>
     );
   }
-
-  const retakeMockRec = recommendations.find((r) => r.type === 'retake_full_mock') || null;
 
   // Section distribution for weight calculations
   const sectionDistribution = attempt.reviewer?.examConfig?.sectionDistribution || [];
@@ -553,53 +617,36 @@ const ExamResultsLoading = () => {
             <button
               type="button"
               onClick={() => navigate(backUrl)}
-              className="font-inter font-regular text-[14px] text-[#421A83] bg-[#FFC92A] hover:opacity-95 transition-opacity py-[11px] px-[20px] rounded-[8px]"
+              className="font-inter font-regular text-[14px] text-[#421A83] bg-[#FFC92A] hover:opacity-95 transition-opacity py-[11px] px-[20px] rounded-[8px] whitespace-nowrap text-center flex-[1_1_calc(50%-5px)] min-w-[170px] sm:flex-[0_1_auto] sm:w-auto"
             >
               Go to Dashboard
             </button>
             <button
               type="button"
               onClick={() => navigate(`/dashboard/review/${attemptId}${fromLibrary ? '?from=library' : ''}`)}
-              className="font-inter font-normal text-[14px] text-[#45464E] border border-[#D1D5DB] bg-white hover:bg-gray-50 transition-colors py-[11px] px-[20px] rounded-[8px]"
+              className="font-inter font-normal text-[14px] text-[#45464E] border border-[#D1D5DB] bg-white hover:bg-gray-50 transition-colors py-[11px] px-[20px] rounded-[8px] whitespace-nowrap text-center flex-[1_1_calc(50%-5px)] min-w-[170px] sm:flex-[0_1_auto] sm:w-auto"
             >
               Review Answers
             </button>
             {(() => {
-              if (retakeMockRec) {
-                const { showUpgrade, handleClick } = getRecAction(retakeMockRec);
-                return (
-                  <button
-                    type="button"
-                    onClick={handleClick}
-                    className="font-inter font-normal text-[14px] text-[#45464E] border border-[#D1D5DB] bg-white hover:bg-gray-50 transition-colors py-[11px] px-[20px] rounded-[8px] flex items-center gap-[6px]"
-                  >
-                    {showUpgrade && <LockIcon className="w-[14px] h-[14px] shrink-0" />}
-                    Retake Full Mock
-                  </button>
-                );
-              }
               const reviewer = attempt.reviewer;
               const reviewerId = reviewer?._id;
               if (!reviewerId) return null;
-              const showUpgrade = !checkAccess(reviewer);
-              const handleClick = () => showUpgrade
-                ? navigate('/dashboard/settings/update-subscription')
-                : navigate(`/dashboard/exam/${reviewerId}${fromLibrary ? '?from=library' : ''}`);
+              const handleClick = () => navigate(`/dashboard/exam/${reviewerId}${fromLibrary ? '?from=library' : ''}`);
               return (
                 <button
                   type="button"
                   onClick={handleClick}
-                  className="font-inter font-normal text-[14px] text-[#45464E] border border-[#D1D5DB] bg-white hover:bg-gray-50 transition-colors py-[11px] px-[20px] rounded-[8px] flex items-center gap-[6px]"
+                  className="font-inter font-normal text-[14px] text-[#45464E] border border-[#D1D5DB] bg-white hover:bg-gray-50 transition-colors py-[11px] px-[20px] rounded-[8px] flex items-center justify-center gap-[6px] whitespace-nowrap flex-[1_1_calc(50%-5px)] min-w-[170px] sm:flex-[0_1_auto] sm:w-auto"
                 >
-                  {showUpgrade && <LockIcon className="w-[14px] h-[14px] shrink-0" />}
-                  Retake Full Mock
+                  {retakeLabel}
                 </button>
               );
             })()}
             <button
               type="button"
               onClick={handleOpenShare}
-              className="font-inter font-normal text-[14px] text-[#45464E] border border-[#D1D5DB] bg-white hover:bg-gray-50 transition-colors py-[11px] px-[20px] rounded-[8px] flex items-center gap-[7px]"
+              className="font-inter font-normal text-[14px] text-[#45464E] border border-[#D1D5DB] bg-white hover:bg-gray-50 transition-colors py-[11px] px-[20px] rounded-[8px] flex items-center justify-center gap-[7px] whitespace-nowrap flex-[1_1_calc(50%-5px)] min-w-[170px] sm:flex-[0_1_auto] sm:w-auto"
             >
               Share Mock Score Card
             </button>
@@ -616,7 +663,7 @@ const ExamResultsLoading = () => {
         </section>
 
         {/* ── Recommended Focus Card ────────────────────────────────────── */}
-        {!passed && lowestSection && (
+        {!passed && lowestSection && !['practice', 'demo'].includes((attempt.reviewer?.type || '').toLowerCase()) && (
           <section
             className="bg-white rounded-[12px] px-[24px] py-[24px] mb-[24px] max-w-[840px] mx-auto"
             data-aos="fade-up" data-aos-duration="400" data-aos-delay="100"
@@ -690,6 +737,7 @@ const ExamResultsLoading = () => {
         gapToPass={gapToPass}
         focusSectionWeight={focusSectionWeight}
         sectionWeightsText={sectionWeightsText}
+        reviewerType={attempt.reviewer?.type}
       />
     </div>
   );

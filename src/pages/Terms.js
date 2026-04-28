@@ -1,15 +1,13 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 
-const EFFECTIVE_DATE = 'January 2026';
+const EFFECTIVE_DATE = 'April 2026';
 
 const INTRO_TEXT =
-  'Welcome to Reviewly! These Terms & Conditions explain how you can use our app and services. By creating an account or using Reviewly, you agree to follow these guidelines.';
+  'Welcome to Reviewly! These Terms & Conditions explain how you can use our app and website. By creating an account or using Reviewly, you agree to follow these Terms.';
 
-/**
- * Terms & Conditions sections. Same structure as Privacy: id, title, content, optional hasEmailLink.
- */
 const TERMS_SECTIONS = [
   {
     id: 1,
@@ -21,110 +19,182 @@ const TERMS_SECTIONS = [
     title: 'User Responsibilities',
     content: [
       'To keep your account safe and your experience smooth, you agree to:',
-      { list: ['Provide accurate information during sign-up', 'Use only your own Google account to log in', 'Avoid any harmful, abusive, or illegal activities inside the app', 'Respect other users and the Reviewly team'] },
+      {
+        list: [
+          'Provide accurate information during sign-up',
+          'Use only your own Google account to log in',
+          'Keep your login access secure',
+          'Avoid any harmful, abusive, or illegal activities inside the app',
+          'Respect other users and the Reviewly team',
+        ]
+      },
     ],
   },
   {
     id: 3,
     title: 'Intellectual Property',
     content: [
-      'All content on Reviewly — including AI-generated questions, explanations, practice reviewers, and summaries — is owned by Reviewly.',
-      'You may use the content for personal study only.',
-      'Please do not copy, resell, distribute, or upload our content elsewhere without permission.',
+      'All content on Reviewly — including question banks, AI-generated questions, explanations, practice reviewers, UI, branding, and summaries — is owned by Reviewly or its licensors.',
+      'You may use Reviewly content for personal study only. You may not copy, reproduce, resell, distribute, upload, or publish our content elsewhere without written permission.',
     ],
   },
   {
     id: 4,
     title: 'User Content',
     content: [
-      'If you upload or submit any notes, messages, or materials (optional features in the future), you agree that:',
-      { list: ['You own the content or have the right to use it', 'You will not upload anything harmful, offensive, or illegal'] },
-      'We may remove content or restrict access if it violates these rules.',
+      'If you submit any notes, messages, feedback, forms, uploads, or materials (including payment receipts), you agree that:',
+      {
+        list: [
+          'You own the content or have the right to submit it',
+          'You will not upload anything harmful, offensive, illegal, or infringing',
+          'You give Reviewly permission to use submitted content only as needed to operate the service (e.g., verifying payments, support, product improvements)',
+        ]
+      },
+      'We may remove content or restrict access if it violates these Terms.',
     ],
   },
   {
     id: 5,
-    title: 'Subscriptions & Payments',
+    title: 'Plans, Access, and Payments',
     content: [
-      'Some Reviewly features require a paid subscription.',
-      { list: ['Premium activation is done manually after you submit our Google Form', 'Access may take a short time to process', 'You must upload valid proof of payment', 'Subscription plans are non-auto-renewing', 'Premium duration depends on the plan you choose (Weekly/Monthly/Quarterly)', 'We may pause or deny subscriptions if payment proof is invalid or fraudulent'] },
-      'Premium access begins only after we confirm your payment.',
+      'Reviewly may offer free and paid access.',
+      { subheading: 'A) Free access (Readiness Checker)' },
+      'Free access may include a readiness check experience (e.g., mock exam results, breakdowns, and review tools). Free features may change over time as we improve the platform.',
+      { subheading: 'B) Paid access (Premium / Improvement Pack)' },
+      'Some features require payment (e.g., sprint plans, topic-level breakdown, additional mock sets, focused practice packs, and progress tracking).',
+      'Premium access may be offered as exam-cycle access (example: access valid until a stated exam date). Duration and inclusions will be shown on the pricing/payment pages.',
+      { subheading: 'C) Payment verification (manual activation)' },
+      'Premium activation may be processed manually after you submit the required payment details (reference number and/or receipt).',
+      {
+        list: [
+          'Activation time is typically within the timeframe shown on the payment page, but may vary',
+          'We may request additional proof if details are incomplete or unclear',
+          'We may pause or deny activation if payment proof appears invalid or fraudulent',
+        ]
+      },
+      'Premium access begins only after we confirm payment.',
+      { subheading: 'D) No auto-renewal (unless stated)' },
+      'Unless we explicitly state otherwise, Premium is not auto-renewing.',
     ],
   },
   {
     id: 6,
-    title: 'Account Termination',
+    title: 'Refunds',
     content: [
-      'We may suspend or remove accounts that:',
-      { list: ['Violate these Terms', 'Attempt to misuse or attack the system', 'Engage in spam or disruptive behavior'] },
-      'You may also request deletion of your account anytime.',
+      'Refund requests are handled under our Refund Policy.',
+      'Please review the Refund Policy page for refund eligibility, timelines, and required details.',
     ],
+    hasRefundLink: true,
   },
   {
     id: 7,
-    title: 'Service Availability',
+    title: 'Account Termination',
     content: [
-      'We aim to keep Reviewly available at all times, but downtime or updates may occasionally occur. Features may also change as we continue improving the app.',
+      'We may suspend or remove accounts that:',
+      {
+        list: [
+          'Violate these Terms',
+          'Attempt to misuse, disrupt, or attack the system',
+          'Engage in spam or abusive behavior',
+          'Use Reviewly in a way that compromises other users or our service integrity',
+        ]
+      },
+      'You may request account deletion anytime by emailing support@reviewly.ph.',
     ],
+    hasEmailLink: true,
   },
   {
     id: 8,
-    title: 'Accuracy & Limitations',
+    title: 'Service Availability',
     content: [
-      'Reviewly uses AI to generate some study materials. While we strive for accuracy, we cannot guarantee all information is 100% perfect. Use Reviewly as a study aid, not a replacement for professional review centers or official references.',
+      'We aim to keep Reviewly available at all times, but downtime or updates may occur. Features may change as we improve the product.',
     ],
   },
   {
     id: 9,
-    title: 'Future Exam Modules',
+    title: 'Accuracy & Limitations',
     content: [
-      'Reviewly may add, modify, or remove exam modules (such as LET, NLE, CHRA, etc.) at any time. Availability of future modules is not guaranteed.',
+      'Reviewly is a study aid. While we work hard to keep content accurate and helpful:',
+      {
+        list: [
+          'We do not guarantee any exam result or passing outcome',
+          'Some content may contain errors; if you spot one, please report it',
+          'Reviewly should not be treated as an official reference or a replacement for official materials',
+        ]
+      },
     ],
   },
   {
     id: 10,
-    title: 'Changes to These Terms',
+    title: 'Future Exam Modules',
     content: [
-      'We may update these Terms from time to time. If we make significant changes, we will notify you through the app or email. Continued use of Reviewly means you accept the updated Terms.',
+      'Reviewly may add, modify, or remove exam modules (such as LET, NLE/PNLE, BLEPP, etc.) at any time. Availability of future modules is not guaranteed.',
     ],
   },
   {
     id: 11,
+    title: 'Changes to These Terms',
+    content: [
+      'We may update these Terms from time to time. If we make significant changes, we may notify you through the app or email. Continued use of Reviewly means you accept the updated Terms.',
+    ],
+  },
+  {
+    id: 12,
     title: 'Contact Us',
     content: [
       'If you have questions or concerns, reach us at support@reviewly.ph.',
-      "Thank you for studying with Reviewly. Smarter studying starts here. 💜",
+      'Thank you for studying with Reviewly. Smarter studying starts here. 💜',
     ],
     hasEmailLink: true,
   },
 ];
 
-function renderContent(blocks, hasEmailLink) {
+function renderContent(blocks, hasEmailLink, hasRefundLink) {
   return blocks.map((block, i) => {
     const marginClass = i === 0 ? 'mt-0' : 'mt-3';
     const blockClass = `${marginClass} mb-0`;
+
     if (typeof block === 'string') {
-      if (hasEmailLink && block.includes('support@reviewly.ph')) {
-        const [before, after] = block.split('support@reviewly.ph');
+      // Refund Policy link
+      if (hasRefundLink && block.includes('Refund Policy')) {
+        const parts = block.split('Refund Policy');
         return (
           <p key={i} className={blockClass}>
-            {before}
-            <a href="mailto:support@reviewly.ph" className="text-[#6E43B9] underline hover:no-underline">support@reviewly.ph</a>
-            {after}
+            {parts[0]}
+            <Link to="/refund" className="text-[#6E43B9] underline hover:no-underline">Refund Policy</Link>
+            {parts[1]}
           </p>
         );
       }
-      return <p key={i} className={blockClass}>{block}</p>;
+      // Email link
+      if (hasEmailLink && block.includes('support@reviewly.ph')) {
+        const parts = block.split('support@reviewly.ph');
+        return (
+          <p key={i} className={blockClass}>
+            {parts[0]}
+            <a href="mailto:support@reviewly.ph" className="text-[#6E43B9] underline hover:no-underline">support@reviewly.ph</a>
+            {parts[1]}
+          </p>
+        );
+      }
+      return <p key={i} className={`text-[13px] sm:text-[14px] lg:text-base ${blockClass}`}>{block}</p>;
     }
-    if (block && typeof block === 'object' && block.list) {
-      const listClass = 'list-disc list-inside pl-4 space-y-1';
-      return (
-        <ul key={i} className={`${listClass} ${blockClass}`}>
-          {block.list.map((item, j) => (
-            <li key={j}>{item}</li>
-          ))}
-        </ul>
-      );
+
+    if (block && typeof block === 'object') {
+      if (block.list) {
+        return (
+          <ul key={i} className={`list-disc list-inside pl-4 space-y-1 text-[13px] sm:text-[14px] lg:text-base ${blockClass}`}>
+            {block.list.map((item, j) => <li key={j}>{item}</li>)}
+          </ul>
+        );
+      }
+      if (block.subheading) {
+        return (
+          <h3 key={i} className={`font-inter font-bold text-[13px] sm:text-[14px] lg:text-base text-[#0F172A] mb-2 ${i === 0 ? 'mt-0' : 'mt-4'}`}>
+            {block.subheading}
+          </h3>
+        );
+      }
     }
     return null;
   });
@@ -137,26 +207,20 @@ function Terms() {
       <main className="flex justify-center pt-12 pb-20">
         <section className="w-full max-w-[800px] mx-auto px-4 sm:px-6">
           <h1
-            className="font-inter font-normal text-4xl text-center text-[#0F172A] mb-4"
-            data-aos="fade-up"
-            data-aos-duration="500"
-            data-aos-delay="0"
+            className="font-inter font-normal text-[26px] sm:text-[32px] lg:text-4xl text-center text-[#0F172A] mb-4"
+            data-aos="fade-up" data-aos-duration="500" data-aos-delay="0"
           >
             Terms & Conditions
           </h1>
           <p
-            className="font-inter font-normal text-base text-center text-[#0F172A] mb-2.5"
-            data-aos="fade-up"
-            data-aos-duration="500"
-            data-aos-delay="50"
+            className="font-inter font-normal text-[13px] sm:text-[14px] lg:text-base text-center text-[#0F172A] mb-2.5"
+            data-aos="fade-up" data-aos-duration="500" data-aos-delay="50"
           >
             Effective Date: {EFFECTIVE_DATE}
           </p>
           <p
-            className="font-inter font-normal text-base text-[#0F172A] mb-10"
-            data-aos="fade-up"
-            data-aos-duration="500"
-            data-aos-delay="100"
+            className="font-inter font-normal text-[13px] sm:text-[14px] lg:text-base text-[#0F172A] mb-10"
+            data-aos="fade-up" data-aos-duration="500" data-aos-delay="100"
           >
             {INTRO_TEXT}
           </p>
@@ -164,15 +228,14 @@ function Terms() {
             {TERMS_SECTIONS.map((section) => (
               <article
                 key={section.id}
-                data-aos="fade-up"
-                data-aos-duration="500"
+                data-aos="fade-up" data-aos-duration="500"
                 data-aos-delay={Math.min(section.id * 40, 200)}
               >
-                <h2 className="font-inter font-bold text-base text-[#0F172A] mb-4">
+                <h2 className="font-inter font-bold text-[13px] sm:text-[14px] lg:text-base text-[#0F172A] mb-4">
                   {section.id}. {section.title}
                 </h2>
-                <div className="font-inter font-normal text-base text-[#0F172A] m-0 leading-[160%]">
-                  {renderContent(section.content, section.hasEmailLink)}
+                <div className="font-inter font-normal text-[13px] sm:text-[14px] lg:text-base text-[#0F172A] m-0 leading-[160%]">
+                  {renderContent(section.content, section.hasEmailLink, section.hasRefundLink)}
                 </div>
               </article>
             ))}

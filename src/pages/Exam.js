@@ -21,12 +21,12 @@ const OPTION_LABELS = ['A', 'B', 'C', 'D'];
 
 /** Section → color map (matches Figma design). */
 const SECTION_TAG_COLORS = {
-  verbal:               { color: '#14B8A6', darkText: true },
-  analytical:           { color: '#3B82F6', darkText: true },
-  clerical:             { color: '#3B82F6', darkText: true },
-  numerical:            { color: '#F59E0B', darkText: false },
-  'general information':{ color: '#EC4899', darkText: false },
-  general_info:         { color: '#EC4899', darkText: false },
+  verbal: { color: '#14B8A6', darkText: true },
+  analytical: { color: '#3B82F6', darkText: true },
+  clerical: { color: '#3B82F6', darkText: true },
+  numerical: { color: '#F59E0B', darkText: false },
+  'general information': { color: '#EC4899', darkText: false },
+  general_info: { color: '#EC4899', darkText: false },
 };
 
 /**
@@ -399,7 +399,7 @@ function Exam({ isTrial = false }) {
         setShowSubmitModal(false);
         navigate(
           `${resultsPath}/${attemptId}${!isTrial && fromLibrary ? '?from=library' : ''}`,
-          isTrial ? { state: { showLoadingFlow: true } } : undefined
+          { state: { showLoadingFlow: true } }
         );
       }
     } catch (err) {
@@ -469,11 +469,11 @@ function Exam({ isTrial = false }) {
         title="Save and exit assessment?"
         titleId="pause-modal-title"
         footer={
-          <>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center items-center w-full">
             <button
               type="button"
               onClick={() => setShowPauseModal(false)}
-              className="font-inter font-normal text-[14px] text-[#431C86] py-[11.5px] px-6 rounded-[8px] border border-[#431C86] bg-white hover:bg-gray-50 transition-colors"
+              className="w-full sm:w-auto min-w-[160px] font-inter font-normal text-[14px] text-[#431C86] py-[10px] px-[14px] sm:px-6 rounded-[8px] border border-[#431C86] bg-white hover:bg-gray-50 transition-colors whitespace-nowrap"
             >
               Continue Assessment
             </button>
@@ -483,11 +483,11 @@ function Exam({ isTrial = false }) {
                 setShowPauseModal(false);
                 handlePauseAndExit();
               }}
-              className="font-inter font-bold text-[14px] text-[#421A83] py-[11.5px] px-6 rounded-[8px] bg-[#FACC15] hover:opacity-90 transition-opacity"
+              className="w-full sm:w-auto min-w-[160px] font-inter font-bold text-[14px] text-[#421A83] py-[10px] px-[14px] sm:px-6 rounded-[8px] bg-[#FACC15] hover:opacity-90 transition-opacity whitespace-nowrap"
             >
               Save &amp; Exit
             </button>
-          </>
+          </div>
         }
       >
         <p className="font-inter font-normal text-[14px] text-[#45464E]">
@@ -538,11 +538,11 @@ function Exam({ isTrial = false }) {
         title="Submit your assessment?"
         titleId="submit-modal-title"
         footer={
-          <>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center items-center w-full">
             <button
               type="button"
               onClick={() => setShowSubmitModal(false)}
-              className="font-inter font-normal text-[14px] text-[#431C86] py-[11.5px] px-6 rounded-[8px] border border-[#431C86] bg-white hover:bg-gray-50 transition-colors"
+              className="w-full sm:w-auto min-w-[160px] font-inter font-normal text-[14px] text-[#431C86] py-[10px] px-[14px] sm:px-6 rounded-[8px] border border-[#431C86] bg-white hover:bg-gray-50 transition-colors whitespace-nowrap"
             >
               Review Answers
             </button>
@@ -550,7 +550,7 @@ function Exam({ isTrial = false }) {
               type="button"
               onClick={handleConfirmSubmit}
               disabled={submitting}
-              className="font-inter font-bold text-[14px] text-[#421A83] py-[11.5px] px-6 rounded-[8px] bg-[#FACC15] hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full sm:w-auto min-w-[160px] font-inter font-bold text-[14px] text-[#421A83] py-[10px] px-[14px] sm:px-6 rounded-[8px] bg-[#FACC15] hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2 whitespace-nowrap"
             >
               {submitting && (
                 <svg className="animate-spin h-4 w-4 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
@@ -560,7 +560,7 @@ function Exam({ isTrial = false }) {
               )}
               Submit Assessment
             </button>
-          </>
+          </div>
         }
       >
         {unansweredCount > 0 ? (
@@ -706,35 +706,68 @@ function Exam({ isTrial = false }) {
             </div>
 
             {/* Bottom actions */}
-            <div className="relative flex flex-col gap-3 pt-4">
+            <div className="relative pt-4 mt-4 border-t border-[#F2F4F7]">
               <span className={`absolute -top-5 right-0 font-inter text-[13px] text-[#45464E] transition-opacity duration-200 ${saveStatus ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
                 {saveStatus === 'saving' ? 'Saving...' : 'Saved ✓'}
               </span>
-              {/* Row 1: Next / Submit (full-width primary) */}
-              <button
-                type="button"
-                onClick={handleNextOrSubmit}
-                disabled={examFrozen || submitting}
-                className="w-full font-inter font-regular text-[14px] text-[#421A83] py-2.5 px-6 rounded-[8px] bg-[#FFC92A] hover:opacity-95 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {isLastQuestion && submitting && (
-                  <svg className="animate-spin h-4 w-4 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                  </svg>
-                )}
-                {isLastQuestion ? 'Submit' : 'Next'}
-              </button>
-              {/* Row 2: Previous + Save and Exit side by side */}
-              <div className="flex items-center gap-3">
+
+              <div className="flex flex-col gap-3 sm:hidden">
                 <button
                   type="button"
-                  onClick={handlePrev}
-                  disabled={currentIndex === 0 || examFrozen}
-                  className="flex-1 font-inter font-regular text-[14px] text-[#6C737F] py-2.5 px-4 rounded-[8px] border-[0.5px] border-[#6C737F] bg-white hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={handleNextOrSubmit}
+                  disabled={examFrozen || submitting}
+                  className="w-full font-inter font-semibold text-[14px] text-[#421A83] py-2.5 px-6 rounded-[8px] bg-[#FFC92A] hover:opacity-95 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  Previous
+                  {isLastQuestion && submitting && (
+                    <svg className="animate-spin h-4 w-4 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                  )}
+                  {isLastQuestion ? 'Submit' : 'Next'}
                 </button>
+                <div className="grid grid-cols-2 gap-2 w-full">
+                  <button
+                    type="button"
+                    onClick={handlePrev}
+                    disabled={currentIndex === 0 || examFrozen}
+                    className="w-full font-inter font-normal text-[14px] text-[#6C737F] py-2 px-4 rounded-[8px] border border-[#D1D5DB] bg-white hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    type="button"
+                    disabled={examFrozen}
+                    onClick={() => {
+                      if (examFrozen) return;
+                      setShowPauseModal(true);
+                    }}
+                    className="w-full font-inter font-normal text-[14px] text-[#6C737F] py-2 px-4 rounded-[8px] border border-[#D1D5DB] bg-white hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                  >
+                    Save and Exit
+                  </button>
+                </div>
+              </div>
+
+              <div className="hidden sm:flex sm:items-center sm:justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleNextOrSubmit}
+                    disabled={examFrozen || submitting}
+                    className="font-inter font-semibold text-[14px] text-[#421A83] py-2.5 px-6 rounded-[8px] bg-[#FFC92A] hover:opacity-95 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {isLastQuestion ? 'Submit' : 'Next'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handlePrev}
+                    disabled={currentIndex === 0 || examFrozen}
+                    className="font-inter font-normal text-[14px] text-[#6C737F] py-2 px-4 rounded-[8px] border border-[#D1D5DB] bg-white hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Previous
+                  </button>
+                </div>
                 <button
                   type="button"
                   disabled={examFrozen}
@@ -742,7 +775,7 @@ function Exam({ isTrial = false }) {
                     if (examFrozen) return;
                     setShowPauseModal(true);
                   }}
-                  className="flex-1 font-inter font-regular text-[14px] text-[#6C737F] py-2.5 px-4 rounded-[8px] border-[0.5px] border-[#6C737F] bg-white hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="font-inter font-normal text-[14px] text-[#6C737F] py-2 px-4 rounded-[8px] border border-[#D1D5DB] bg-white hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                 >
                   Save and Exit
                 </button>

@@ -44,14 +44,16 @@ const REFUND_SECTIONS = [
     title: 'Non-refundable cases (important)',
     content: [
       { underline: 'Refunds are generally not granted in these cases:' },
-      { list: [
-        'Change of mind after Premium has been activated',
-        'You already accessed Premium features (e.g., sprint plan generation, topic-level breakdown, additional mock sets)',
-        'You did not reach a desired score or outcome (Reviewly is a study tool; results vary by person)',
-        'You submitted the wrong Reviewly email address and did not respond to our request to correct details',
-        'Delays caused by incomplete or incorrect information (missing reference number, unclear receipt, mismatched email, etc.)',
-        'Account issues not caused by Reviewly (e.g., Google account access problems)',
-      ]},
+      {
+        list: [
+          'Change of mind after Premium has been activated',
+          'You already accessed Premium features (e.g., sprint plan generation, topic-level breakdown, additional mock sets)',
+          'You did not reach a desired score or outcome (Reviewly is a study tool; results vary by person)',
+          'You submitted the wrong Reviewly email address and did not respond to our request to correct details',
+          'Delays caused by incomplete or incorrect information (missing reference number, unclear receipt, mismatched email, etc.)',
+          'Account issues not caused by Reviewly (e.g., Google account access problems)',
+        ]
+      },
     ],
   },
   {
@@ -60,13 +62,15 @@ const REFUND_SECTIONS = [
     content: [
       { emailBold: 'Email support@reviewly.ph with the subject: Refund Request' },
       'Include the following:',
-      { orderedList: [
-        'Reviewly account email (the email you use to log in)',
-        'GCash reference number',
-        'Date and time of payment',
-        'Screenshot of payment receipt',
-        'Short explanation of the issue (e.g., duplicate payment / not activated)',
-      ]},
+      {
+        orderedList: [
+          'Reviewly account email (the email you use to log in)',
+          'GCash reference number',
+          'Date and time of payment',
+          'Screenshot of payment receipt',
+          'Short explanation of the issue (e.g., duplicate payment / not activated)',
+        ]
+      },
       "If we need more info, we'll email you.",
     ],
     hasEmailLink: true,
@@ -85,11 +89,13 @@ const REFUND_SECTIONS = [
     title: 'Premium activation reminders',
     content: [
       'Premium activation is manual verification for now. To avoid delays:',
-      { list: [
-        'Make sure your Reviewly email matches your account login email.',
-        'Keep your GCash reference number ready.',
-        'Upload a clear receipt screenshot if available.',
-      ]},
+      {
+        list: [
+          'Make sure your Reviewly email matches your account login email.',
+          'Keep your GCash reference number ready.',
+          'Upload a clear receipt screenshot if available.',
+        ]
+      },
     ],
   },
   {

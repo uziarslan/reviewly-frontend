@@ -119,7 +119,7 @@ const CardGauge = ({ percentage }) => {
  * Single unified card — logo + title inside — matching image-1 reference design.
  */
 const MockScoreCard = forwardRef(function MockScoreCard(
-  { title, submittedAt, result, passingThreshold, lowestSection, gapToPass, focusSectionWeight, sectionWeightsText },
+  { title, submittedAt, result, passingThreshold, lowestSection, gapToPass, focusSectionWeight, sectionWeightsText, reviewerType },
   ref,
 ) {
   const pct = (result.percentage != null ? result.percentage : 0).toFixed(2);
@@ -293,7 +293,7 @@ const MockScoreCard = forwardRef(function MockScoreCard(
         </div>
 
         {/* ── Recommended Focus ── */}
-        {!passed && lowestSection && (
+        {!passed && lowestSection && !['practice', 'demo'].includes(String(reviewerType || '').toLowerCase()) && (
           <div style={{ paddingTop: 24 }}>
             <h3 style={{ fontSize: 16, fontWeight: 700, color: '#45464E', margin: '0 0 8px' }}>
               Recommended Focus

@@ -3,13 +3,17 @@ import { Link } from 'react-router-dom';
 
 const Footer = () => {
   return (
-    <footer className="bg-[#431C86] text-white px-4 sm:px-6 md:px-8 lg:px-[80px] pt-8 pb-6 md:pt-[40px] md:pb-[32px]">
+    <footer className="bg-[#431C86] text-white px-6 sm:px-8 lg:px-[80px] pt-10 pb-6 md:pt-[48px] md:pb-[32px]">
       <div className="max-w-[1440px] mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-8">
-          {/* Left Section */}
-          <div className="text-center md:text-left" data-aos="fade-up" data-aos-duration="500" data-aos-delay="0">
-            <div className="flex items-center justify-center md:justify-start mb-0">
-              <svg width="214" height="80" viewBox="0 0 214 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-12 w-auto max-w-[180px] sm:max-w-[214px] sm:h-14 md:h-[80px] md:w-[214px] md:max-w-none" aria-label="Reviewly">
+
+        {/* Top Section */}
+        <div className="flex flex-col md:flex-row justify-between items-center gap-10 md:gap-8 mb-[24px]">
+
+          {/* Left: Logo + description + social icons */}
+          <div>
+            {/* Logo */}
+            <div className="mb-[8px]">
+              <svg width="214" height="80" viewBox="0 0 214 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-12 w-auto sm:h-14 md:h-[80px]" aria-label="Reviewly">
                 <g clipPath="url(#clip0_footer_logo)">
                   <path d="M113.696 53.3675C124.979 53.0558 137.089 53.5753 148.294 54.848C150.804 55.1337 157.635 55.7051 159.317 57.2896C160.999 58.874 160.533 60.4844 159.032 61.7051C155.668 64.4584 148.526 62.6402 144.438 62.3805C114.214 60.5363 78.0643 63.809 49.4706 74.0688C20.8767 84.3285 41.2418 78.1467 37.5932 77.6792C34.8244 77.3155 30.6841 75.1597 27.8635 74.1986C26.3109 73.6792 23.6973 73.7831 22.9986 72.0688C22.921 71.2376 25.7674 70.0168 26.4921 69.6792C50.7385 58.3025 87.0693 54.0688 113.748 53.3675H113.696Z" fill="white" />
                   <path d="M16.4518 35.1083C15.9343 35.3421 15.8566 36.5628 15.7531 37.1343C14.8992 41.6278 14.5369 46.2512 13.476 50.6927C12.6738 54.0953 12.622 56.0693 8.58528 55.6018C6.41164 55.3421 4.238 54.6148 4.28976 52.1473C4.34151 49.1862 5.40245 44.6408 5.91999 41.5758C7.44671 32.6667 9.49097 23.8616 11.794 15.1343C9.33571 16.511 6.23051 18.8486 5.09193 21.5239C3.95336 24.1993 4.85904 25.5499 2.5819 24.2252C0.30475 22.9006 -0.575056 19.0304 0.38238 16.5369C3.12531 9.34212 16.5812 5.08238 23.542 4.71874C33.6081 4.22523 43.0013 8.61485 38.5505 20.3032C36.2734 26.3031 30.5288 30.3031 25.2757 33.42C28.7692 40.8486 33.6081 50.2771 42.225 52.4849C44.3987 53.0564 46.1065 53.1862 48.2802 52.6667C50.4538 52.1473 51.7476 50.6408 51.6441 53.1602C51.5406 55.9914 47.3227 58.3291 44.9162 58.9005C30.1406 62.2512 20.5403 47.0304 16.4518 35.1343V35.1083ZM16.9693 30.433C22.9986 29.1862 31.4086 21.9915 31.4345 15.472C31.4345 14.4071 30.7358 12.5369 29.9077 11.8876C28.4845 10.7707 23.8784 10.2252 22.3517 11.0304C21.446 11.498 20.2298 15.9655 19.9193 17.1603C18.7031 21.5239 18.1079 26.0693 16.9952 30.459L16.9693 30.433Z" fill="white" />
@@ -32,70 +36,58 @@ const Footer = () => {
                 </defs>
               </svg>
             </div>
-            <p className="font-sans text-sm sm:text-base font-normal text-[#E2E8F0] max-w-[429px] leading-[200%] mx-auto md:mx-0" data-aos="fade-up" data-aos-duration="500" data-aos-delay="50">
-              Reviewly helps everyday Filipinos review for exams and certifications using smart, AI-powered study tools.
+
+            {/* Description */}
+            <p className="font-sans text-xs sm:text-sm lg:text-base font-normal text-[#E2E8F0] leading-[1.8] mb-[16px] max-w-[547px]">
+              Your CSE readiness check — realistic mocks, clear results, no guesswork. Know what to fix next and review with direction.
             </p>
+
+            {/* Social Icons */}
+            <div className="flex items-center gap-[24px]">
+              <a href="http://facebook.com/reviewly.ph" target="_blank" rel="noopener noreferrer" className="hover:opacity-80 transition-opacity" aria-label="Reviewly on Facebook">
+                <svg className="w-5 h-5 sm:w-7 sm:h-7" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                </svg>
+              </a>
+              <a href="https://www.tiktok.com/@reviewly.ph" target="_blank" rel="noopener noreferrer" className="hover:opacity-80 transition-opacity" aria-label="Reviewly on TikTok">
+                <svg className="w-5 h-5 sm:w-7 sm:h-7" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z" />
+                </svg>
+              </a>
+              <a href="https://www.instagram.com/reviewly.ph" target="_blank" rel="noopener noreferrer" className="hover:opacity-80 transition-opacity" aria-label="Reviewly on Instagram">
+                <svg className="w-5 h-5 sm:w-7 sm:h-7" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+                </svg>
+              </a>
+            </div>
           </div>
 
-          {/* Right Section - Links */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 items-center justify-items-center md:justify-items-end">
-            <div className="flex flex-col items-center md:items-end" data-aos="fade-up" data-aos-duration="500" data-aos-delay="100">
-              <div className="text-center md:text-right">
-                <Link to="/pricing" className="block font-sans text-sm sm:text-base font-normal text-[#E2E8F0] hover:text-white mb-3">
-                  Pricing
-                </Link>
-                <Link to="/faq" className="block font-sans text-sm sm:text-base font-normal text-[#E2E8F0] hover:text-white">
-                  FAQ
-                </Link>
-              </div>
+          {/* Right: Two link columns */}
+          <div className="flex gap-16 sm:gap-24">
+            {/* Column 1 */}
+            <div className="flex flex-col gap-4">
+              <Link to="/pricing" className="font-sans text-xs sm:text-sm lg:text-base font-normal text-[#E2E8F0] hover:text-white transition-colors">Pricing</Link>
+              <Link to="/contact" className="font-sans text-xs sm:text-sm lg:text-base font-normal text-[#E2E8F0] hover:text-white transition-colors">Contact Us</Link>
             </div>
-            <div className="flex flex-col items-center md:items-end" data-aos="fade-up" data-aos-duration="500" data-aos-delay="150">
-              <div className="text-center md:text-right">
-                <Link to="/privacy" className="block font-sans text-sm sm:text-base font-normal text-[#E2E8F0] hover:text-white mb-3">
-                  Privacy Policy
-                </Link>
-                <Link to="/terms" className="block font-sans text-sm sm:text-base font-normal text-[#E2E8F0] hover:text-white">
-                  Terms & Conditions
-                </Link>
-              </div>
-            </div>
-            <div className="flex flex-col items-center md:items-end" data-aos="fade-up" data-aos-duration="500" data-aos-delay="200">
-              <div className="text-center md:text-right">
-                <Link to="/contact" className="block font-sans text-sm sm:text-base font-normal text-[#E2E8F0] hover:text-white mb-3">
-                  Contact Us
-                </Link>
-                {/* Social Media Icons */}
-                <div className="flex space-x-3">
-                  <a href="http://facebook.com/reviewly.ph" target="_blank" rel="noopener noreferrer" className="hover:opacity-80" aria-label="Reviewly on Facebook">
-                    <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                    </svg>
-                  </a>
-                  <a href="https://www.tiktok.com/@reviewly.ph" target="_blank" rel="noopener noreferrer" className="hover:opacity-80" aria-label="Reviewly on TikTok">
-                    <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z" />
-                    </svg>
-                  </a>
-                  <a href="https://www.instagram.com/reviewly.ph" target="_blank" rel="noopener noreferrer" className="hover:opacity-80" aria-label="Reviewly on Instagram">
-                    <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
-                    </svg>
-                  </a>
-                </div>
-              </div>
+            {/* Column 2 */}
+            <div className="flex flex-col gap-4">
+              <Link to="/privacy" className="font-sans text-xs sm:text-sm lg:text-base font-normal text-[#E2E8F0] hover:text-white transition-colors">Privacy Policy</Link>
+              <Link to="/refund" className="font-sans text-xs sm:text-sm lg:text-base font-normal text-[#E2E8F0] hover:text-white transition-colors">Refund Policy</Link>
+              <Link to="/terms" className="font-sans text-xs sm:text-sm lg:text-base font-normal text-[#E2E8F0] hover:text-white transition-colors">Terms & Conditions</Link>
             </div>
           </div>
         </div>
 
-        {/* Bottom Section */}
-        <div className="mt-6 pt-6 border-t border-[#E2E8F0] flex flex-col md:flex-row justify-between items-center gap-4 text-center md:text-left" data-aos="fade-up" data-aos-duration="500" data-aos-delay="100">
-          <p className="font-sans text-sm sm:text-base font-normal text-[#E2E8F0]">
+        {/* Bottom bar */}
+        <div className="pt-6 border-t border-[#E2E8F0]/30 flex flex-col sm:flex-row justify-between items-center gap-3">
+          <p className="font-sans text-xs sm:text-sm font-normal text-[#E2E8F0]">
             © 2026 Reviewly PH. All rights reserved.
           </p>
-          <p className="font-sans text-sm sm:text-base font-normal text-[#E2E8F0]">
+          <p className="font-sans text-xs sm:text-sm font-normal text-[#E2E8F0]">
             Made with 💜 for Filipino learners.
           </p>
         </div>
+
       </div>
     </footer>
   );

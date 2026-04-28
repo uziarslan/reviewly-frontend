@@ -16,26 +16,26 @@ const normalizeSection = (name) => (name || '').toLowerCase().trim();
 
 const SectionLogoByName = ({ sectionName, className = 'w-[22px] h-[22px]' }) => {
   const s = normalizeSection(sectionName);
-  if (s.includes('verbal'))     return <VerbalAbilityLogoIcon className={className} />;
+  if (s.includes('verbal')) return <VerbalAbilityLogoIcon className={className} />;
   if (s.includes('analytical')) return <AnalyticalAbilityLogoIcon className={className} />;
-  if (s.includes('clerical'))   return <ClericalAbilityLogoIcon className={className} />;
-  if (s.includes('numerical'))  return <NumericalAbilityLogoIcon className={className} />;
+  if (s.includes('clerical')) return <ClericalAbilityLogoIcon className={className} />;
+  if (s.includes('numerical')) return <NumericalAbilityLogoIcon className={className} />;
   return <GeneralInformationLogoIcon className={className} />;
 };
 
 const SemiCircleGauge = ({ percentage }) => {
   const pct = Math.min(100, Math.max(0, Number(percentage) || 0));
 
-  const outerR   = 160;
-  const trackW   = 15;
-  const midR     = outerR - trackW / 2;
+  const outerR = 160;
+  const trackW = 15;
+  const midR = outerR - trackW / 2;
   const innerPct = ((outerR - trackW) / outerR * 100).toFixed(3);
 
   const progressDeg = (pct / 100) * 180;
   const pd = progressDeg.toFixed(2);
 
   const toRad = (d) => (d * Math.PI) / 180;
-  const angle   = 180 - (pct / 100) * 180;
+  const angle = 180 - (pct / 100) * 180;
   const handleX = outerR + midR * Math.cos(toRad(angle));
   const handleY = outerR - midR * Math.sin(toRad(angle));
 
@@ -100,9 +100,9 @@ const SemiCircleGauge = ({ percentage }) => {
 
 const ShareResult = () => {
   const { shareToken } = useParams();
-  const [data, setData]     = useState(null);
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError]   = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     if (!shareToken) { setLoading(false); setError('Invalid link'); return; }
@@ -137,24 +137,24 @@ const ShareResult = () => {
   }
 
   const { reviewer, submittedAt, result } = data;
-  const title            = reviewer?.title || 'Exam';
-  const breakdown        = result.sectionScores || [];
-  const totalCorrect     = result.correct    || 0;
-  const totalIncorrect   = result.incorrect  || breakdown.reduce((s, r) => s + (r.incorrect  ?? 0), 0);
-  const totalUnanswered  = result.unanswered || breakdown.reduce((s, r) => s + (r.unanswered ?? 0), 0);
-  const totalItems       = result.totalItems || 0;
-  const pct              = (result.percentage != null ? result.percentage : 0).toFixed(2);
-  const passed           = result.passed;
+  const title = reviewer?.title || 'Exam';
+  const breakdown = result.sectionScores || [];
+  const totalCorrect = result.correct || 0;
+  const totalIncorrect = result.incorrect || breakdown.reduce((s, r) => s + (r.incorrect ?? 0), 0);
+  const totalUnanswered = result.unanswered || breakdown.reduce((s, r) => s + (r.unanswered ?? 0), 0);
+  const totalItems = result.totalItems || 0;
+  const pct = (result.percentage != null ? result.percentage : 0).toFixed(2);
+  const passed = result.passed;
   const passingThreshold = reviewer?.examConfig?.passingThreshold || 80;
-  const passingScore     = result.passingScore ?? Math.ceil((passingThreshold / 100) * totalItems);
+  const passingScore = result.passingScore ?? Math.ceil((passingThreshold / 100) * totalItems);
 
   const capitalize = (str) => (str ? str.charAt(0).toUpperCase() + str.slice(1) : '');
 
-  const durationMs  = result.duration != null ? result.duration * 1000 : 0;
+  const durationMs = result.duration != null ? result.duration * 1000 : 0;
   const durationMin = Math.floor(durationMs / 60000);
-  const durationH   = Math.floor(durationMin / 60);
-  const durationM   = durationMin % 60;
-  const duration    = durationH > 0
+  const durationH = Math.floor(durationMin / 60);
+  const durationM = durationMin % 60;
+  const duration = durationH > 0
     ? `${durationH} hour${durationH !== 1 ? 's' : ''} ${durationM} min${durationM !== 1 ? 's' : ''}`
     : `${durationM} minute${durationM !== 1 ? 's' : ''}`;
 
@@ -162,24 +162,24 @@ const ShareResult = () => {
     ? new Date(submittedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
     : '';
 
-  const pctNum    = parseFloat(pct);
+  const pctNum = parseFloat(pct);
   const readiness = pctNum >= 85
-    ? { label: 'Exam Ready',        message: 'You are above the passing threshold.' }
+    ? { label: 'Exam Ready', message: 'You are above the passing threshold.' }
     : pctNum >= 75
-      ? { label: 'Almost Ready',      message: 'A few improvements can push you to passing.' }
+      ? { label: 'Almost Ready', message: 'A few improvements can push you to passing.' }
       : pctNum >= 60
         ? { label: 'Needs Improvement', message: "You're within reach but need more practice." }
-        : { label: 'Early Stage',       message: 'Focus on building fundamentals first.' };
+        : { label: 'Early Stage', message: 'Focus on building fundamentals first.' };
 
-  const sortedSections   = [...breakdown].sort((a, b) => b.score - a.score);
-  const lowestSection    = sortedSections[sortedSections.length - 1] || null;
-  const gapToPass        = passed ? 0 : Math.max(0, passingScore - totalCorrect);
+  const sortedSections = [...breakdown].sort((a, b) => b.score - a.score);
+  const lowestSection = sortedSections[sortedSections.length - 1] || null;
+  const gapToPass = passed ? 0 : Math.max(0, passingScore - totalCorrect);
 
-  const sectionDistribution  = reviewer?.examConfig?.sectionDistribution || [];
-  const lowestSectionDist    = lowestSection
+  const sectionDistribution = reviewer?.examConfig?.sectionDistribution || [];
+  const lowestSectionDist = lowestSection
     ? sectionDistribution.find((sd) => sd.section?.toLowerCase() === lowestSection.section?.toLowerCase())
     : null;
-  const focusSectionWeight   = lowestSection
+  const focusSectionWeight = lowestSection
     ? Math.round(((lowestSectionDist?.count ?? lowestSection.totalItems) / totalItems) * 100)
     : 0;
 
@@ -328,7 +328,7 @@ const ShareResult = () => {
         </section>
 
         {/* ── Recommended Focus Card ── */}
-        {!passed && lowestSection && (
+        {!passed && lowestSection && !['practice', 'demo'].includes((reviewer?.type || '').toLowerCase()) && (
           <section className="bg-white rounded-[12px] px-[24px] py-[24px] mb-[24px] max-w-[840px] mx-auto">
             <h3 className="font-inter font-bold text-[16px] text-[#45464E] mb-[8px]">Recommended Focus</h3>
             <p className="font-inter font-regular text-[14px] text-[#0F172ABF] mb-[16px]">

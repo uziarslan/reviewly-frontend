@@ -9,6 +9,35 @@ const formatSection = (s) => {
   return s.split(/[\s_]+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 };
 
+const SECTION_CONFIG = {
+  verbal: { label: 'Verbal', color: '#14B8A6' },
+  analytical: { label: 'Analytical', color: '#3B82F6' },
+  clerical: { label: 'Clerical', color: '#3B82F6' },
+  numerical: { label: 'Numerical', color: '#F59E0B' },
+  general_info: { label: 'General Info', color: '#EC4899' },
+  'general info': { label: 'General Info', color: '#EC4899' },
+};
+const FALLBACK_COLORS = ['#8B5CF6', '#06B6D4', '#10B981', '#F43F5E', '#6366F1', '#EF4444'];
+
+function getSectionConfig(sectionKey, index) {
+  const key = (sectionKey || '').toLowerCase().trim();
+  return SECTION_CONFIG[key] || {
+    label: sectionKey.charAt(0).toUpperCase() + sectionKey.slice(1),
+    color: FALLBACK_COLORS[index % FALLBACK_COLORS.length],
+  };
+}
+
+function getSectionKeyFromSubject(subject) {
+  if (!subject) return null;
+  const lower = subject.toLowerCase();
+  if (lower.includes('verbal')) return 'verbal';
+  if (lower.includes('analytical')) return 'analytical';
+  if (lower.includes('clerical')) return 'clerical';
+  if (lower.includes('numerical')) return 'numerical';
+  if (lower.includes('general')) return 'general information';
+  return null;
+}
+
 const formatDuration = (secs) => {
   if (secs == null) return '–';
   const h = Math.floor(secs / 3600);
@@ -72,7 +101,10 @@ function ExamReview() {
   const explanationCorrect = currentQ.explanationCorrect || '';
   const explanationWrong = currentQ.explanationWrong || '';
   const tip = currentQ.reviewlyTip;
-  const topicTag = currentQ.topic ? formatSection(currentQ.topic) : (currentQ.module ? formatSection(currentQ.module) : '');
+  const topicSource = currentQ.topic || currentQ.module || currentQ.section || '';
+  const topicTag = topicSource ? formatSection(topicSource) : '';
+  const sectionKey = getSectionKeyFromSubject(currentQ.section || currentQ.module || currentQ.topic);
+  const sectionConfig = sectionKey ? getSectionConfig(sectionKey, 0) : null;
 
   const totalCorrect = result.correct || 0;
   const totalItems = result.totalItems || totalQuestions;
@@ -84,12 +116,11 @@ function ExamReview() {
   const statusLabel = pct >= 85 ? 'Exam Ready' : pct >= 70 ? 'Almost Ready' : 'Keep Practicing';
   const statusColor = pct >= 85 ? '#06A561' : pct >= 70 ? '#F5A623' : '#F0142F';
 
-  const scoreMessage = result.quickSummary ||
-    (result.passed
-      ? 'Great job — you passed!'
-      : pct >= 70
-        ? 'A few improvements can push you to passing.'
-        : "Keep studying – you're building strong foundations!");
+  const scoreMessage = result.passed
+    ? 'Great job — you passed!'
+    : pct >= 70
+      ? 'A few improvements can push you to passing.'
+      : "Keep studying – you're building strong foundations!";
 
   const sectionCoverage = result.sectionScores?.length
     ? result.sectionScores
@@ -129,21 +160,30 @@ function ExamReview() {
           <span className="text-[#6E43B9] font-inter font-normal text-[14px]">{reviewer.title}</span>
         </nav>
 
-        <h1 className="font-inter font-medium text-[#45464E] text-[20px] mb-[24px]">{reviewer.title}</h1>
-
         <div className="flex flex-col lg:flex-row gap-6 items-start">
           {/* ── Left: Question card ── */}
           <div className="order-1 w-full lg:w-auto lg:flex-1 lg:min-w-0 bg-white p-[24px] rounded-[16px] shadow-sm">
             <div key={currentIndex} className="animate-question-change">
 
               {/* Question header: number + category tags */}
-              <div className="flex items-center justify-between gap-3 mb-5">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 mb-5">
                 <span className="font-inter font-medium text-[#45464E] text-[15px] shrink-0">
                   Question {questionNumber} of {totalQuestions}
                 </span>
-                <div className="flex items-center gap-2 flex-wrap justify-end">
+                <div className="flex items-center gap-2 flex-wrap sm:ml-auto">
+                  {sectionConfig && (
+                    <span
+                      className="font-inter text-[12px] font-medium inline-flex items-center rounded-full px-3 py-1"
+                      style={{ backgroundColor: sectionConfig.color + '20', color: sectionConfig.color }}
+                    >
+                      {sectionConfig.label}
+                    </span>
+                  )}
                   {topicTag && (
-                    <span className="font-inter text-[12px] font-medium px-3 py-1 rounded-full bg-[#EDE9FF] text-[#6E43B9]">
+                    <span
+                      className="font-inter text-[12px] font-medium px-3 py-1 rounded-full"
+                      style={sectionConfig ? { backgroundColor: sectionConfig.color + '20', color: sectionConfig.color } : { backgroundColor: '#EDE9FF', color: '#6E43B9' }}
+                    >
                       {topicTag}
                     </span>
                   )}
@@ -217,32 +257,61 @@ function ExamReview() {
             </div>
 
             {/* Navigation */}
-            <div className="flex items-center justify-between pt-5 mt-4 border-t border-[#F2F4F7]">
-              <div className="flex items-center gap-2">
+            <div className="pt-5 mt-4 border-t border-[#F2F4F7]">
+              <div className="flex flex-col gap-2 sm:hidden">
                 <button
                   type="button"
                   onClick={handleNext}
                   disabled={currentIndex === totalQuestions - 1}
-                  className="font-inter font-semibold text-[14px] text-[#421A83] py-2.5 px-6 rounded-[8px] bg-[#FFC92A] hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full font-inter font-semibold text-[14px] text-[#421A83] py-2.5 px-6 rounded-[8px] bg-[#FFC92A] hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Next
                 </button>
+                <div className="grid grid-cols-2 gap-2 w-full">
+                  <button
+                    type="button"
+                    onClick={handlePrev}
+                    disabled={currentIndex === 0}
+                    className="w-full font-inter font-normal text-[14px] sm:text-[15px] text-[#6C737F] py-2 px-4 rounded-[8px] border border-[#D1D5DB] bg-white hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/dashboard/results/${attemptId}${fromLibrary ? '?from=library' : ''}`)}
+                    className="w-full font-inter font-normal text-[14px] sm:text-[15px] text-[#6C737F] py-2 px-4 rounded-[8px] border border-[#D1D5DB] bg-white hover:bg-gray-50 transition-colors whitespace-nowrap"
+                  >
+                    Back to Results
+                  </button>
+                </div>
+              </div>
+              <div className="hidden sm:flex sm:items-center sm:justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleNext}
+                    disabled={currentIndex === totalQuestions - 1}
+                    className="font-inter font-semibold text-[14px] text-[#421A83] py-2.5 px-6 rounded-[8px] bg-[#FFC92A] hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Next
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handlePrev}
+                    disabled={currentIndex === 0}
+                    className="font-inter font-normal text-[14px] sm:text-[15px] text-[#6C737F] py-2 px-4 sm:py-2.5 sm:px-5 rounded-[8px] border border-[#D1D5DB] bg-white hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Previous
+                  </button>
+                </div>
                 <button
                   type="button"
-                  onClick={handlePrev}
-                  disabled={currentIndex === 0}
-                  className="font-inter font-normal text-[15px] text-[#6C737F] py-2.5 px-5 rounded-[8px] border border-[#D1D5DB] bg-white hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={() => navigate(`/dashboard/results/${attemptId}${fromLibrary ? '?from=library' : ''}`)}
+                  className="font-inter font-normal text-[14px] sm:text-[15px] text-[#6C737F] py-2 px-4 sm:py-2.5 sm:px-5 rounded-[8px] border border-[#D1D5DB] bg-white hover:bg-gray-50 transition-colors whitespace-nowrap"
                 >
-                  Previous
+                  Back to Results
                 </button>
               </div>
-              <button
-                type="button"
-                onClick={() => navigate(`/dashboard/results/${attemptId}${fromLibrary ? '?from=library' : ''}`)}
-                className="font-inter font-normal text-[15px] text-[#6C737F] py-2.5 px-5 rounded-[8px] border border-[#D1D5DB] bg-white hover:bg-gray-50 transition-colors"
-              >
-                Back to Results
-              </button>
             </div>
           </div>
 
