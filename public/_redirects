@@ -1,1 +1,5 @@
-/*    /index.html   200
+# Dynamic OG tags for share pages — handled by a Netlify Function
+/share/*  /.netlify/functions/share  200
+
+# SPA catch-all — all other routes serve the React app
+/*        /index.html                200
