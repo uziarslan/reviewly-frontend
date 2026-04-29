@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom';
 import html2canvas from 'html2canvas';
 import { CloseIcon, DownloadImageIcon, CopyClipboardIcon, ShareLinkSmallIcon } from './Icons';
 
-function ShareModal({ isOpen, onClose, shareUrl, cardRef }) {
+function ShareModal({ isOpen, onClose, shareUrl, cardRef, linkLoading = false }) {
   const [linkCopied, setLinkCopied] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [copying, setCopying] = useState(false);
@@ -171,13 +171,14 @@ function ShareModal({ isOpen, onClose, shareUrl, cardRef }) {
               <div className='flex-1 min-w-0 flex items-center gap-[8px] border border-[#EBEBEB] rounded-bl-[8px] rounded-tl-[8px] p-[9px]'>
                 <ShareLinkSmallIcon className="w-[16px] h-[16px] shrink-0 text-[#6B7280]" />
                 <span className="flex-1 font-inter font-normal text-[12px] text-[#45464E] truncate">
-                  {shareUrl || 'Link unavailable'}
+                  {linkLoading ? 'Preparing share link…' : (shareUrl || 'Link unavailable')}
                 </span>
               </div>
               <button
                 type="button"
                 onClick={handleCopyLink}
-                className="w-[99px] shrink-0 font-inter font-regular text-[14px] text-[#421A83] bg-[#FFC92A] hover:opacity-90 transition-opacity py-[7px] px-[16px] rounded-tr-[8px] rounded-br-[8px] whitespace-nowrap"
+                disabled={linkLoading || !shareUrl}
+                className="w-[99px] shrink-0 font-inter font-regular text-[14px] text-[#421A83] bg-[#FFC92A] hover:opacity-90 transition-opacity py-[7px] px-[16px] rounded-tr-[8px] rounded-br-[8px] whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {linkCopied ? 'Copied!' : 'Copy'}
               </button>

@@ -173,6 +173,7 @@ const ExamResultsLoading = () => {
   const [backendReady, setBackendReady] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareUrl, setShareUrl] = useState('');
+  const [shareLinkLoading, setShareLinkLoading] = useState(false);
   const cardRef = useRef(null);
   const [shouldPlayLoadingFlow] = useState(() => location.state?.showLoadingFlow === true);
 
@@ -181,6 +182,7 @@ const ExamResultsLoading = () => {
   const handleOpenShare = useCallback(async () => {
     setShowShareModal(true);
     if (shareUrl) return; // already fetched
+    setShareLinkLoading(true);
     try {
       // Run share-link generation and card capture in parallel for speed
       const captureCard = cardRef.current
@@ -195,17 +197,26 @@ const ExamResultsLoading = () => {
 
       if (res.success && res.shareToken) {
         const url = `${window.location.origin}/share/${res.shareToken}`;
-        setShareUrl(url);
 
-        // Upload the score-card image in the background so the Facebook OG preview
-        // shows the actual breakdown image instead of a generic icon.
+        // Upload the score-card image and WAIT for it before exposing the share URL.
+        // This ensures Facebook's crawler sees the Cloudinary image (not og-share.png)
+        // when the user copies and pastes the link. We cap the wait at 10 s so a slow
+        // network never blocks the modal indefinitely.
         if (canvas) {
           const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-          examAPI.uploadShareImage(attemptId, dataUrl).catch(() => {/* non-critical */ });
+          const timeout = new Promise((resolve) => setTimeout(resolve, 10000));
+          await Promise.race([
+            examAPI.uploadShareImage(attemptId, dataUrl).catch(() => {}),
+            timeout,
+          ]);
         }
+
+        setShareUrl(url);
       }
     } catch (err) {
       console.error('Failed to generate share link', err);
+    } finally {
+      setShareLinkLoading(false);
     }
   }, [attemptId, shareUrl, cardRef]);
 
@@ -724,6 +735,7 @@ const ExamResultsLoading = () => {
         onClose={() => setShowShareModal(false)}
         shareUrl={shareUrl}
         cardRef={cardRef}
+        linkLoading={shareLinkLoading}
       />
 
       {/* Hidden off-screen card for html2canvas capture */}
