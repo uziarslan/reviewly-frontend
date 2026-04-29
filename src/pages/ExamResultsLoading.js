@@ -206,7 +206,7 @@ const ExamResultsLoading = () => {
           const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
           const timeout = new Promise((resolve) => setTimeout(resolve, 10000));
           await Promise.race([
-            examAPI.uploadShareImage(attemptId, dataUrl).catch(() => {}),
+            examAPI.uploadShareImage(attemptId, dataUrl).catch(() => { }),
             timeout,
           ]);
         }
