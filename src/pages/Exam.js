@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import DashNav from '../components/DashNav';
-import { ExamTimeInfoIcon } from '../components/Icons';
 import ExamSkeleton from '../components/skeletons/ExamSkeleton';
 import Modal from '../components/Modal';
 import { examAPI, reviewerAPI, trialAPI } from '../services/api';
@@ -61,6 +60,8 @@ function Exam({ isTrial = false }) {
   const navigate = useNavigate();
   const location = useLocation();
   const fromLibrary = !isTrial && new URLSearchParams(location.search).get('from') === 'library';
+  const fromSprint  = !isTrial && new URLSearchParams(location.search).get('from') === 'sprint';
+  const sprintTaskLabel = fromSprint ? (new URLSearchParams(location.search).get('taskLabel') || 'Sprint Task') : null;
   const isRestart = useMemo(
     () => new URLSearchParams(location.search).get('restart') === 'true',
     [location.search]
@@ -339,7 +340,9 @@ function Exam({ isTrial = false }) {
     }
     setShowPauseModal(false);
     if (isTrial) {
-      navigate('/dashboard/all-reviewers');
+      navigate('/dashboard');
+    } else if (fromSprint) {
+      navigate('/dashboard');
     } else {
       navigate(`/dashboard/exam/${id}${fromLibrary ? '?from=library' : ''}`);
     }
@@ -421,16 +424,18 @@ function Exam({ isTrial = false }) {
   if (loadingExam) return <ExamSkeleton />;
 
   if (errorMsg || !reviewer || questions.length === 0) {
+    const backTo = fromSprint ? '/dashboard' : (fromLibrary ? '/dashboard/library' : '/dashboard/all-reviewers');
+    const backLabel = fromSprint ? 'Dashboard' : (fromLibrary ? 'My Library' : 'All Reviewers');
     return (
       <div className="min-h-screen bg-[#F5F4FF]">
         <DashNav />
         <main className="max-w-[1440px] mx-auto px-6 sm:px-8 lg:px-20 py-8">
           <p className="font-inter text-[#45464E]">{errorMsg || 'Exam not found.'}</p>
           <Link
-            to={fromLibrary ? '/dashboard/library' : '/dashboard/all-reviewers'}
+            to={backTo}
             className="font-inter text-[#6E43B9] hover:underline mt-4 inline-block"
           >
-            Back to {fromLibrary ? 'My Library' : 'All Reviewers'}
+            Back to {backLabel}
           </Link>
         </main>
       </div>
@@ -616,14 +621,26 @@ function Exam({ isTrial = false }) {
       <main className="max-w-[1440px] mx-auto px-6 sm:px-8 lg:px-20 pt-[24px] pb-[40px]">
         {/* Breadcrumbs */}
         <nav className="mb-[24px]" aria-label="Breadcrumb" data-aos="fade-up" data-aos-duration="400" data-aos-delay="0">
-          <Link
-            to={fromLibrary ? '/dashboard/library' : '/dashboard/all-reviewers'}
-            className="text-[#45464E] font-inter font-normal text-[14px] hover:text-[#6E43B9] transition-colors"
-          >
-            {fromLibrary ? 'My Library' : 'All Reviewers'}
-          </Link>
-          <span className="mx-2">›</span>
-          <span className="text-[#6E43B9] font-inter font-normal text-[14px]">{reviewer.title}</span>
+          {fromSprint ? (
+            <>
+              <Link to="/dashboard" className="text-[#45464E] font-inter font-normal text-[14px] hover:text-[#6E43B9] transition-colors">Dashboard</Link>
+              <span className="mx-2">›</span>
+              <Link to="/dashboard" className="text-[#45464E] font-inter font-normal text-[14px] hover:text-[#6E43B9] transition-colors">Sprint Task</Link>
+              <span className="mx-2">›</span>
+              <span className="text-[#6E43B9] font-inter font-normal text-[14px]">{sprintTaskLabel}</span>
+            </>
+          ) : (
+            <>
+              <Link
+                to={fromLibrary ? '/dashboard/library' : '/dashboard/all-reviewers'}
+                className="text-[#45464E] font-inter font-normal text-[14px] hover:text-[#6E43B9] transition-colors"
+              >
+                {fromLibrary ? 'My Library' : 'All Reviewers'}
+              </Link>
+              <span className="mx-2">›</span>
+              <span className="text-[#6E43B9] font-inter font-normal text-[14px]">{reviewer.title}</span>
+            </>
+          )}
         </nav>
 
         <h1 className="font-inter font-medium text-[#45464E] text-[20px] mb-[24px]" data-aos="fade-up" data-aos-duration="400" data-aos-delay="25">{reviewer.title}</h1>
@@ -790,45 +807,31 @@ function Exam({ isTrial = false }) {
           <div className="order-2 lg:flex-shrink-0 lg:max-w-[404px] lg:self-stretch w-full lg:w-auto" data-aos="fade-up" data-aos-duration="400" data-aos-delay="75">
             <div className="bg-[#FFFFFF] rounded-[12px] p-[24px] lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto">
               <div className="flex flex-row justify-between items-center mb-[15px]">
-                <div className="flex items-center gap-[10px]">
-                  <span className="font-inter font-normal not-italic text-[20px] text-[#45464E]">Time Left</span>
-                  <div className="relative flex items-center group">
-                    <button
-                      type="button"
-                      aria-label="Time information"
-                      className="w-[20px] h-[20px] rounded-[4px] flex items-center justify-center opacity-40 text-[#130F26] bg-[linear-gradient(0deg,_#FFC92A,_#FFC92A),_linear-gradient(0deg,_rgba(255,255,255,0.5),_rgba(255,255,255,0.5))]"
-                    >
-                      <ExamTimeInfoIcon className="w-[1.76px] h-[9.34px]" />
-                    </button>
-                    <div className="pointer-events-none absolute left-1/2 top-[28px] w-[220px] -translate-x-1/2 rounded-[8px] bg-[#1F2937] px-3 py-2 text-[12px] text-white opacity-0 shadow-md transition-opacity duration-150 group-hover:opacity-100">
-                      Your answers will be automatically submitted once the timer reaches zero. Make sure to manage your time wisely.
-                    </div>
-                  </div>
-                </div>
-                <p className="font-inter font-medium not-italic text-[32px] text-[#431C86]">{timeLeft}</p>
+                <span className="font-inter font-semibold not-italic text-[20px] text-[#45464E]">Time Elapsed</span>
+                <p className="font-inter font-bold not-italic text-[32px] text-[#431C86]">{timeLeft}</p>
               </div>
-              <div className="flex items-center mb-[15px] w-100">
-                <div className="flex items-center gap-[8px] w-[50%]">
-                  <span className="w-[32px] h-[32px] rounded-[4px] bg-[#F1F1F1]" aria-hidden />
+              <div className="flex items-center gap-[16px] mb-[15px]">
+                <div className="flex items-center gap-[8px]">
+                  <span className="w-[20px] h-[20px] rounded-[4px] bg-[#E8E3F0]" aria-hidden />
                   <span className="font-inter font-normal not-italic text-[14px] text-[#53545C]">Unanswered</span>
                 </div>
-                <div className="flex items-center gap-[8px] w-[50%]">
-                  <span className="w-[32px] h-[32px] rounded-[4px] bg-[#CDC3DD]" aria-hidden />
+                <div className="flex items-center gap-[8px]">
+                  <span className="w-[20px] h-[20px] rounded-[4px] bg-[#BDB0D4]" aria-hidden />
                   <span className="font-inter font-normal not-italic text-[14px] text-[#53545C]">Answered</span>
                 </div>
               </div>
-              <div className="flex flex-wrap gap-[4px] lg:grid lg:grid-cols-10 lg:gap-x-[4px] lg:gap-y-[4px]">
+              <div className="flex flex-wrap gap-[6px] lg:grid lg:grid-cols-10 lg:gap-x-[6px] lg:gap-y-[6px]">
                 {Array.from({ length: totalQuestions }, (_, i) => i + 1).map((num) => (
                   <button
                     key={num}
                     type="button"
                     disabled={examFrozen}
                     onClick={() => goToQuestion(num)}
-                    className={`shrink-0 w-8 h-8 lg:min-w-0 lg:w-full lg:aspect-square lg:max-w-8 font-inter text-[14px] font-medium rounded-[4px] border transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed ${num === questionNumber
+                    className={`shrink-0 w-8 h-8 lg:min-w-0 lg:w-full lg:aspect-square lg:max-w-8 font-inter text-[13px] font-medium rounded-[6px] border transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed ${num === questionNumber
                       ? 'border-[#6E43B9] bg-[#6E43B91A] text-[#6E43B9]'
                       : answered.has(num)
-                        ? 'border-[#CDC3DD] bg-[#CDC3DD] text-[#45464E]'
-                        : 'border-transparent bg-[#F1F1F1] text-[#AEAEAE] hover:border-[#6E43B9]/50 hover:bg-[#F1F1F1]'
+                        ? 'border-transparent bg-[#BDB0D4] text-[#45464E]'
+                        : 'border-transparent bg-[#E8E3F0] text-[#7B6FA0] hover:border-[#6E43B9]/40 hover:bg-[#DDD6EE]'
                       }`}
                   >
                     {num}

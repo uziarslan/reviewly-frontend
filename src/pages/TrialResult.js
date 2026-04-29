@@ -240,7 +240,7 @@ const TrialResult = () => {
         <TrialNav user={user} />
         <main className="max-w-[1440px] mx-auto px-6 sm:px-8 lg:px-20 pt-8 pb-16">
           <p className="font-inter text-[#45464E]">Results not found.</p>
-          <button onClick={() => navigate('/dashboard/all-reviewers')} className="font-inter text-[#6E43B9] hover:underline mt-4 inline-block">
+          <button onClick={() => navigate('/dashboard')} className="font-inter text-[#6E43B9] hover:underline mt-4 inline-block">
             Go to Dashboard
           </button>
         </main>
@@ -406,7 +406,7 @@ const TrialResult = () => {
           <div className="flex flex-wrap gap-[10px] mb-[16px]">
             <button
               type="button"
-              onClick={() => navigate('/dashboard/all-reviewers')}
+              onClick={() => navigate('/dashboard')}
               className="font-inter font-bold text-[14px] text-[#421A83] bg-[#FFC92A] hover:opacity-90 active:opacity-100 transition-opacity py-[10px] px-[22px] rounded-[8px]"
             >
               Go to Dashboard

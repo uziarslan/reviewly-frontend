@@ -3,6 +3,7 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import logo from '../Assets/logo.png';
 import { useAuth } from '../context/AuthContext';
 import {
+  DashHomeIcon,
   DashAllReviewersIcon,
   DashMyLibraryIcon,
   DashSettingsIcon,
@@ -15,6 +16,7 @@ const TAB_ACTIVE = 'text-[#6E43B9] border-b-[#6E43B9]';
 const TAB_INACTIVE = 'text-[#6C737F] hover:text-[#6E43B9]';
 
 const TABS = [
+  { to: '/dashboard', label: 'Dashboard', Icon: DashHomeIcon, end: true },
   { to: '/dashboard/all-reviewers', label: 'All Reviewers', Icon: DashAllReviewersIcon, end: true },
   { to: '/dashboard/library', label: 'My Library', Icon: DashMyLibraryIcon, end: true },
   { to: '/dashboard/settings', label: 'Account Settings', Icon: DashSettingsIcon, end: false },

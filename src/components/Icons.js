@@ -70,6 +70,13 @@ export const DashSettingsIcon = ({ className = "w-5 h-5" }) => (
   </svg>
 );
 
+/** Dashboard home tab – inherits link color (active + hover). */
+export const DashHomeIcon = ({ className = "w-5 h-5" }) => (
+  <svg className={className} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M8.51472 2.46967C9.33886 1.64553 10.661 1.64553 11.4852 2.46967L16.4697 7.45413C16.8291 7.8135 17.0833 8.29082 17.0833 8.83333V15.8333C17.0833 16.7538 16.3371 17.5 15.4167 17.5H13.3333C12.8731 17.5 12.5 17.1269 12.5 16.6667V13.3333C12.5 12.8731 12.1269 12.5 11.6667 12.5H8.33333C7.8731 12.5 7.5 12.8731 7.5 13.3333V16.6667C7.5 17.1269 7.1269 17.5 6.66667 17.5H4.58333C3.66286 17.5 2.91667 16.7538 2.91667 15.8333V8.83333C2.91667 8.29082 3.17082 7.8135 3.53033 7.45413L8.51472 2.46967Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
 /** Help Center tab – inherits link color (active + hover). */
 export const DashHelpCenterIcon = ({ className = "w-5 h-5" }) => (
   <svg className={className} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">

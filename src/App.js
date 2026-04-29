@@ -21,6 +21,8 @@ import ExamReview from './pages/ExamReview';
 import ShareResult from './pages/ShareResult';
 import TrialAssessment from './pages/TrialAssessment';
 import TrialResult from './pages/TrialResult';
+import Dashboard from './pages/Dashboard';
+import SprintTask from './pages/SprintTask';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 import { AOS_CONFIG } from './config/aos';
@@ -50,7 +52,7 @@ function App() {
         <Route path="/trial/results/:attemptId" element={<ProtectedRoute skipTrialGate><TrialResult /></ProtectedRoute>} />
 
         {/* Protected dashboard routes */}
-        <Route path="/dashboard" element={<ProtectedRoute><Navigate to="/dashboard/all-reviewers" replace /></ProtectedRoute>} />
+        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/dashboard/all-reviewers" element={<ProtectedRoute><AllReviewers /></ProtectedRoute>} />
         <Route path="/dashboard/library" element={<ProtectedRoute><MyLibrary /></ProtectedRoute>} />
         <Route path="/dashboard/settings" element={<ProtectedRoute><AccountSettings /></ProtectedRoute>} />
@@ -60,6 +62,7 @@ function App() {
         <Route path="/dashboard/results/:attemptId" element={<ProtectedRoute><ExamResultsLoading /></ProtectedRoute>} />
         <Route path="/dashboard/review/:attemptId" element={<ProtectedRoute><ExamReview /></ProtectedRoute>} />
         <Route path="/dashboard/exam/:id" element={<ProtectedRoute><ExamDetails /></ProtectedRoute>} />
+        <Route path="/dashboard/sprint/task/:taskId" element={<ProtectedRoute><SprintTask /></ProtectedRoute>} />
       </Routes>
     </Router>
   );

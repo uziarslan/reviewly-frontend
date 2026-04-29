@@ -140,3 +140,22 @@ export const supportAPI = {
   submitHelp: (data) =>
     apiFetch("/support/help", { method: "POST", body: data }),
 };
+
+// ── Dashboard ──
+export const dashboardAPI = {
+  get: () => apiFetch("/dashboard"),
+  generateSprint: () => apiFetch("/dashboard/sprint/generate", { method: "POST" }),
+  abandonSprint: () => apiFetch("/dashboard/sprint", { method: "DELETE" }),
+  startTask: (taskId) =>
+    apiFetch(`/dashboard/sprint/tasks/${taskId}/start`, { method: "POST" }),
+  saveTaskAnswer: (taskId, questionIndex, selectedAnswer) =>
+    apiFetch(`/dashboard/sprint/tasks/${taskId}/answer`, {
+      method: "PUT",
+      body: { questionIndex, selectedAnswer },
+    }),
+  submitTask: (taskId, answers) =>
+    apiFetch(`/dashboard/sprint/tasks/${taskId}/submit`, {
+      method: "POST",
+      body: { answers },
+    }),
+};

@@ -66,7 +66,7 @@ const Header = () => {
               <GoogleAuthButton
                 variant="withGoogleIcon"
                 label="Login"
-                redirectTo="/dashboard/all-reviewers"
+                redirectTo="/dashboard"
                 className="flex items-center justify-center space-x-2 w-[157px] h-[56px] bg-white border-2 border-[#6137A8] rounded-lg hover:border-purple-700 transition-colors"
               />
             </div>

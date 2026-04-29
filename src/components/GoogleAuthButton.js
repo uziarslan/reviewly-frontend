@@ -7,7 +7,7 @@ export default function GoogleAuthButton({
   className,
   label,
   variant = 'plain',
-  redirectTo = '/dashboard/all-reviewers',
+  redirectTo = '/dashboard',
   replace = true,
 }) {
   const navigate = useNavigate();

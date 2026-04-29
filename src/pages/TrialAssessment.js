@@ -95,7 +95,7 @@ const TrialAssessment = () => {
 
   useEffect(() => {
     if (user?.trialAssessment === true) {
-      navigate('/dashboard/all-reviewers', { replace: true });
+      navigate('/dashboard', { replace: true });
     }
   }, [user, navigate]);
 
@@ -111,7 +111,7 @@ const TrialAssessment = () => {
     } catch {
       /* no-op */
     } finally {
-      navigate('/dashboard/all-reviewers', { replace: true });
+      navigate('/dashboard', { replace: true });
     }
   };
 
