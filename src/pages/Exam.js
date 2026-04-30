@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import DashNav from '../components/DashNav';
 import ExamSkeleton from '../components/skeletons/ExamSkeleton';
 import Modal from '../components/Modal';
-import { examAPI, reviewerAPI, trialAPI } from '../services/api';
+import { examAPI, reviewerAPI, trialAPI, dashboardAPI } from '../services/api';
 
 import { trackExamStarted, trackExamCompleted } from '../services/analytics';
 
@@ -56,30 +56,40 @@ function getTagStyleBySection(sectionKey) {
 }
 
 function Exam({ isTrial = false }) {
-  const { id } = useParams(); // reviewer id
+  const { id, taskId } = useParams(); // reviewer id or sprint task id
+  const routeId = id || taskId;
   const navigate = useNavigate();
   const location = useLocation();
-  const fromLibrary = !isTrial && new URLSearchParams(location.search).get('from') === 'library';
-  const fromSprint  = !isTrial && new URLSearchParams(location.search).get('from') === 'sprint';
-  const sprintTaskLabel = fromSprint ? (new URLSearchParams(location.search).get('taskLabel') || 'Sprint Task') : null;
+  const queryParams = new URLSearchParams(location.search);
+  const fromLibrary = !isTrial && queryParams.get('from') === 'library';
+  const fromSprint = !isTrial && (Boolean(taskId) || queryParams.get('from') === 'sprint');
+  const sprintTaskLabel = fromSprint ? (queryParams.get('taskLabel') || 'Sprint Task') : null;
   const isRestart = useMemo(
     () => new URLSearchParams(location.search).get('restart') === 'true',
     [location.search]
   );
 
   // API adapter: use trial endpoints when in trial mode
-  const api = useMemo(
-    () => isTrial
+  const api = useMemo(() => {
+    if (fromSprint) {
+      return {
+        start: dashboardAPI.startTask,
+        saveAnswer: dashboardAPI.saveTaskAnswer,
+        pause: async () => ({ success: true }),
+        submit: async (taskId, _remainingSeconds, answers) => dashboardAPI.submitTask(taskId, answers),
+      };
+    }
+    return isTrial
       ? { start: trialAPI.start, saveAnswer: trialAPI.saveAnswer, pause: trialAPI.pause, submit: trialAPI.submit }
-      : { start: examAPI.start, saveAnswer: examAPI.saveAnswer, pause: examAPI.pause, submit: examAPI.submit },
-    [isTrial]
-  );
+      : { start: examAPI.start, saveAnswer: examAPI.saveAnswer, pause: examAPI.pause, submit: examAPI.submit };
+  }, [fromSprint, isTrial]);
   const beaconPath = useMemo(() => isTrial ? 'trial-assessment' : 'exams', [isTrial]);
   const resultsPath = isTrial ? '/trial/results' : '/dashboard/results';
 
   // Exam data from API
   const [attemptId, setAttemptId] = useState(null);
   const [reviewer, setReviewer] = useState(null);
+  const [task, setTask] = useState(null);
   const [questions, setQuestions] = useState([]);
   const [totalQuestions, setTotalQuestions] = useState(0);
   const [loadingExam, setLoadingExam] = useState(true);
@@ -96,10 +106,12 @@ function Exam({ isTrial = false }) {
   const [showResetModal, setShowResetModal] = useState(false);
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [timeUp, setTimeUp] = useState(false);
-  const [showReloadWarningModal, setShowReloadWarningModal] = useState(true);
+  const [showReloadWarningModal, setShowReloadWarningModal] = useState(!fromSprint);
   const [submitting, setSubmitting] = useState(false);
   const [saveStatus, setSaveStatus] = useState(null); // null | 'saving' | 'saved'
 
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const startTsRef = useRef(Date.now());
   const endTimeRef = useRef(null);
   const timerRef = useRef(null);
   const debounceTimerRef = useRef(null);
@@ -135,20 +147,53 @@ function Exam({ isTrial = false }) {
     let cancelled = false;
     async function loadExam() {
       try {
-        // Fetch reviewer info for display
-        const [examRes, revRes] = await Promise.all([
-          api.start(id, isRestart),
-          isTrial ? Promise.resolve({ success: false }) : reviewerAPI.getById(id),
-        ]);
+        let examRes;
+        let revRes = { success: false };
+
+        if (fromSprint) {
+          examRes = await api.start(routeId);
+        } else {
+          [examRes, revRes] = await Promise.all([
+            api.start(id, isRestart),
+            isTrial ? Promise.resolve({ success: false }) : reviewerAPI.getById(id),
+          ]);
+        }
+
         if (cancelled) return;
 
         if (revRes.success) setReviewer(revRes.data);
-        // For trial, build minimal reviewer from location state
         if (isTrial && !revRes.success) {
           setReviewer({ _id: id, title: location.state?.reviewerTitle || 'CSE Assessment', type: 'trial_assessment' });
         }
 
-        if (examRes.success) {
+        if (fromSprint && examRes.success) {
+          const data = examRes.data;
+          setTask(data.task || null);
+          setReviewer({ _id: routeId, title: sprintTaskLabel || data.task?.title || 'Sprint Task', type: 'sprint_task' });
+          setAttemptId(routeId);
+          setQuestions(data.questions);
+          setTotalQuestions(data.totalQuestions);
+          setCurrentIndex(data.currentIndex || 0);
+          setRemainingSeconds(data.remainingSeconds ?? null);
+          startTsRef.current = Date.now();
+          setElapsedSeconds(0);
+
+          const answeredSet = new Set();
+          const answersMap = {};
+          if (data.savedAnswers) {
+            Object.entries(data.savedAnswers).forEach(([idx, answer]) => {
+              const index = parseInt(idx, 10);
+              answersMap[index] = answer;
+              answeredSet.add(index + 1);
+            });
+          }
+          setAnswered(answeredSet);
+          setAnswers(answersMap);
+          const currentAnswer = answersMap[data.currentIndex || 0];
+          setSelectedOption(currentAnswer ? OPTION_LABELS.indexOf(currentAnswer) : null);
+        }
+
+        if (!fromSprint && examRes.success) {
           const data = examRes.data;
           setAttemptId(data.attemptId);
           setQuestions(data.questions);
@@ -156,32 +201,27 @@ function Exam({ isTrial = false }) {
           setCurrentIndex(data.currentIndex || 0);
           setRemainingSeconds(data.remainingSeconds);
 
-          // Track exam started
           if (revRes.success) {
             trackExamStarted(id, revRes.data.title);
           }
 
-          // Restore answered state
           const answeredSet = new Set();
           const answersMap = {};
           if (data.answeredIndices) {
             data.answeredIndices.forEach((i) => answeredSet.add(i + 1));
           }
-          // Restore previously selected answers if resuming
           if (data.userAnswers) {
             Object.entries(data.userAnswers).forEach(([idx, answer]) => {
-              answersMap[parseInt(idx)] = answer;
+              answersMap[parseInt(idx, 10)] = answer;
             });
           }
           setAnswered(answeredSet);
           setAnswers(answersMap);
-          // Pre-select the option for current question if resuming
           if (data.userAnswers && data.userAnswers[data.currentIndex || 0]) {
             const currentAnswer = data.userAnswers[data.currentIndex || 0];
             setSelectedOption(['A', 'B', 'C', 'D'].indexOf(currentAnswer));
           }
 
-          // Set time display
           if (data.remainingSeconds != null && data.remainingSeconds > 0) {
             setTimeLeft(secondsToTimeStr(data.remainingSeconds));
           }
@@ -194,12 +234,19 @@ function Exam({ isTrial = false }) {
     }
     loadExam();
     return () => { cancelled = true; };
-  }, [id, api, isRestart, isTrial, location.state?.reviewerTitle]);
+  }, [routeId, id, api, isRestart, isTrial, fromSprint, sprintTaskLabel, location.state?.reviewerTitle]);
 
   // Timer logic – starts after reload warning is dismissed
   useEffect(() => {
     if (loadingExam || showReloadWarningModal || timeUp) return;
-    if (remainingSeconds == null || remainingSeconds <= 0) return;
+    if (!fromSprint && (remainingSeconds == null || remainingSeconds <= 0)) return;
+
+    if (fromSprint) {
+      const intervalId = setInterval(() => {
+        setElapsedSeconds(Math.floor((Date.now() - startTsRef.current) / 1000));
+      }, 1000);
+      return () => clearInterval(intervalId);
+    }
 
     // Set end time from remaining seconds
     if (!endTimeRef.current) {
@@ -227,7 +274,7 @@ function Exam({ isTrial = false }) {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [loadingExam, showReloadWarningModal, timeUp, remainingSeconds, attemptId, flushPendingAnswers, api]);
+  }, [loadingExam, showReloadWarningModal, timeUp, remainingSeconds, attemptId, flushPendingAnswers, api, fromSprint]);
 
   // beforeunload: send pending answers via beacon (sendBeacon survives tab close)
   useEffect(() => {
@@ -308,7 +355,7 @@ function Exam({ isTrial = false }) {
   const handleNextOrSubmit = () => {
     if (examFrozen) return;
     if (isLastQuestion) {
-      if (hasTimeLimit) setShowSubmitModal(true);
+      if (fromSprint || hasTimeLimit) setShowSubmitModal(true);
       else handleConfirmSubmit();
     } else {
       handleNext();
@@ -391,19 +438,30 @@ function Exam({ isTrial = false }) {
     try {
       await flushPendingAnswers();
       const remaining = hasTimeLimit ? getRemainingSecondsNow() : null;
-      const res = await api.submit(attemptId, remaining);
+      const res = await api.submit(attemptId, remaining, answers);
       if (res.success) {
-        // Track exam completed
-        trackExamCompleted(id, reviewer?.title, {
-          score: res.data?.result?.percentage,
-          duration: res.data?.result?.duration,
-          totalQuestions: totalQuestions,
-        });
-        setShowSubmitModal(false);
-        navigate(
-          `${resultsPath}/${attemptId}${!isTrial && fromLibrary ? '?from=library' : ''}`,
-          { state: { showLoadingFlow: true } }
-        );
+        if (!fromSprint) {
+          trackExamCompleted(routeId, reviewer?.title, {
+            score: res.data?.result?.percentage,
+            duration: res.data?.result?.duration,
+            totalQuestions: totalQuestions,
+          });
+          setShowSubmitModal(false);
+          navigate(
+            `${resultsPath}/${attemptId}${!isTrial && fromLibrary ? '?from=library' : ''}`,
+            { state: { showLoadingFlow: true } }
+          );
+        } else {
+          setShowSubmitModal(false);
+          navigate(`/dashboard/sprint/task/${routeId}/result`, {
+            state: {
+              task,
+              result: res.data.result,
+              sprintPlan: res.data.sprintPlan,
+              review: res.data.review,
+            },
+          });
+        }
       }
     } catch (err) {
       console.error('Submit failed:', err);
@@ -415,6 +473,10 @@ function Exam({ isTrial = false }) {
 
   const handleViewResults = () => {
     if (!attemptId) return;
+    if (fromSprint) {
+      navigate('/dashboard');
+      return;
+    }
     navigate(
       `${resultsPath}/${attemptId}${!isTrial && fromLibrary ? '?from=library' : ''}`,
       isTrial ? { state: { showLoadingFlow: true } } : undefined
@@ -443,6 +505,7 @@ function Exam({ isTrial = false }) {
   }
 
   const questionNumber = currentIndex + 1;
+  const displayTime = fromSprint ? secondsToTimeStr(elapsedSeconds) : timeLeft;
 
   return (
     <div className="min-h-screen bg-[#F5F4FF]">
@@ -540,7 +603,7 @@ function Exam({ isTrial = false }) {
       <Modal
         isOpen={showSubmitModal}
         onClose={() => setShowSubmitModal(false)}
-        title="Submit your assessment?"
+        title={fromSprint ? 'Ready to see how you did?' : 'Submit your assessment?'}
         titleId="submit-modal-title"
         footer={
           <div className="flex flex-col sm:flex-row gap-3 justify-center items-center w-full">
@@ -563,12 +626,21 @@ function Exam({ isTrial = false }) {
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                 </svg>
               )}
-              Submit Assessment
+              {fromSprint ? 'Submit Task' : 'Submit Assessment'}
             </button>
           </div>
         }
       >
-        {unansweredCount > 0 ? (
+        {fromSprint ? (
+          <>
+            <p className="font-inter font-normal text-[14px] text-[#45464E] mb-3">
+              You answered {totalQuestions - unansweredCount} of {totalQuestions} questions.
+            </p>
+            <p className="font-inter font-normal text-[14px] text-[#45464E]">
+              Review your answers first — or submit to see your results.
+            </p>
+          </>
+        ) : unansweredCount > 0 ? (
           <p className="font-inter font-normal text-[14px] text-[#45464E]">
             You still have{' '}
             <span className="text-[#F59E0B] font-semibold">{unansweredCount} unanswered question{unansweredCount !== 1 ? 's' : ''}</span>
@@ -808,7 +880,7 @@ function Exam({ isTrial = false }) {
             <div className="bg-[#FFFFFF] rounded-[12px] p-[24px] lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto">
               <div className="flex flex-row justify-between items-center mb-[15px]">
                 <span className="font-inter font-semibold not-italic text-[20px] text-[#45464E]">Time Elapsed</span>
-                <p className="font-inter font-bold not-italic text-[32px] text-[#431C86]">{timeLeft}</p>
+                <p className="font-inter font-bold not-italic text-[32px] text-[#431C86]">{displayTime}</p>
               </div>
               <div className="flex items-center gap-[16px] mb-[15px]">
                 <div className="flex items-center gap-[8px]">

@@ -22,7 +22,8 @@ import ShareResult from './pages/ShareResult';
 import TrialAssessment from './pages/TrialAssessment';
 import TrialResult from './pages/TrialResult';
 import Dashboard from './pages/Dashboard';
-import SprintTask from './pages/SprintTask';
+import SprintTaskOverview from './pages/SprintTaskOverview';
+import SprintTaskResult from './pages/SprintTaskResult';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 import { AOS_CONFIG } from './config/aos';
@@ -62,7 +63,10 @@ function App() {
         <Route path="/dashboard/results/:attemptId" element={<ProtectedRoute><ExamResultsLoading /></ProtectedRoute>} />
         <Route path="/dashboard/review/:attemptId" element={<ProtectedRoute><ExamReview /></ProtectedRoute>} />
         <Route path="/dashboard/exam/:id" element={<ProtectedRoute><ExamDetails /></ProtectedRoute>} />
-        <Route path="/dashboard/sprint/task/:taskId" element={<ProtectedRoute><SprintTask /></ProtectedRoute>} />
+        <Route path="/dashboard/sprint/task/:taskId/overview" element={<ProtectedRoute><SprintTaskOverview /></ProtectedRoute>} />
+        <Route path="/dashboard/sprint/task/:taskId" element={<ProtectedRoute><Exam /></ProtectedRoute>} />
+        <Route path="/dashboard/sprint/task/:taskId/result" element={<ProtectedRoute><SprintTaskResult /></ProtectedRoute>} />
+        <Route path="/dashboard/sprint/task/:taskId/review" element={<ProtectedRoute><ExamReview /></ProtectedRoute>} />
       </Routes>
     </Router>
   );

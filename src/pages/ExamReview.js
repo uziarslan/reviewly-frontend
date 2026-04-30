@@ -1,12 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useLocation, useNavigate } from 'react-router-dom';
 import DashNav from '../components/DashNav';
-import { examAPI } from '../services/api';
+import { examAPI, dashboardAPI } from '../services/api';
 import ExamReviewSkeleton from '../components/skeletons/ExamReviewSkeleton';
 
 const formatSection = (s) => {
   if (!s) return '';
   return s.split(/[\s_]+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+};
+
+const formatDuration = (secs) => {
+  if (secs == null) return '–';
+  const h = Math.floor(secs / 3600);
+  const m = Math.floor((secs % 3600) / 60);
+  if (h > 0) return `${h} hr ${m} min`;
+  return `${m} min`;
 };
 
 const SECTION_CONFIG = {
@@ -38,36 +46,37 @@ function getSectionKeyFromSubject(subject) {
   return null;
 }
 
-const formatDuration = (secs) => {
-  if (secs == null) return '–';
-  const h = Math.floor(secs / 3600);
-  const m = Math.floor((secs % 3600) / 60);
-  if (h > 0) return `${h} hr ${m} min`;
-  return `${m} min`;
-};
-
 function ExamReview() {
-  const { attemptId } = useParams();
+  const { attemptId, taskId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
   const fromLibrary = new URLSearchParams(location.search).get('from') === 'library';
+  const fromSprint = Boolean(taskId);
   const [reviewData, setReviewData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
-    if (!attemptId) { setLoading(false); return; }
+    if (!attemptId && !taskId) { setLoading(false); return; }
     let cancelled = false;
-    examAPI.getReview(attemptId)
+    const loader = fromSprint
+      ? dashboardAPI.getTaskReview(taskId)
+      : examAPI.getReview(attemptId);
+
+    loader
       .then((res) => {
         if (!cancelled && res.success) setReviewData(res.data);
       })
       .catch((err) => console.error('Failed to load review:', err))
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [attemptId]);
+  }, [attemptId, taskId, fromSprint]);
 
   if (loading) return <ExamReviewSkeleton />;
+
+  const backLink = fromSprint ? '/dashboard' : fromLibrary ? '/dashboard/library' : '/dashboard/all-reviewers';
+  const backLabel = fromSprint ? 'Dashboard' : fromLibrary ? 'My Library' : 'All Reviewers';
+  const backButtonLabel = fromSprint ? 'Back to Dashboard' : 'Back to Results';
 
   if (!reviewData || !reviewData.questions?.length) {
     return (
@@ -76,10 +85,10 @@ function ExamReview() {
         <main className="max-w-[1440px] mx-auto px-6 sm:px-8 lg:px-20 py-8">
           <p className="font-inter text-[#45464E]">Review not found.</p>
           <Link
-            to={fromLibrary ? '/dashboard/library' : '/dashboard/all-reviewers'}
+            to={backLink}
             className="font-inter text-[#6E43B9] hover:underline mt-4 inline-block"
           >
-            Back to {fromLibrary ? 'My Library' : 'All Reviewers'}
+            Back to {backLabel}
           </Link>
         </main>
       </div>
@@ -105,6 +114,7 @@ function ExamReview() {
   const topicTag = topicSource ? formatSection(topicSource) : '';
   const sectionKey = getSectionKeyFromSubject(currentQ.section || currentQ.module || currentQ.topic);
   const sectionConfig = sectionKey ? getSectionConfig(sectionKey, 0) : null;
+  const taskTopic = reviewData.taskTopic || topicTag || reviewer.title;
 
   const totalCorrect = result.correct || 0;
   const totalItems = result.totalItems || totalQuestions;
@@ -150,14 +160,31 @@ function ExamReview() {
       <main className="max-w-[1440px] mx-auto px-6 sm:px-8 lg:px-20 pt-[24px] pb-[40px]">
         {/* Breadcrumbs */}
         <nav className="mb-[24px]" aria-label="Breadcrumb">
-          <Link
-            to={fromLibrary ? '/dashboard/library' : '/dashboard/all-reviewers'}
-            className="text-[#45464E] font-inter font-normal text-[14px] hover:text-[#6E43B9] transition-colors"
-          >
-            {fromLibrary ? 'My Library' : 'All Reviewers'}
-          </Link>
-          <span className="mx-2 text-[#45464E]">›</span>
-          <span className="text-[#6E43B9] font-inter font-normal text-[14px]">{reviewer.title}</span>
+          {fromSprint ? (
+            <>
+              <Link
+                to="/dashboard"
+                className="text-[#45464E] font-inter font-normal text-[14px] hover:text-[#6E43B9] transition-colors"
+              >
+                Dashboard
+              </Link>
+              <span className="mx-2 text-[#45464E]">›</span>
+              <span className="text-[#45464E] font-inter font-normal text-[14px]">Sprint Task</span>
+              <span className="mx-2 text-[#45464E]">›</span>
+              <span className="text-[#6E43B9] font-inter font-normal text-[14px]">{reviewer.title}</span>
+            </>
+          ) : (
+            <>
+              <Link
+                to={fromLibrary ? '/dashboard/library' : '/dashboard/all-reviewers'}
+                className="text-[#45464E] font-inter font-normal text-[14px] hover:text-[#6E43B9] transition-colors"
+              >
+                {fromLibrary ? 'My Library' : 'All Reviewers'}
+              </Link>
+              <span className="mx-2 text-[#45464E]">›</span>
+              <span className="text-[#6E43B9] font-inter font-normal text-[14px]">{reviewer.title}</span>
+            </>
+          )}
         </nav>
 
         <div className="flex flex-col lg:flex-row gap-6 items-start">
@@ -278,10 +305,10 @@ function ExamReview() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => navigate(`/dashboard/results/${attemptId}${fromLibrary ? '?from=library' : ''}`)}
+                    onClick={() => navigate(backLink)}
                     className="w-full font-inter font-normal text-[14px] sm:text-[15px] text-[#6C737F] py-2 px-4 rounded-[8px] border border-[#D1D5DB] bg-white hover:bg-gray-50 transition-colors whitespace-nowrap"
                   >
-                    Back to Results
+                    {backButtonLabel}
                   </button>
                 </div>
               </div>
@@ -306,10 +333,10 @@ function ExamReview() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => navigate(`/dashboard/results/${attemptId}${fromLibrary ? '?from=library' : ''}`)}
+                  onClick={() => navigate(backLink)}
                   className="font-inter font-normal text-[14px] sm:text-[15px] text-[#6C737F] py-2 px-4 sm:py-2.5 sm:px-5 rounded-[8px] border border-[#D1D5DB] bg-white hover:bg-gray-50 transition-colors whitespace-nowrap"
                 >
-                  Back to Results
+                  {backButtonLabel}
                 </button>
               </div>
             </div>
@@ -321,28 +348,44 @@ function ExamReview() {
 
               {/* Stat rows */}
               <div className="mb-5">
-                {[
-                  { label: reviewerTypeLabel, value: `${percentage} %` },
-                  { label: 'Correct Items', value: `${totalCorrect} / ${totalItems}` },
-                  { label: 'Status', value: statusLabel, style: { color: statusColor } },
-                  ...(duration != null ? [{ label: 'Total Time', value: formatDuration(duration) }] : []),
-                ].map(({ label, value, style }, i, arr) => (
+                {(
+                  fromSprint
+                    ? [
+                      { label: 'Correct Items', value: `${totalCorrect} / ${totalItems}` },
+                      { label: 'Status', value: scoreMessage },
+                      { label: 'Topic', value: taskTopic },
+                      ...(duration != null ? [{ label: 'Total Time', value: formatDuration(duration) }] : []),
+                    ]
+                    : [
+                      { label: reviewerTypeLabel, value: `${percentage} %` },
+                      { label: 'Correct Items', value: `${totalCorrect} / ${totalItems}` },
+                      { label: 'Status', value: statusLabel, style: { color: statusColor } },
+                      ...(duration != null ? [{ label: 'Total Time', value: formatDuration(duration) }] : []),
+                    ]
+                ).map(({ label, value, style }, i, arr) => (
                   <div
                     key={i}
                     className={`flex items-center justify-between py-3 ${i < arr.length - 1 ? 'border-b border-[#F3F4F6]' : ''}`}
                   >
-                    <span className="font-inter text-[14px] text-[#45464E]">{label}</span>
-                    <span className="font-inter text-[14px] font-medium text-right" style={style || { color: '#0F172A' }}>
+                    <span className="font-inter text-[14px] text-[#181D1F]">{label}</span>
+                    <span
+                      className={`font-inter text-right max-w-[200px] ${label === 'Correct Items' ? 'font-bold text-[24px] text-[#6E43B9]' : 'font-medium text-[14px] text-[#181D1F]'}`}
+                      style={style}
+                    >
                       {value}
                     </span>
                   </div>
                 ))}
+                {fromSprint && reviewData?.sprintPlan && (
+                  <div className="flex items-center justify-between gap-3 mt-3">
+                    <span className="font-inter text-[14px] text-[#45464E]">Sprint</span>
+                    <span className="font-inter text-[14px] text-[#181D1F]">
+                      {reviewData.sprintPlan.completedTasks} of {reviewData.sprintPlan.totalTasks} tasks completed
+                    </span>
+                  </div>
+                )}
               </div>
 
-              {/* Score message */}
-              {scoreMessage && (
-                <p className="font-inter text-[14px] font-medium text-[#45464E] mb-[8px]">{scoreMessage}</p>
-              )}
               {sectionCoverage ? (
                 <p className="font-inter text-[14px] text-[#45464E80] mb-[24px]">
                   Weighted by section coverage: {sectionCoverage}

@@ -158,4 +158,6 @@ export const dashboardAPI = {
       method: "POST",
       body: { answers },
     }),
+  getTaskReview: (taskId) =>
+    apiFetch(`/dashboard/sprint/tasks/${taskId}/review`),
 };

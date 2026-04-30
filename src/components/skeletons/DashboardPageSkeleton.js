@@ -3,8 +3,8 @@ import DashNav from '../DashNav';
 import SkeletonBlock from '../SkeletonBlock';
 
 /**
- * Base skeleton for dashboard pages with header (title + search) and content area.
- * Used for ProtectedRoute auth loading and as base for list pages.
+ * Generic page skeleton used for auth loading and simple page placeholders.
+ * Not the phase-2 dashboard skeleton.
  */
 export default function DashboardPageSkeleton() {
   return (
