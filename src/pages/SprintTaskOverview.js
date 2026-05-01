@@ -64,10 +64,10 @@ const SprintTaskOverview = () => {
                             <SkeletonBlock className="h-4 w-4" />
                             <SkeletonBlock className="h-4 w-32" />
                         </div>
-                        <div className="bg-white rounded-[12px] px-[32px] py-[40px] border">
-                            <div className="flex items-center gap-[12px] mb-[24px]">
+                        <div className="bg-white rounded-[12px] px-[20px] sm:px-[32px] py-[32px] sm:py-[40px] border">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-[12px] mb-[24px]">
                                 <SkeletonBlock className="w-[48px] h-[48px] rounded-[8px]" />
-                                <SkeletonBlock className="h-8 w-[280px] rounded-[8px]" />
+                                <SkeletonBlock className="h-8 w-full max-w-[280px] rounded-[8px]" />
                             </div>
                             <div className="space-y-4">
                                 <SkeletonBlock className="h-5 w-[190px] rounded-[6px]" />
@@ -127,14 +127,14 @@ const SprintTaskOverview = () => {
                         <span className="text-[#6E43B9] font-medium">Sprint Task</span>
                     </nav>
 
-                    <div className="w-full bg-white rounded-[12px] px-[32px] py-[40px] border">
-                        <div className="flex items-center gap-[12px] mb-[24px]">
+                    <div className="w-full bg-white rounded-[12px] px-[20px] sm:px-[32px] py-[32px] sm:py-[40px] border">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-[12px] mb-[24px]">
                             <div className="w-[48px] h-[48px] rounded-[8px] bg-white border border-[#FFC92A] flex items-center justify-center shrink-0">
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                     <path d={iconPath} stroke="#4B5563" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
                                 </svg>
                             </div>
-                            <h1 className="font-inter font-bold text-[28px] text-[#45464E] leading-snug tracking-[-0.02em]">
+                            <h1 className="min-w-0 font-inter font-bold text-[28px] text-[#45464E] leading-snug tracking-[-0.02em]">
                                 {task.title}
                             </h1>
                         </div>
@@ -149,18 +149,18 @@ const SprintTaskOverview = () => {
                             Answer all questions first, then review your results and explanations after submitting.
                         </p>
 
-                        <div className="flex flex-wrap gap-[24px]">
+                        <div className="flex flex-col sm:flex-row gap-[16px]">
                             <button
                                 type="button"
                                 onClick={() => navigate(`/dashboard/sprint/task/${taskId}?from=sprint&taskLabel=${encodeURIComponent(task.title)}`)}
-                                className="h-[48px] font-inter font-regular text-[16px] text-[#421A83] bg-[#FFC92A] hover:bg-[#FFB800] active:bg-[#E6A800] px-[32px] rounded-[4px] transition-colors"
+                                className="w-full sm:w-auto h-[48px] font-inter font-regular text-[16px] text-[#421A83] bg-[#FFC92A] hover:bg-[#FFB800] active:bg-[#E6A800] px-[32px] rounded-[4px] transition-colors"
                             >
                                 Start Task
                             </button>
                             <button
                                 type="button"
                                 onClick={() => navigate('/dashboard')}
-                                className="h-[48px] font-inter font-medium text-[16px] text-[#737373] bg-white border border-[#737373] hover:bg-[#F8F8FB] px-[32px] rounded-[4px] transition-colors"
+                                className="w-full sm:w-auto h-[48px] font-inter font-medium text-[16px] text-[#737373] bg-white border border-[#737373] hover:bg-[#F8F8FB] px-[32px] rounded-[4px] transition-colors"
                             >
                                 Back to Dashboard
                             </button>

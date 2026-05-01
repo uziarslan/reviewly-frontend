@@ -294,23 +294,21 @@ function ExamReview() {
                 >
                   Next
                 </button>
-                <div className="grid grid-cols-2 gap-2 w-full">
-                  <button
-                    type="button"
-                    onClick={handlePrev}
-                    disabled={currentIndex === 0}
-                    className="w-full font-inter font-normal text-[14px] sm:text-[15px] text-[#6C737F] py-2 px-4 rounded-[8px] border border-[#D1D5DB] bg-white hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Previous
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => navigate(backLink)}
-                    className="w-full font-inter font-normal text-[14px] sm:text-[15px] text-[#6C737F] py-2 px-4 rounded-[8px] border border-[#D1D5DB] bg-white hover:bg-gray-50 transition-colors whitespace-nowrap"
-                  >
-                    {backButtonLabel}
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={handlePrev}
+                  disabled={currentIndex === 0}
+                  className="w-full font-inter font-normal text-[14px] sm:text-[15px] text-[#6C737F] py-2 px-4 rounded-[8px] border border-[#D1D5DB] bg-white hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Previous
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate(backLink)}
+                  className="w-full font-inter font-normal text-[14px] sm:text-[15px] text-[#6C737F] py-2 px-4 rounded-[8px] border border-[#D1D5DB] bg-white hover:bg-gray-50 transition-colors whitespace-nowrap"
+                >
+                  {backButtonLabel}
+                </button>
               </div>
               <div className="hidden sm:flex sm:items-center sm:justify-between gap-2">
                 <div className="flex items-center gap-2">

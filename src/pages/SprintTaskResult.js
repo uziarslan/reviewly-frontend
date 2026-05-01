@@ -69,7 +69,7 @@ const SprintTaskResult = () => {
     <div className="min-h-screen bg-[#F5F4FF]">
       <DashNav />
       <main className="max-w-[620px] mx-auto px-4 sm:px-6 lg:px-10 pt-6 pb-16">
-        <nav className="flex gap-1.5 mb-6 font-inter text-[13px]">
+        <nav className="flex flex-wrap gap-1.5 mb-6 font-inter text-[13px]">
           <button type="button" onClick={() => navigate('/dashboard')} className="text-[#6C737F] hover:text-[#1A1A2E]">
             Dashboard
           </button>
@@ -79,7 +79,7 @@ const SprintTaskResult = () => {
           <span className="text-[#6E43B9] font-medium truncate">{task?.title || 'Task Complete'}</span>
         </nav>
 
-        <div className="max-w-[552px] mx-auto bg-white rounded-[12px] p-[24px] border border-[#EFF0F6]">
+        <div className="max-w-[552px] mx-auto bg-white rounded-[12px] px-[20px] sm:px-[24px] py-[24px] sm:py-[40px] border border-[#EFF0F6]">
           <h1 className="font-inter font-bold text-[16px] text-[#45464E] mb-[4px]">Task Complete</h1>
           <p className="font-inter text-[14px] text-[#0F172ABF] mb-[16px]">Nice work — one step closer.</p>
 
@@ -102,12 +102,12 @@ const SprintTaskResult = () => {
             </div>
           </div>
 
-          <div className="flex items-center flex-wrap gap-[16px] mt-[24px] mb-[12px]">
+          <div className="flex flex-col sm:flex-row gap-[16px] mt-[24px] mb-[12px]">
             <button
               type="button"
               onClick={() => navigate(`/dashboard/sprint/task/${task?.taskId}/review`)}
               disabled={!review.length || !task?.taskId}
-              className="font-inter text-[14px] text-[#421A83] bg-[#FFC92A] hover:bg-[#FFB800] active:bg-[#E6A800] px-[32px] py-[11.5px] rounded-[8px] shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full sm:w-auto font-inter text-[14px] text-[#421A83] bg-[#FFC92A] hover:bg-[#FFB800] active:bg-[#E6A800] px-[32px] py-[11.5px] rounded-[8px] shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Review Answers
             </button>
@@ -115,14 +115,14 @@ const SprintTaskResult = () => {
               type="button"
               onClick={() => nextTask && navigate(`/dashboard/sprint/task/${nextTask.taskId}/overview`)}
               disabled={!nextTask || planDone}
-              className="font-inter text-[14px] text-[#6C737F] border-[0.5px] border-[#6C737F] hover:bg-[#F8F8FB] px-[16px] py-[11.5px] rounded-[8px] disabled:opacity-40 disabled:cursor-not-allowed"
+              className="w-full sm:w-auto font-inter text-[14px] text-[#6C737F] border-[0.5px] border-[#6C737F] hover:bg-[#F8F8FB] px-[16px] py-[11.5px] rounded-[8px] disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Start Next Task
             </button>
             <button
               type="button"
               onClick={() => navigate('/dashboard')}
-              className="font-inter text-[14px] text-[#6C737F] border-[0.5px] border-[#6C737F] hover:bg-[#F8F8FB] px-[16px] py-[11.5px] rounded-[8px]"
+              className="w-full sm:w-auto font-inter text-[14px] text-[#6C737F] border-[0.5px] border-[#6C737F] hover:bg-[#F8F8FB] px-[16px] py-[11.5px] rounded-[8px]"
             >
               Back to Dashboard
             </button>

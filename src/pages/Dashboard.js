@@ -262,6 +262,74 @@ const SectionRow = ({ section, isExpanded, onToggle, hasData }) => {
   );
 };
 
+const SectionCard = ({ section, isExpanded, onToggle, hasData }) => {
+  const hasTopics = section.topics && section.topics.length > 0;
+  return (
+    <div
+      className={`rounded-[18px] border border-[#E6E2EE] bg-white p-[16px] ${hasTopics ? 'cursor-pointer hover:bg-[#FCFBFE]' : ''}`}
+      onClick={hasTopics ? onToggle : undefined}
+    >
+      <div className="flex flex-col gap-[14px]">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-[12px]">
+              {hasTopics ? <ChevronIcon open={isExpanded} /> : <span className="w-4 h-4 shrink-0" />}
+              <span className={`font-inter ${hasData ? 'font-semibold' : 'font-medium'} text-[15px] text-[#1A1A2E] truncate`}>
+                {section.label}
+              </span>
+            </div>
+            <div className="mt-[10px] flex flex-wrap gap-3 text-[13px] text-[#6C737F]">
+              <span className="inline-flex items-center gap-2">
+                <span className="font-medium text-[#232027]">{section.scoreDisplay}</span>
+                <span>Score</span>
+              </span>
+              <span className="inline-flex items-center gap-2">
+                <span className="font-medium text-[#232027]">{section.weightDisplay}</span>
+                <span>Weight</span>
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-col items-end gap-2">
+            <StatusLabel status={section.status} />
+            <PriorityBadge priority={section.priority} />
+          </div>
+        </div>
+
+        <div className="rounded-[16px] bg-[#F8F6FF] p-[14px] text-[13px] text-[#45464E]">
+          <div className="font-medium text-[#232027] mb-1">Action</div>
+          <div>{section.action || 'No suggested action yet.'}</div>
+        </div>
+
+        {isExpanded && hasTopics && (
+          <div className="mt-[16px] space-y-[12px] border-t border-[#EDE9F3] pt-[16px]">
+            {section.topics.map((topic) => (
+              <div key={topic.name} className="rounded-[14px] bg-[#F9F8FF] p-[14px]">
+                <div className="flex flex-col gap-[10px]">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="font-inter font-semibold text-[14px] text-[#1A1A2E] truncate">{topic.name}</span>
+                    <StatusLabel status={topic.status} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 text-[13px] text-[#45464E]">
+                    <div>
+                      <div className="font-medium text-[#232027]">{topic.scoreDisplay}</div>
+                      <div className="text-[#6C737F]">Score</div>
+                    </div>
+                    <div>
+                      <div className="font-medium text-[#232027]">{topic.result}</div>
+                      <div className="text-[#6C737F]">Result</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 /* ─── Main Dashboard Component ─────────────────── */
 
 const Dashboard = () => {
@@ -392,6 +460,16 @@ const Dashboard = () => {
     else navigate('/dashboard/all-reviewers');
   };
 
+  const sections = useMemo(() => breakdown?.sections || [], [breakdown?.sections]);
+  const sortedSections = useMemo(() => {
+    const priorityOrder = { High: 0, Medium: 1, Low: 2 };
+    return [...sections].sort((a, b) => {
+      const aPriority = priorityOrder[a.priority] ?? 3;
+      const bPriority = priorityOrder[b.priority] ?? 3;
+      return aPriority - bPriority;
+    });
+  }, [sections]);
+
   /* ── Loading skeleton ── */
   if (loading) {
     return <DashboardSkeleton />;
@@ -419,9 +497,6 @@ const Dashboard = () => {
     );
   }
 
-  /* ── Sections list ── */
-  const sections = breakdown?.sections || [];
-
   /* ── Render ── */
   return (
     <div className="min-h-screen bg-[#F5F4FF]">
@@ -435,7 +510,7 @@ const Dashboard = () => {
 
             {/* ── Welcome Banner ── */}
             <div
-              className="rounded-[12px] px-20 py-24 sm:px-[24px] sm:py-[29px] relative overflow-hidden"
+              className="rounded-[12px] px-6 py-14 sm:px-[24px] sm:py-[29px] relative overflow-hidden"
               style={{ background: 'linear-gradient(98.48deg, #8156D1 2.51%, #421983 47.46%, #4945B3 107.59%)' }}
             >
               <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -465,15 +540,15 @@ const Dashboard = () => {
                   )}
                 </div>
 
-                <div className="flex flex-wrap gap-2.5 sm:shrink-0">
+                <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-2.5 sm:shrink-0">
                   {!hasData ? (
                     <>
                       <button type="button" onClick={onTakeAssessment}
-                        className="font-inter font-medium text-[14px] text-[#141415] bg-[#FFC92A] hover:bg-[#FFB800] active:bg-[#E6A800] px-[16px] py-[11.5px] rounded-[8px] transition-colors shadow-sm">
+                        className="w-full sm:w-auto font-inter font-medium text-[14px] text-[#141415] bg-[#FFC92A] hover:bg-[#FFB800] active:bg-[#E6A800] px-[16px] py-[11.5px] rounded-[8px] transition-colors shadow-sm">
                         Take Assessment Exam
                       </button>
                       <button type="button" onClick={onTakeMock}
-                        className="font-inter font-medium text-[14px] text-white hover:bg-white/25 border border-[#FFFFFF] px-[16px] py-[11.5px] rounded-[8px] transition-colors">
+                        className="w-full sm:w-auto font-inter font-medium text-[14px] text-white hover:bg-white/25 border border-[#FFFFFF] px-[16px] py-[11.5px] rounded-[8px] transition-colors">
                         Take Full Mock Exam
                       </button>
                     </>
@@ -484,7 +559,7 @@ const Dashboard = () => {
                           type="button"
                           disabled={startingTaskId === nextTask.taskId}
                           onClick={() => openTaskOverview(nextTask)}
-                          className="font-inter font-medium text-[14px] text-[#141415] bg-[#FFC92A] hover:bg-[#FFB800] active:bg-[#E6A800] px-[16px] py-[11.5px] rounded-[8px] transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="w-full sm:w-auto font-inter font-medium text-[14px] text-[#141415] bg-[#FFC92A] hover:bg-[#FFB800] active:bg-[#E6A800] px-[16px] py-[11.5px] rounded-[8px] transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           Start Task
                         </button>
@@ -493,7 +568,7 @@ const Dashboard = () => {
                           type="button"
                           onClick={planState === 'idle' ? handleGeneratePlan : undefined}
                           disabled={planState !== 'idle'}
-                          className={`font-inter font-medium text-[14px] px-[16px] py-[11.5px] rounded-[8px] transition-colors shadow-sm ${planState === 'loading'
+                          className={`w-full sm:w-auto font-inter font-medium text-[14px] px-[16px] py-[11.5px] rounded-[8px] transition-colors shadow-sm ${planState === 'loading'
                             ? 'bg-[#B0B0B0] text-[#141415] cursor-not-allowed'
                             : 'text-[#141415] bg-[#FFC92A] hover:bg-[#FFB800] active:bg-[#E6A800]'
                             }`}
@@ -505,7 +580,7 @@ const Dashboard = () => {
                         type="button"
                         onClick={planState !== 'loading' ? onTakeMock : undefined}
                         disabled={planState === 'loading'}
-                        className={`font-inter font-medium text-[14px] text-white border border-[#FFFFFF] px-[16px] py-[11.5px] rounded-[8px] transition-colors ${planState === 'loading' ? 'border-[#B0B0B0] text-[#B0B0B0] cursor-not-allowed' : null
+                        className={`w-full sm:w-auto font-inter font-medium text-[14px] text-white border border-[#FFFFFF] px-[16px] py-[11.5px] rounded-[8px] transition-colors ${planState === 'loading' ? 'border-[#B0B0B0] text-[#B0B0B0] cursor-not-allowed' : ''
                           }`}
                       >
                         Take Full Mock Exam
@@ -619,29 +694,37 @@ const Dashboard = () => {
               {/* States C / D — Plan exists, show next task */}
               {(stepState === 'C' || stepState === 'D') && nextTask && (
                 <>
-                  <h2 className="font-inter font-bold text-[20px] text-[#45464E] mb-[8px]">Your Next Step</h2>
-                  <div className="flex items-start justify-between mb-[16px]">
-                    <p className="font-inter text-[14px] text-[#0F172ABF]">
-                      {stepState === 'C'
-                        ? 'Your 7-day path to passing is ready. Start here — this is your highest-impact task.'
-                        : 'Complete this to move forward →'}
-                    </p>
-                    <span className="font-inter text-[14px] text-[#0F172ABF]">{completedTasks}/{totalTasks} Completed</span>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-[16px]">
+                    <div>
+                      <h2 className="font-inter font-bold text-[20px] text-[#45464E] mb-[8px]">Your Next Step</h2>
+                      <p className="font-inter text-[14px] text-[#0F172ABF] max-w-xl">
+                        {stepState === 'C'
+                          ? 'Your 7-day path to passing is ready. Start here — this is your highest-impact task.'
+                          : 'Complete this to move forward →'}
+                      </p>
+                    </div>
+                    <div className="font-inter text-[14px] text-[#0F172ABF]">
+                      {completedTasks}/{totalTasks} Completed
+                    </div>
                   </div>
-                  <div className="border border-[#FFCC00] bg-[#FFF9E9] rounded-[8px] p-[16px] flex items-center gap-[16px]">
-                    <div className="w-[48px] h-[48px] rounded-[8px] bg-[#FFFFFFF2] border border-[#FFC92A] flex items-center justify-center shrink-0">
+                  <div className="border border-[#FFCC00] bg-[#FFF9E9] rounded-[18px] p-[16px] sm:p-[18px] flex flex-col sm:flex-row sm:items-center gap-4">
+                    <div className="w-[52px] h-[52px] rounded-[16px] bg-[#FFFFFFF2] border border-[#FFC92A] flex items-center justify-center shrink-0">
                       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d={ICON_PATHS[TASK_ICON_BY_TYPE[nextTask.type] || 'book']} stroke="#434E5F" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-inter font-semibold text-[14px] text-[#0F172A] mb-[4px]">{nextTask.title}</h3>
-                      <p className="font-inter text-[12px] text-[#0F172A]">{nextTask.meta}</p>
+                      <h3 className="font-inter font-semibold text-[16px] text-[#141415] leading-tight mb-[4px]">
+                        {nextTask.title}
+                      </h3>
+                      <p className="font-inter text-[13px] text-[#141415] mb-[4px]">
+                        {nextTask.meta}
+                      </p>
                     </div>
                     <button
                       type="button"
                       onClick={() => openTaskOverview(nextTask)}
-                      className="shrink-0 font-inter font-medium text-[14px] text-[#141415] bg-[#FFC92A] hover:bg-[#FFB800] active:bg-[#E6A800] px-[16px] py-[11.5px] rounded-[8px] transition-colors shadow-sm"
+                      className="w-full sm:w-auto font-inter font-semibold text-[14px] text-[#141415] bg-[#FFC92A] hover:bg-[#FFB800] active:bg-[#E6A800] px-[16px] py-[13px] rounded-[12px] transition-colors shadow-sm"
                     >
                       Start Task
                     </button>
@@ -737,7 +820,19 @@ const Dashboard = () => {
                 </p>
               </div>
 
-              <div className="overflow-x-auto">
+              <div className="space-y-[12px] sm:hidden">
+                {sortedSections.map((section) => (
+                  <SectionCard
+                    key={section.key}
+                    section={section}
+                    isExpanded={!!expandedSections[section.key]}
+                    onToggle={() => toggleSection(section.key)}
+                    hasData={!!breakdown?.hasData}
+                  />
+                ))}
+              </div>
+
+              <div className="hidden overflow-x-auto sm:block">
                 <table className="w-full">
                   <thead>
                     <tr className="border-y border-[#181D1F26] bg-[#F5F5F6]">
@@ -750,7 +845,7 @@ const Dashboard = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {sections.map((section) => (
+                    {sortedSections.map((section) => (
                       <SectionRow
                         key={section.key}
                         section={section}
@@ -776,12 +871,12 @@ const Dashboard = () => {
                 7-Day Sprint Progress
               </h2>
               {sprintPlan ? (
-                <div className="flex items-end justify-between mb-[24px]">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-end justify-between mb-[24px]">
                   <div>
                     <p className="font-inter text-[14px] text-[#0F172ABF] leading-snug">Your next 7 study sessions based on your weakest areas</p>
                     <p className="font-inter text-[14px] text-[#0F172ABF] leading-snug">Complete this sprint, then retake a mock to verify your progress.</p>
                   </div>
-                  <span className="font-inter text-[14px] text-[#0F172ABF] shrink-0 ml-4 mt-0.5">{completedTasks}/{totalTasks} Completed</span>
+                  <span className="font-inter text-[14px] text-[#0F172ABF] shrink-0">{completedTasks}/{totalTasks} Completed</span>
                 </div>
               ) : (
                 <p className="font-inter text-[14px] text-[#0F172ABF] mb-[24px]">
@@ -790,7 +885,7 @@ const Dashboard = () => {
               )}
 
               {sprintPlan ? (
-                <div className="flex flex-col gap-[24px]">
+                <div className="flex flex-col gap-[18px]">
                   {sprintPlan.tasks.map((task) => {
                     const isCurrent = task.taskId === sprintPlan.nextTask?.taskId;
                     const isCompleted = task.status === 'completed';
@@ -798,68 +893,65 @@ const Dashboard = () => {
                     return (
                       <div
                         key={task.taskId}
-                        className={`flex items-center gap-[16px] p-[16px] rounded-[8px] border ${isCurrent ? 'border-[#FFCC00] bg-[#FFF9E9]' : 'border-[#EBEBEB] bg-[#FCFBFC]'
-                          }`}
+                        className={`flex flex-col sm:flex-row sm:items-center gap-4 p-[16px] rounded-[16px] border ${isCurrent ? 'border-[#FFCC00] bg-[#FFF9E9]' : 'border-[#EBEBEB] bg-[#FCFBFC]'}`}
                       >
-                        <div className={`w-[48px] h-[48px] rounded-[8px] bg-white border ${isCurrent ? 'border-[#FFC92A]' : 'border-[#EBEBEB]'} flex items-center justify-center shrink-0`}>
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <div className={`w-[52px] h-[52px] rounded-[14px] bg-white border ${isCurrent ? 'border-[#FFC92A]' : 'border-[#EBEBEB]'} flex items-center justify-center shrink-0`}>
+                          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d={ICON_PATHS[iconKey]} stroke="#434E5F" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
                           </svg>
                         </div>
 
                         <div className="flex-1 min-w-0">
-                          <p className="font-inter font-semibold text-[14px] text-[#0F172A] mb-[4px] truncate">{task.title}</p>
-                          <p className="font-inter text-[12px] text-[#0F172A] truncate">{task.meta}</p>
+                          <p className="font-inter font-semibold text-[15px] text-[#141415] mb-[4px] truncate">{task.title}</p>
+                          <p className="font-inter text-[13px] text-[#141415] mb-[8px] truncate">{task.meta}</p>
                         </div>
 
-                        {isCurrent && !isCompleted ? (
-                          <button
-                            type="button"
-                            onClick={() => openTaskOverview(task)}
-                            className="shrink-0 font-inter font-medium text-[14px] text-[#141415] bg-[#FFC92A] hover:bg-[#FFB800] active:bg-[#E6A800] px-[16px] py-[11.5px] rounded-[8px] transition-colors shadow-sm"
-                          >
-                            Start Task
-                          </button>
-                        ) : isCompleted ? (
-                          <div className="shrink-0 text-right">
-                            <span className="inline-flex items-center gap-[8px] font-inter font-medium text-[14px] text-[#06A561]">
-                              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M18.1708 8.33357C18.5513 10.2013 18.2801 12.1431 17.4023 13.8351C16.5245 15.527 15.0932 16.8669 13.347 17.6313C11.6009 18.3957 9.64545 18.5384 7.80684 18.0355C5.96823 17.5327 4.35758 16.4147 3.24349 14.8681C2.12939 13.3214 1.57919 11.4396 1.68464 9.53639C1.79009 7.63318 2.54482 5.82364 3.82297 4.40954C5.10111 2.99545 6.82541 2.06226 8.70831 1.76561C10.5912 1.46897 12.5189 1.82679 14.1699 2.7794M7.50325 9.16691L10.0032 11.6669L18.3366 3.33358" stroke="#06A561" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                              </svg>
-                              DONE
+                        <div className="flex flex-col items-stretch gap-3 sm:items-end">
+                          {isCurrent && !isCompleted ? (
+                            <button
+                              type="button"
+                              onClick={() => openTaskOverview(task)}
+                              className="w-full sm:w-auto font-inter font-semibold text-[14px] text-[#141415] bg-[#FFC92A] hover:bg-[#FFB800] active:bg-[#E6A800] px-[16px] py-[13px] rounded-[12px] transition-colors shadow-sm"
+                            >
+                              Start Task
+                            </button>
+                          ) : isCompleted ? (
+                            <div className="inline-flex flex-col items-end gap-2 text-right">
+                              <span className="inline-flex items-center gap-[8px] font-inter font-medium text-[14px] text-[#06A561]">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                  <path d="M18.1708 8.33357C18.5513 10.2013 18.2801 12.1431 17.4023 13.8351C16.5245 15.527 15.0932 16.8669 13.347 17.6313C11.6009 18.3957 9.64545 18.5384 7.80684 18.0355C5.96823 17.5327 4.35758 16.4147 3.24349 14.8681C2.12939 13.3214 1.57919 11.4396 1.68464 9.53639C1.79009 7.63318 2.54482 5.82364 3.82297 4.40954C5.10111 2.99545 6.82541 2.06226 8.70831 1.76561C10.5912 1.46897 12.5189 1.82679 14.1699 2.7794M7.50325 9.16691L10.0032 11.6669L18.3366 3.33358" stroke="#06A561" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                                DONE
+                              </span>
+                              {task.result && (
+                                <p className="font-inter text-[12px] text-[#0F172A]">+{task.result.correct}/{task.result.totalItems} correct</p>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="inline-flex items-center gap-[8px] font-inter font-medium text-[14px] text-[#181D1F]">
+                              <span className="w-[8px] h-[8px] rounded-full bg-[#F3596D] shrink-0" />
+                              NOT STARTED
                             </span>
-                            {task.result && (
-                              <p className="font-inter text-[12px] text-[#0F172A] mt-[4px]">
-                                +{task.result.correct}/{task.result.totalItems} correct
-                              </p>
-                            )}
-                          </div>
-                        ) : (
-                          <span className="shrink-0 inline-flex items-center gap-[8px] font-inter font-medium text-[14px] text-[#181D1F]">
-                            <span className="w-[8px] h-[8px] rounded-full bg-[#F3596D] shrink-0" />
-                            NOT STARTED
-                          </span>
-                        )}
+                          )}
+                        </div>
                       </div>
                     );
                   })}
                 </div>
               ) : (
-                <div className="border border-[#FFCC00] rounded-[8px] p-[16px] flex items-center gap-[16px] bg-[#FFF9E9]">
-                  <div className="w-[48px] h-[48px] rounded-[8px] bg-white border border-[#FFC92A] flex items-center justify-center shrink-0">
+                <div className="border border-[#FFCC00] rounded-[12px] p-[16px] flex flex-col sm:flex-row sm:items-center gap-[16px] bg-[#FFF9E9]">
+                  <div className="w-[48px] h-[48px] rounded-[12px] bg-white border border-[#FFC92A] flex items-center justify-center shrink-0">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <path d={ICON_PATHS.book} stroke="#434E5F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   </div>
-                  <div>
-                    <p className="font-inter font-semibold text-[14px] text-[#0F172A] mb-[4px]">
-                      No active plan yet
-                    </p>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-inter font-semibold text-[14px] text-[#0F172A] mb-[4px]">No active plan yet</p>
                     <p className="font-inter text-[12px] text-[#0F172A]">
                       {hasData ? (
-                        <>Generate your 7-day plan to start a guided study routine based on your assessment.<br />Includes smart daily tasks, topic drills, and progress tracking.</>
+                        <>Generate your 7-day plan to start a guided study routine based on your assessment. Includes smart daily tasks, topic drills, and progress tracking.</>
                       ) : (
-                        <>Your 7-day study plan will be created after your first exam.<br />Includes daily tasks, topic drills, and progress tracking.</>
+                        <>Your 7-day study plan will be created after your first exam. Includes daily tasks, topic drills, and progress tracking.</>
                       )}
                     </p>
                   </div>
@@ -872,11 +964,11 @@ const Dashboard = () => {
           <div className="w-full lg:w-[300px] xl:w-[360px] shrink-0 flex flex-col gap-[24px]">
 
             {/* ── Readiness Checker ── */}
-            <div className="bg-white rounded-[12px] p-[24px]">
-              <h3 className="font-inter font-bold text-[16px] text-[#45464E] mb-[24px]">
+            <div className="bg-white rounded-[18px] p-[20px] sm:p-[24px]">
+              <h3 className="font-inter font-bold text-[18px] text-[#1A1A2E] mb-[16px]">
                 Readiness Checker
               </h3>
-              <p className="font-inter text-[12px] text-[#45464E] mb-[19px] text-center">
+              <p className="font-inter text-[13px] text-[#45464E] mb-[22px] text-center">
                 Civil Service Exam ({examLevelLabel})
               </p>
 
@@ -885,37 +977,43 @@ const Dashboard = () => {
                 : <NoDataSemiCircle />}
 
               {readiness?.sourceLabel && (
-                <p className="font-inter italic text-[12px] text-[#45464E] text-center mt-[12px] mb-[40px]">
+                <p className="font-inter italic text-[13px] text-[#6C737F] text-center mt-[16px] mb-[24px]">
                   {readiness.sourceLabel}
                 </p>
               )}
 
               {/* Stats row */}
-              <div className="flex flex-col gap-[16px] sm:flex-row">
-                <div className="w-full sm:w-1/3 flex flex-col gap-[4px] pr-[16px] border-b border-[#0000001A] sm:border-b-0 sm:border-r sm:last:border-r-0">
-                  <span className="font-inter font-semibold text-[18px] text-[#6E43B9] whitespace-nowrap">
+              <div className="grid divide-y divide-[#E5E7EB] text-center sm:grid-cols-3 sm:divide-y-0 sm:divide-x">
+                <div className="py-[16px]">
+                  <span className="font-inter font-semibold text-[18px] text-[#6E43B9] block">
                     {readiness ? `${Math.round(readiness.passingScore * 100)}%` : '80%'}
                   </span>
-                  <span className="font-inter font-regular text-[12px] text-[#737373] text-left leading-tight whitespace-nowrap">Passing Score</span>
+                  <span className="font-inter text-[12px] text-[#737373] block mt-[4px]">
+                    Passing Score
+                  </span>
                 </div>
-                <div className="w-full sm:w-1/3 flex flex-col gap-[4px] px-[16px] border-b border-[#0000001A] sm:border-b-0 sm:border-r sm:last:border-r-0">
-                  <span className="font-inter font-semibold text-[18px] text-[#6E43B9] whitespace-nowrap">
+                <div className="py-[16px]">
+                  <span className="font-inter font-semibold text-[18px] text-[#6E43B9] block">
                     {readiness ? `${Math.round(readiness.safeZone * 100)}%` : '85%'}
                   </span>
-                  <span className="font-inter font-regular text-[12px] text-[#737373] text-left leading-tight whitespace-nowrap">Safe Zone</span>
+                  <span className="font-inter text-[12px] text-[#737373] block mt-[4px]">
+                    Safe Zone
+                  </span>
                 </div>
                 {readiness?.daysBeforeExam != null && (
-                  <div className="w-full sm:w-1/3 flex flex-col gap-[4px] pl-[16px]">
-                    <span className="font-inter font-semibold text-[18px] text-[#6E43B9] whitespace-nowrap">
+                  <div className="py-[16px]">
+                    <span className="font-inter font-semibold text-[18px] text-[#6E43B9] block">
                       {readiness.daysBeforeExam} days
                     </span>
-                    <span className="font-inter font-regular text-[12px] text-[#737373] text-left leading-tight whitespace-nowrap">before CSE</span>
+                    <span className="font-inter text-[12px] text-[#737373] block mt-[4px]">
+                      before CSE
+                    </span>
                   </div>
                 )}
               </div>
 
               {readiness?.mode !== 'no_data' && readiness?.supportingMessage && (
-                <p className="font-inter text-[14px] text-[#45464E] mt-[24px] text-left">
+                <p className="font-inter text-[14px] text-[#45464E] mt-[22px]">
                   {readiness.supportingMessage}
                 </p>
               )}
