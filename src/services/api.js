@@ -10,13 +10,16 @@ async function apiFetch(endpoint, options = {}) {
     ...options,
     credentials: "include",
     headers: {
-      "Content-Type": "application/json",
+      // Don't set Content-Type for FormData — the browser sets it with the boundary.
+      ...(options.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
   };
 
-  if (options.body && typeof options.body === "object") {
+  if (options.body instanceof FormData) {
+    config.body = options.body;
+  } else if (options.body && typeof options.body === "object") {
     config.body = JSON.stringify(options.body);
   }
 
@@ -110,8 +113,11 @@ export const trialAPI = {
   getStatus: () => apiFetch("/trial-assessment/status"),
   getReviewers: () => apiFetch("/trial-assessment/reviewers"),
   skip: () => apiFetch("/trial-assessment/skip", { method: "POST" }),
-  start: (reviewerId) =>
-    apiFetch(`/trial-assessment/${reviewerId}/start`, { method: "POST" }),
+  start: (reviewerId, retake = false) =>
+    apiFetch(`/trial-assessment/${reviewerId}/start`, {
+      method: "POST",
+      body: retake ? { retake: true } : undefined,
+    }),
   saveAnswer: (attemptId, questionIndex, selectedAnswer) =>
     apiFetch(`/trial-assessment/attempts/${attemptId}/answer`, {
       method: "PUT",
@@ -139,6 +145,24 @@ export const supportAPI = {
     apiFetch("/support/contact", { method: "POST", body: data }),
   submitHelp: (data) =>
     apiFetch("/support/help", { method: "POST", body: data }),
+};
+
+// ── Payments (manual GCash upgrade flow) ──
+export const paymentsAPI = {
+  /**
+   * Submit a GCash payment confirmation. The proof image (if any) is sent as
+   * a multipart file upload — multer+CloudinaryStorage on the server handles
+   * the Cloudinary upload and returns the secure URL for storage.
+   * Public endpoint; works pre-login.
+   */
+  submitUpgrade: ({ email, gcashRef, gcashName, proof }) => {
+    const formData = new FormData();
+    formData.append("email", email);
+    formData.append("gcashRef", gcashRef);
+    formData.append("gcashName", gcashName);
+    if (proof) formData.append("proofImage", proof);
+    return apiFetch("/payments/upgrade", { method: "POST", body: formData });
+  },
 };
 
 // ── Dashboard ──

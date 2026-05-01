@@ -2,8 +2,12 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashNav from '../components/DashNav';
 import DashboardSkeleton from '../components/skeletons/DashboardSkeleton';
+import PaywallModal from '../components/PaywallModal';
 import { useAuth } from '../context/AuthContext';
 import { dashboardAPI, reviewerAPI } from '../services/api';
+import { isPremiumActive } from '../utils/subscription';
+
+const PAYWALL_DISMISSED_KEY = 'reviewly:paywall:after_plan_dismissed';
 
 /* ─── Constants ─────────────────────────────────────── */
 
@@ -346,6 +350,12 @@ const Dashboard = () => {
   const [startingTaskId, setStartingTaskId] = useState(null);
   const [mockReviewerId, setMockReviewerId] = useState(null);
 
+  // Paywall state. `paywallVariant` drives both visibility and copy; null
+  // means closed.
+  const [paywallVariant, setPaywallVariant] = useState(null);
+
+  const isPremium = isPremiumActive(user);
+
   const refreshDashboard = useCallback(async () => {
     try {
       const res = await dashboardAPI.get();
@@ -393,6 +403,20 @@ const Dashboard = () => {
     return () => timers.forEach(clearTimeout);
   }, [planState]);
 
+  // Whether this user has already dismissed the after-plan-generation modal
+  // in a prior session. Persisted to localStorage so it doesn't re-pop on
+  // every page load.
+  const wasAfterPlanDismissed = () => {
+    try {
+      return localStorage.getItem(PAYWALL_DISMISSED_KEY) === '1';
+    } catch (_) {
+      return false;
+    }
+  };
+  const markAfterPlanDismissed = () => {
+    try { localStorage.setItem(PAYWALL_DISMISSED_KEY, '1'); } catch (_) {}
+  };
+
   const handleGeneratePlan = async () => {
     if (planState !== 'idle') return;
     setGenerateError(null);
@@ -408,18 +432,39 @@ const Dashboard = () => {
       if (res.success) {
         await refreshDashboard();
         setPlanState('ready');
+        // Trigger 1 — after first plan generation, show the paywall (free
+        // users only, and only if they haven't already dismissed it).
+        if (!isPremium && !wasAfterPlanDismissed()) {
+          setPaywallVariant('after_plan_generation');
+        }
       } else {
-        setGenerateError(res.message || 'Could not generate plan');
+        // 402 from server when free user tries to regenerate after completion.
+        if (res.code === 'premium_required') {
+          setPaywallVariant('regenerate_sprint');
+        } else {
+          setGenerateError(res.message || 'Could not generate plan');
+        }
         setPlanState('idle');
       }
     } catch (err) {
-      setGenerateError(err.message || 'Could not generate plan');
+      if (err.status === 402 || err.apiResponse?.code === 'premium_required') {
+        setPaywallVariant('regenerate_sprint');
+      } else {
+        setGenerateError(err.message || 'Could not generate plan');
+      }
       setPlanState('idle');
     }
   };
 
   const openTaskOverview = (task) => {
     if (!task) return;
+    // Trigger 2 — Start Task is the canonical paywall trigger.
+    if (!isPremium) {
+      setPaywallVariant('start_sprint_task');
+      return;
+    }
+    // Premium users go to the task overview page; the actual
+    // dashboardAPI.startTask call happens when they click "Start Task" there.
     setStartingTaskId(task.taskId);
     navigate(`/dashboard/sprint/task/${task.taskId}/overview`);
   };
@@ -454,7 +499,11 @@ const Dashboard = () => {
     return 'D';
   }, [planState, hasData, sprintPlan, planDone, completedTasks]);
 
-  const onTakeAssessment = () => navigate('/trial');
+  // The trial assessment page redirects authenticated users that have already
+  // completed/skipped the trial back to the dashboard. The Dashboard's
+  // assessment CTAs explicitly want to *retake* the trial, so we pass a flag
+  // that tells /trial to skip that redirect.
+  const onTakeAssessment = () => navigate('/trial?retake=1');
   const onTakeMock = () => {
     if (mockReviewerId) navigate(`/dashboard/exam/${mockReviewerId}`);
     else navigate('/dashboard/all-reviewers');
@@ -1039,6 +1088,15 @@ const Dashboard = () => {
           </div>
         </div>
       </main>
+
+      <PaywallModal
+        open={!!paywallVariant}
+        variant={paywallVariant || 'default'}
+        onClose={() => {
+          if (paywallVariant === 'after_plan_generation') markAfterPlanDismissed();
+          setPaywallVariant(null);
+        }}
+      />
     </div>
   );
 };

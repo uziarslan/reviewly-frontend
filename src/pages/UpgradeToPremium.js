@@ -1,11 +1,16 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import FloatingField from '../components/FloatingField';
 import gcashQR from '../Assets/gcashQR.png';
+import { paymentsAPI } from '../services/api';
+import { useAuth } from '../context/AuthContext';
+
+const MAX_PROOF_BYTES = 2 * 1024 * 1024; // 2 MB
 
 const UpgradeToPremium = () => {
+  const { user } = useAuth();
   const [form, setForm] = useState({
     email: '',
     gcashRef: '',
@@ -13,10 +18,31 @@ const UpgradeToPremium = () => {
     proof: null,
   });
   const [dragOver, setDragOver] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
+  const [submitted, setSubmitted] = useState(false);
   const fileInputRef = useRef(null);
 
+  // Pre-fill the email field when the user is logged in.
+  useEffect(() => {
+    if (user?.email && !form.email) {
+      setForm((prev) => ({ ...prev, email: user.email }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.email]);
+
   const handleFile = (file) => {
-    if (file) setForm({ ...form, proof: file });
+    if (!file) return;
+    if (!/^image\/(png|jpe?g)$/i.test(file.type)) {
+      setSubmitError('Proof image must be a JPG or PNG.');
+      return;
+    }
+    if (file.size > MAX_PROOF_BYTES) {
+      setSubmitError('Proof image must be 2 MB or smaller.');
+      return;
+    }
+    setSubmitError(null);
+    setForm((prev) => ({ ...prev, proof: file }));
   };
 
   const handleDrop = (e) => {
@@ -25,9 +51,35 @@ const UpgradeToPremium = () => {
     handleFile(e.dataTransfer.files[0]);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // submission logic here
+    if (submitting) return;
+    setSubmitError(null);
+
+    if (!form.email.trim() || !form.gcashRef.trim() || !form.gcashName.trim()) {
+      setSubmitError('Please fill in email, GCash reference, and account name.');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const res = await paymentsAPI.submitUpgrade({
+        email: form.email.trim(),
+        gcashRef: form.gcashRef.trim(),
+        gcashName: form.gcashName.trim(),
+        proof: form.proof || null,
+      });
+      if (res.success) {
+        setSubmitted(true);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        setSubmitError(res.message || 'Could not submit your confirmation. Please try again.');
+      }
+    } catch (err) {
+      setSubmitError(err.message || 'Could not submit your confirmation. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -128,11 +180,37 @@ const UpgradeToPremium = () => {
           </div>
         </div>
 
-        {/* Section 3: Payment Confirmation Form */}
+        {/* Section 3: Payment Confirmation Form (or success state) */}
         <div className="max-w-[960px] mx-auto bg-white rounded-[12px] border border-[#EFF0F6] py-[24px] sm:py-[40px] px-[16px] sm:px-[24px] mb-[16px] sm:mb-[24px]" style={{ boxShadow: '0px 1px 8px 0px #14142B0A' }}>
           <h2 className="font-inter font-bold text-[#45464E] text-[16px] sm:text-[18px] lg:text-[20px] mb-[16px] sm:mb-[24px]">
             Payment Confirmation
           </h2>
+
+          {submitted ? (
+            <div className="border border-[#A7F3D0] bg-[#ECFDF5] rounded-[8px] p-[16px] sm:p-[20px]">
+              <p className="font-inter font-bold text-[#065F46] text-[14px] sm:text-[16px] mb-1">
+                We received your payment confirmation.
+              </p>
+              <p className="font-inter text-[#065F46] text-[13px] sm:text-[14px] leading-[1.6] mb-3">
+                Verification usually takes <strong>1–6 hours</strong>. We'll email you at <strong>{form.email}</strong> once your Premium access is active.
+              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <Link
+                  to="/dashboard"
+                  className="font-inter font-medium text-[14px] text-[#421A83] bg-[#FFC92A] hover:bg-[#f0bb1f] px-[20px] py-[10px] rounded-[8px] transition-colors"
+                >
+                  Go to Dashboard
+                </Link>
+                <Link
+                  to="/"
+                  className="font-inter font-medium text-[14px] text-[#45464E] bg-white border border-[#D1D5DB] hover:bg-[#F8F8FB] px-[20px] py-[10px] rounded-[8px] transition-colors"
+                >
+                  Back to Home
+                </Link>
+              </div>
+            </div>
+          ) : (
+          <>
           <p className="font-inter text-[#45464E] text-[13px] sm:text-[15px] lg:text-[16px] mb-[16px] sm:mb-[24px]">
             Already paid? Fill this out so we can activate your Premium access.
           </p>
@@ -215,17 +293,26 @@ const UpgradeToPremium = () => {
               />
             </div>
 
+            {submitError && (
+              <p className="font-inter text-[13px] sm:text-[14px] text-[#DC2626]">
+                {submitError}
+              </p>
+            )}
+
             <button
               type="submit"
-              className="w-full sm:w-auto self-start px-[20px] sm:px-[28px] py-[10px] sm:h-[48px] rounded-[8px] bg-[#FFC92A] hover:bg-[#f0bb1f] font-inter font-medium text-[#421A83] text-[14px] sm:text-[16px] transition-colors"
+              disabled={submitting}
+              className="w-full sm:w-auto self-start px-[20px] sm:px-[28px] py-[10px] sm:h-[48px] rounded-[8px] bg-[#FFC92A] hover:bg-[#f0bb1f] font-inter font-medium text-[#421A83] text-[14px] sm:text-[16px] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              Confirm Payment
+              {submitting ? 'Submitting…' : 'Confirm Payment'}
             </button>
 
             <p className="font-inter text-[#45464E] text-[12px] sm:text-[14px] lg:text-[16px]">
               Make sure your email matches your Reviewly account so we can activate access correctly.
             </p>
           </form>
+          </>
+          )}
         </div>
       </main>
 

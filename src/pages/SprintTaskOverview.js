@@ -2,7 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import DashNav from '../components/DashNav';
 import SkeletonBlock from '../components/SkeletonBlock';
+import PaywallModal from '../components/PaywallModal';
 import { dashboardAPI } from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import { isPremiumActive } from '../utils/subscription';
 
 const ICON_PATHS = {
     book: 'M4 19.5V4.5C4 3.83696 4.26339 3.20107 4.73223 2.73223C5.20107 2.26339 5.83696 2 6.5 2H19C19.2652 2 19.5196 2.10536 19.7071 2.29289C19.8946 2.48043 20 2.73478 20 3V21C20 21.2652 19.8946 21.5196 19.7071 21.7071C19.5196 21.8946 19.2652 22 19 22H6.5C5.83696 22 5.20107 21.7366 4.73223 21.2678C4.26339 20.7989 4 20.163 4 19.5ZM4 19.5C4 18.837 4.26339 18.2011 4.73223 17.7322C5.20107 17.2634 5.83696 17 6.5 17H20M8 13L12 6L16 13M9.09998 11H14.8',
@@ -13,9 +16,14 @@ const ICON_PATHS = {
 const SprintTaskOverview = () => {
     const { taskId } = useParams();
     const navigate = useNavigate();
+    const { user } = useAuth();
+    const isPremium = isPremiumActive(user);
+
     const [task, setTask] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [starting, setStarting] = useState(false);
+    const [paywallOpen, setPaywallOpen] = useState(false);
 
     useEffect(() => {
         let cancelled = false;
@@ -52,6 +60,30 @@ const SprintTaskOverview = () => {
             cancelled = true;
         };
     }, [taskId]);
+
+    const handleStartTask = async () => {
+        if (!task || starting) return;
+        // Trigger 2 — Start Task is the canonical paywall trigger.
+        if (!isPremium) {
+            setPaywallOpen(true);
+            return;
+        }
+
+        setStarting(true);
+        try {
+            await dashboardAPI.startTask(taskId);
+            navigate(
+                `/dashboard/sprint/task/${taskId}?from=sprint&taskLabel=${encodeURIComponent(task.title)}`
+            );
+        } catch (err) {
+            if (err.status === 402 || err.apiResponse?.code === 'premium_required') {
+                setPaywallOpen(true);
+            } else {
+                setError(err.message || 'Could not start task');
+            }
+            setStarting(false);
+        }
+    };
 
     if (loading) {
         return (
@@ -152,10 +184,11 @@ const SprintTaskOverview = () => {
                         <div className="flex flex-col sm:flex-row gap-[16px]">
                             <button
                                 type="button"
-                                onClick={() => navigate(`/dashboard/sprint/task/${taskId}?from=sprint&taskLabel=${encodeURIComponent(task.title)}`)}
-                                className="w-full sm:w-auto h-[48px] font-inter font-regular text-[16px] text-[#421A83] bg-[#FFC92A] hover:bg-[#FFB800] active:bg-[#E6A800] px-[32px] rounded-[4px] transition-colors"
+                                onClick={handleStartTask}
+                                disabled={starting}
+                                className="w-full sm:w-auto h-[48px] font-inter font-regular text-[16px] text-[#421A83] bg-[#FFC92A] hover:bg-[#FFB800] active:bg-[#E6A800] disabled:opacity-60 disabled:cursor-not-allowed px-[32px] rounded-[4px] transition-colors"
                             >
-                                Start Task
+                                {starting ? 'Starting…' : 'Start Task'}
                             </button>
                             <button
                                 type="button"
@@ -168,6 +201,12 @@ const SprintTaskOverview = () => {
                     </div>
                 </div>
             </main>
+
+            <PaywallModal
+                open={paywallOpen}
+                variant="start_sprint_task"
+                onClose={() => setPaywallOpen(false)}
+            />
         </div>
     );
 };

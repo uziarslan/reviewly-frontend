@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, NavLink } from 'react-router-dom';
+import { useNavigate, NavLink, useSearchParams } from 'react-router-dom';
 import logo from '../Assets/logo.png';
 import trailImg from '../Assets/trail.png';
 import { useAuth } from '../context/AuthContext';
@@ -74,11 +74,16 @@ const IllustrationPanel = () => (
 const TrialAssessment = () => {
   const navigate = useNavigate();
   const { user, setUser } = useAuth();
+  const [searchParams] = useSearchParams();
+  // ?retake=1 is set by the Dashboard "Take Assessment" CTA so users who have
+  // already completed/skipped the trial can take it again on demand.
+  const isRetake = searchParams.get('retake') === '1';
   const [step, setStep] = useState(1);
   const [selectedType, setSelectedType] = useState(null);
   const [reviewers, setReviewers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [starting, setStarting] = useState(false);
+  const [startError, setStartError] = useState('');
 
   useEffect(() => {
     (async () => {
@@ -94,10 +99,10 @@ const TrialAssessment = () => {
   }, []);
 
   useEffect(() => {
-    if (user?.trialAssessment === true) {
+    if (user?.trialAssessment === true && !isRetake) {
       navigate('/dashboard', { replace: true });
     }
-  }, [user, navigate]);
+  }, [user, navigate, isRetake]);
 
   const getReviewerByType = (type) =>
     type === 'professional'
@@ -117,10 +122,14 @@ const TrialAssessment = () => {
 
   const handleStartExam = async () => {
     const reviewer = getReviewerByType(selectedType);
-    if (!reviewer) return;
+    if (!reviewer) {
+      setStartError('Could not load the assessment. Please refresh and try again.');
+      return;
+    }
     setStarting(true);
+    setStartError('');
     try {
-      const res = await trialAPI.start(reviewer._id);
+      const res = await trialAPI.start(reviewer._id, isRetake);
       if (res.success) {
         navigate(`/trial/exam/${reviewer._id}`, {
           state: { attempt: res.data, reviewerTitle: reviewer.title },
@@ -128,6 +137,7 @@ const TrialAssessment = () => {
       }
     } catch (err) {
       console.error('Failed to start trial exam', err);
+      setStartError(err.message || 'Failed to start the assessment. Please try again.');
     } finally {
       setStarting(false);
     }
@@ -209,6 +219,12 @@ const TrialAssessment = () => {
                 Back
               </button>
             </div>
+
+            {startError && (
+              <p className="mt-4 font-inter text-[14px] text-[#DC2626]">
+                {startError}
+              </p>
+            )}
           </div>
         </main>
       </div>
