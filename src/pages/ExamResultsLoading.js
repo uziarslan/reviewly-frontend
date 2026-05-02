@@ -178,6 +178,7 @@ const ExamResultsLoading = () => {
   const [shouldPlayLoadingFlow] = useState(() => location.state?.showLoadingFlow === true);
 
   const backUrl = fromLibrary ? '/dashboard/library' : '/dashboard/all-reviewers';
+  const dashboardUrl = '/dashboard';
 
   const handleOpenShare = useCallback(async () => {
     setShowShareModal(true);
@@ -627,7 +628,7 @@ const ExamResultsLoading = () => {
           <div className="flex flex-wrap gap-[10px] mb-[14px]">
             <button
               type="button"
-              onClick={() => navigate(backUrl)}
+              onClick={() => navigate(dashboardUrl)}
               className="font-inter font-regular text-[14px] text-[#421A83] bg-[#FFC92A] hover:opacity-95 transition-opacity py-[11px] px-[20px] rounded-[8px] whitespace-nowrap text-center flex-[1_1_calc(50%-5px)] min-w-[170px] sm:flex-[0_1_auto] sm:w-auto"
             >
               Go to Dashboard

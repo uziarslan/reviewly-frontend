@@ -715,8 +715,6 @@ function Exam({ isTrial = false }) {
           )}
         </nav>
 
-        <h1 className="font-inter font-medium text-[#45464E] text-[20px] mb-[24px]" data-aos="fade-up" data-aos-duration="400" data-aos-delay="25">{reviewer.title}</h1>
-
         <div className="flex flex-col lg:flex-row gap-8 lg:gap-[24px] items-start">
           {/* Left: Question card */}
           <div className="order-1 w-full lg:w-auto lg:flex-1 lg:min-w-0 bg-[#FFFFFF] p-[24px] rounded-[12px]" data-aos="fade-up" data-aos-duration="400" data-aos-delay="50">

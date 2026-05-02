@@ -74,8 +74,10 @@ function ExamReview() {
 
   if (loading) return <ExamReviewSkeleton />;
 
-  const backLink = fromSprint ? '/dashboard' : fromLibrary ? '/dashboard/library' : '/dashboard/all-reviewers';
-  const backLabel = fromSprint ? 'Dashboard' : fromLibrary ? 'My Library' : 'All Reviewers';
+  const backLink = fromSprint
+    ? '/dashboard'
+    : `/dashboard/results/${attemptId}${fromLibrary ? '?from=library' : ''}`;
+  const backLabel = fromSprint ? 'Dashboard' : 'Results';
   const backButtonLabel = fromSprint ? 'Back to Dashboard' : 'Back to Results';
 
   if (!reviewData || !reviewData.questions?.length) {
