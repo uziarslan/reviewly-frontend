@@ -99,7 +99,11 @@ const TrialAssessment = () => {
   }, []);
 
   useEffect(() => {
-    if (user?.trialAssessment === true && !isRetake) {
+    // Only auto-redirect users who are fully onboarded (trial done + examType
+    // picked). Legacy users with trialAssessment=true but no examType need to
+    // pass through Step 1 to choose a track before the dashboard makes sense.
+    const fullyOnboarded = user?.trialAssessment === true && !!user?.examType;
+    if (fullyOnboarded && !isRetake) {
       navigate('/dashboard', { replace: true });
     }
   }, [user, navigate, isRetake]);
@@ -110,9 +114,21 @@ const TrialAssessment = () => {
       : reviewers.find((r) => r.slug === 'trial-subprofessional');
 
   const handleSkip = async () => {
+    // Skip still records a choice — without examType the dashboard cannot
+    // render a coherent state. Step 2 is only reachable after Step 1 sets
+    // selectedType, but guard anyway in case of legacy / retake routing.
+    const examType = selectedType || user?.examType || null;
+    if (!examType) {
+      setStep(1);
+      return;
+    }
     try {
-      await trialAPI.skip();
-      setUser({ ...user, trialAssessment: true });
+      await trialAPI.skip(examType);
+      setUser({
+        ...user,
+        trialAssessment: true,
+        examType,
+      });
     } catch {
       /* no-op */
     } finally {
@@ -129,8 +145,11 @@ const TrialAssessment = () => {
     setStarting(true);
     setStartError('');
     try {
-      const res = await trialAPI.start(reviewer._id, isRetake);
+      const res = await trialAPI.start(reviewer._id, isRetake, selectedType);
       if (res.success) {
+        if (selectedType) {
+          setUser({ ...user, examType: selectedType });
+        }
         navigate(`/trial/exam/${reviewer._id}`, {
           state: { attempt: res.data, reviewerTitle: reviewer.title },
         });

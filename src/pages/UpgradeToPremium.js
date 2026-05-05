@@ -71,7 +71,6 @@ const UpgradeToPremium = () => {
       });
       if (res.success) {
         setSubmitted(true);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
       } else {
         setSubmitError(res.message || 'Could not submit your confirmation. Please try again.');
       }
@@ -171,7 +170,7 @@ const UpgradeToPremium = () => {
               <img
                 src={gcashQR}
                 alt="GCash QR code"
-                className="w-[140px] h-[140px] sm:w-[260px] sm:h-[260px] lg:w-[340px] lg:h-[340px] object-cover"
+                className="w-[280px] h-[280px] max-w-[85vw] max-h-[85vw] sm:w-[300px] sm:h-[300px] lg:w-[340px] lg:h-[340px] object-cover"
               />
               <p className="font-inter text-[#45464E] text-[12px] sm:text-[14px] lg:text-[16px] mt-[10px] text-center">
                 ₱349 – Exact amount already set
@@ -199,13 +198,7 @@ const UpgradeToPremium = () => {
                   to="/dashboard"
                   className="font-inter font-medium text-[14px] text-[#421A83] bg-[#FFC92A] hover:bg-[#f0bb1f] px-[20px] py-[10px] rounded-[8px] transition-colors"
                 >
-                  Go to Dashboard
-                </Link>
-                <Link
-                  to="/"
-                  className="font-inter font-medium text-[14px] text-[#45464E] bg-white border border-[#D1D5DB] hover:bg-[#F8F8FB] px-[20px] py-[10px] rounded-[8px] transition-colors"
-                >
-                  Back to Home
+                  Login
                 </Link>
               </div>
             </div>

@@ -112,12 +112,20 @@ export const sharedAPI = {
 export const trialAPI = {
   getStatus: () => apiFetch("/trial-assessment/status"),
   getReviewers: () => apiFetch("/trial-assessment/reviewers"),
-  skip: () => apiFetch("/trial-assessment/skip", { method: "POST" }),
-  start: (reviewerId, retake = false) =>
-    apiFetch(`/trial-assessment/${reviewerId}/start`, {
+  skip: (examType) =>
+    apiFetch("/trial-assessment/skip", {
       method: "POST",
-      body: retake ? { retake: true } : undefined,
+      body: examType ? { examType } : undefined,
     }),
+  start: (reviewerId, retake = false, examType) => {
+    const body = {};
+    if (retake) body.retake = true;
+    if (examType) body.examType = examType;
+    return apiFetch(`/trial-assessment/${reviewerId}/start`, {
+      method: "POST",
+      body: Object.keys(body).length ? body : undefined,
+    });
+  },
   saveAnswer: (attemptId, questionIndex, selectedAnswer) =>
     apiFetch(`/trial-assessment/attempts/${attemptId}/answer`, {
       method: "PUT",

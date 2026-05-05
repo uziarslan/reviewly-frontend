@@ -10,6 +10,9 @@ const AccountSettings = () => {
   const [firstName, setFirstName] = useState(user?.firstName || '');
   const [lastName, setLastName] = useState(user?.lastName || '');
   const [marketingEmails, setMarketingEmails] = useState(user?.marketingEmails ?? true);
+  const [examType, setExamType] = useState(user?.examType || null);
+  const [examTypeSaving, setExamTypeSaving] = useState(false);
+  const [examTypeStatus, setExamTypeStatus] = useState('');
 
   useEffect(() => {
     AOS.refresh();
@@ -21,6 +24,7 @@ const AccountSettings = () => {
       setFirstName(user.firstName || '');
       setLastName(user.lastName || '');
       setMarketingEmails(user.marketingEmails ?? true);
+      setExamType(user.examType || null);
     }
   }, [user]);
 
@@ -29,6 +33,24 @@ const AccountSettings = () => {
       await updateUser({ firstName, lastName, marketingEmails });
     } catch (err) {
       console.error('Failed to update profile:', err);
+    }
+  };
+
+  const handleSaveExamType = async (next) => {
+    if (!next || next === user?.examType || examTypeSaving) return;
+    setExamTypeSaving(true);
+    setExamTypeStatus('');
+    const previous = user?.examType || null;
+    setExamType(next);
+    try {
+      await updateUser({ examType: next });
+      setExamTypeStatus('Saved');
+    } catch (err) {
+      console.error('Failed to update exam type:', err);
+      setExamType(previous);
+      setExamTypeStatus('Could not save. Please try again.');
+    } finally {
+      setExamTypeSaving(false);
     }
   };
 
@@ -103,6 +125,55 @@ const AccountSettings = () => {
           </section>
           <hr className="border-0 border-t border-[#E1E2E9] mx-6 sm:mx-8" />
 
+          {/* Exam Type */}
+          <section className="p-6 sm:p-8">
+            <div className="flex items-start justify-between gap-4 mb-2">
+              <h2 className="font-inter font-semibold text-[16px] text-[#45464E]">Exam Type</h2>
+              {examTypeStatus && (
+                <span
+                  className={`font-inter text-[12px] ${examTypeStatus === 'Saved' ? 'text-[#16A34A]' : 'text-[#DC2626]'
+                    }`}
+                >
+                  {examTypeStatus}
+                </span>
+              )}
+            </div>
+            <p className="font-inter font-normal text-[14px] text-[#64748B] mb-5">
+              Choose the Civil Service Exam track you're preparing for. This drives your
+              dashboard breakdown, mock exams, and sprint plan.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-[560px]">
+              {[
+                { key: 'professional', label: 'Professional', sub: 'Higher coverage / difficulty.' },
+                { key: 'subprofessional', label: 'Sub-Professional', sub: 'Clerical / non-prof roles.' },
+              ].map(({ key, label, sub }) => {
+                const selected = examType === key;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => handleSaveExamType(key)}
+                    disabled={examTypeSaving}
+                    className={`text-left p-4 rounded-[12px] border transition-all duration-200 disabled:opacity-60 ${selected
+                      ? 'border-2 border-[#6E43B940] bg-[#6E43B91A]'
+                      : 'bg-white border-[#E1E2E9] hover:border-[#C4B5FD]'
+                      }`}
+                    aria-pressed={selected}
+                  >
+                    <p className="font-inter font-bold text-[16px] text-[#45464E]">{label}</p>
+                    <p className="font-inter text-[13px] text-[#64748B] mt-1">{sub}</p>
+                  </button>
+                );
+              })}
+            </div>
+            {!examType && (
+              <p className="font-inter text-[13px] text-[#9CA3AF] mt-3">
+                You haven't picked a track yet. Choose one to personalize your dashboard.
+              </p>
+            )}
+          </section>
+          <hr className="border-0 border-t border-[#E1E2E9] mx-6 sm:mx-8" />
+
           {/* Subscription */}
           <section className="p-6 sm:p-8">
             <h2 className="font-inter font-semibold text-[16px] text-[#45464E] mb-4">Subscription</h2>
@@ -156,7 +227,7 @@ const AccountSettings = () => {
                 to="/dashboard/settings/update-subscription"
                 className="font-inter font-medium text-[14px] text-[#6E43B9] underline hover:no-underline shrink-0"
               >
-                Get 7 days Free Premium
+                Update Subscription
               </Link>
             </div>
           </section>
@@ -199,7 +270,7 @@ const AccountSettings = () => {
           {/* App Info */}
           <section className="p-6 sm:p-8">
             <h2 className="font-inter font-semibold text-[16px] text-[#45464E] mb-4">App Info</h2>
-            <p className="font-inter font-normal text-[14px] text-[#45464E]">Reviewly PH - Version 1.0</p>
+            <p className="font-inter font-normal text-[14px] text-[#45464E]">Reviewly PH - Version 2.0</p>
           </section>
         </div>
       </main>
