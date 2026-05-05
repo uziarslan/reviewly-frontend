@@ -506,6 +506,7 @@ function Exam({ isTrial = false }) {
 
   const questionNumber = currentIndex + 1;
   const displayTime = fromSprint ? secondsToTimeStr(elapsedSeconds) : timeLeft;
+  const timerLabel = fromSprint ? 'Time Elapsed' : 'Time Left';
 
   return (
     <div className="min-h-screen bg-[#F5F4FF]">
@@ -877,7 +878,7 @@ function Exam({ isTrial = false }) {
           <div className="order-2 lg:flex-shrink-0 lg:max-w-[404px] lg:self-stretch w-full lg:w-auto" data-aos="fade-up" data-aos-duration="400" data-aos-delay="75">
             <div className="bg-[#FFFFFF] rounded-[12px] p-[24px] lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto">
               <div className="flex flex-row justify-between items-center mb-[15px]">
-                <span className="font-inter font-semibold not-italic text-[20px] text-[#45464E]">Time Elapsed</span>
+                <span className="font-inter font-semibold not-italic text-[20px] text-[#45464E]">{timerLabel}</span>
                 <p className="font-inter font-bold not-italic text-[32px] text-[#431C86]">{displayTime}</p>
               </div>
               <div className="flex items-center gap-[16px] mb-[15px]">

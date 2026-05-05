@@ -184,6 +184,7 @@ function renderContent(blocks, hasEmailLink) {
         const parts = block.emailBold.split('support@reviewly.ph');
         return (
           <p key={i} className={`text-[13px] sm:text-[14px] lg:text-base ${blockClass}`}>
+            {parts[0]}
             <a href="mailto:support@reviewly.ph" className="text-[#6E43B9] underline hover:no-underline">support@reviewly.ph</a>
             {parts[1] && <strong>{parts[1]}</strong>}
           </p>

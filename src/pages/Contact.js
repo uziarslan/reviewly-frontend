@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import AOS from 'aos';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -118,13 +117,6 @@ function Contact() {
             </h1>
             <p className="font-inter font-normal text-base text-center text-[#0F172A] mt-4" data-aos="fade-up" data-aos-duration="500" data-aos-delay="50">
               We've received your message and usually reply within 24–48 hours.
-            </p>
-            <p className="font-inter font-normal text-base text-center text-[#0F172A] mt-4" data-aos="fade-up" data-aos-duration="500" data-aos-delay="100">
-              You may also browse our{' '}
-              <Link to="/faq" className="underline decoration-solid text-[#0F172A]">
-                FAQ
-              </Link>{' '}
-              while you wait.
             </p>
             <div className="flex justify-center mt-10" data-aos="fade-up" data-aos-duration="500" data-aos-delay="150">
               <button

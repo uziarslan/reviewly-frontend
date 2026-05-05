@@ -1,11 +1,10 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { NavLink } from 'react-router-dom';
 import logo from '../Assets/logo.png';
 import { useAuth } from '../context/AuthContext';
 import { trialAPI } from '../services/api';
 import {
-  ShareOutIcon,
   VerbalAbilityLogoIcon,
   AnalyticalAbilityLogoIcon,
   ClericalAbilityLogoIcon,
@@ -13,8 +12,6 @@ import {
   GeneralInformationLogoIcon,
 } from '../components/Icons';
 import { SaveIcon, ComputeIcon, FindIcon, PrepareIcon } from '../components/LoadingStepIcons';
-import ShareModal from '../components/ShareModal';
-import { examAPI } from '../services/api';
 
 const PAGE_CLASSES = 'min-h-screen bg-[#F5F4FF]';
 
@@ -140,22 +137,7 @@ const TrialResult = () => {
   const [attempt, setAttempt] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeStep, setActiveStep] = useState(0);
-  const [showShareModal, setShowShareModal] = useState(false);
-  const [shareUrl, setShareUrl] = useState('');
   const shouldPlayLoadingFlow = location.state?.showLoadingFlow === true;
-
-  const handleOpenShare = useCallback(async () => {
-    setShowShareModal(true);
-    if (shareUrl) return;
-    try {
-      const res = await examAPI.generateShareLink(attemptId);
-      if (res.success && res.shareToken) {
-        setShareUrl(`${window.location.origin}/share/${res.shareToken}`);
-      }
-    } catch (err) {
-      console.error('Failed to generate share link', err);
-    }
-  }, [attemptId, shareUrl]);
 
   useEffect(() => {
     if (!attemptId) { setLoading(false); return; }
@@ -189,10 +171,10 @@ const TrialResult = () => {
   /* ── Loading state ── */
   if (loading || (shouldPlayLoadingFlow && activeStep < 4)) {
     const LOADING_STEPS = [
-      { title: 'Saving your answers',    description: 'Securing your responses.',          Icon: SaveIcon },
-      { title: 'Computing your score',   description: 'Calculating section scores.',        Icon: ComputeIcon },
-      { title: 'Finding your weak sections', description: 'Spotting areas to improve.',    Icon: FindIcon },
-      { title: 'Preparing your results', description: 'Building your diagnostic report.',  Icon: PrepareIcon },
+      { title: 'Saving your answers', description: 'Securing your responses.', Icon: SaveIcon },
+      { title: 'Computing your score', description: 'Calculating section scores.', Icon: ComputeIcon },
+      { title: 'Finding your weak sections', description: 'Spotting areas to improve.', Icon: FindIcon },
+      { title: 'Preparing your results', description: 'Building your diagnostic report.', Icon: PrepareIcon },
     ];
     return (
       <div className={PAGE_CLASSES}>
@@ -249,33 +231,33 @@ const TrialResult = () => {
   }
 
   /* ── Data ── */
-  const result            = attempt.result || {};
-  const breakdown         = result.sectionScores || [];
-  const totalCorrect      = result.correct || 0;
-  const totalIncorrect    = result.incorrect || 0;
-  const totalUnanswered   = result.unanswered || 0;
+  const result = attempt.result || {};
+  const breakdown = result.sectionScores || [];
+  const totalCorrect = result.correct || 0;
+  const totalIncorrect = result.incorrect || 0;
+  const totalUnanswered = result.unanswered || 0;
   const overallPercentage = (result.percentage != null ? result.percentage : 0).toFixed(2);
-  const pctNum            = parseFloat(overallPercentage);
+  const pctNum = parseFloat(overallPercentage);
 
   const readiness =
-    pctNum >= 85 ? { label: 'Exam Ready',         textColor: 'text-[#16A34A]', message: 'You are above the passing threshold.' }
-    : pctNum >= 75 ? { label: 'Almost Ready',      textColor: 'text-[#D97706]', message: 'A few improvements can push you to passing.' }
-    : pctNum >= 60 ? { label: 'Needs Improvement', textColor: 'text-[#2563EB]', message: "You're within reach but need more practice." }
-    : { label: 'Early Stage', textColor: 'text-[#6E43B9]', message: 'Focus on building fundamentals first.' };
+    pctNum >= 85 ? { label: 'Exam Ready', textColor: 'text-[#16A34A]', message: 'You are above the passing threshold.' }
+      : pctNum >= 75 ? { label: 'Almost Ready', textColor: 'text-[#D97706]', message: 'A few improvements can push you to passing.' }
+        : pctNum >= 60 ? { label: 'Needs Improvement', textColor: 'text-[#2563EB]', message: "You're within reach but need more practice." }
+          : { label: 'Early Stage', textColor: 'text-[#6E43B9]', message: 'Focus on building fundamentals first.' };
 
-  const sorted  = [...breakdown].sort((a, b) => a.score - b.score);
+  const sorted = [...breakdown].sort((a, b) => a.score - b.score);
   const weakest = sorted[0] || null;
 
   const sectionDistribution = [
-    { section: 'verbal',              weight: 30 },
-    { section: 'analytical',          weight: 34 },
-    { section: 'clerical',            weight: 34 },
-    { section: 'numerical',           weight: 30 },
-    { section: 'general information', weight: 6  },
+    { section: 'verbal', weight: 30 },
+    { section: 'analytical', weight: 34 },
+    { section: 'clerical', weight: 34 },
+    { section: 'numerical', weight: 30 },
+    { section: 'general information', weight: 6 },
   ];
   const weakestWeight = weakest
     ? sectionDistribution.find((sd) => normalizeSection(sd.section) === normalizeSection(weakest.section))?.weight
-      || Math.round((weakest.totalItems / (result.totalItems || 50)) * 100)
+    || Math.round((weakest.totalItems / (result.totalItems || 50)) * 100)
     : 0;
 
   const gapItems = weakest ? weakest.totalItems - weakest.correct : 0;
@@ -302,14 +284,6 @@ const TrialResult = () => {
             <h2 className="font-inter font-semibold text-[16px] sm:text-[17px] text-[#1A1A2E] leading-snug">
               Civil Service Exam -&nbsp; Assessment Result
             </h2>
-            <button
-              type="button"
-              onClick={handleOpenShare}
-              className="shrink-0 flex items-center gap-[6px] font-inter font-normal text-[13px] text-[#45464E] border border-[#D1D5DB] bg-white hover:bg-[#F9FAFB] transition-colors py-[6px] px-[14px] rounded-[8px]"
-            >
-              <ShareOutIcon className="w-[14px] h-[14px]" />
-              Share
-            </button>
           </div>
 
           {/* Gauge + stats row */}
@@ -329,9 +303,9 @@ const TrialResult = () => {
               <div className="divide-y divide-[#F3F4F6]">
                 {[
                   { label: 'Initial Readiness', value: `${overallPercentage} %`, cls: 'font-semibold text-[#1A1A2E]' },
-                  { label: 'Correct Items',     value: `${totalCorrect} / ${result.totalItems || 50}`, cls: 'font-semibold text-[#1A1A2E]' },
-                  { label: 'Status',            value: readiness.label, cls: `font-semibold ${readiness.textColor}` },
-                  { label: 'Total Time',        value: `${durationMin} min`, cls: 'font-semibold text-[#1A1A2E]' },
+                  { label: 'Correct Items', value: `${totalCorrect} / ${result.totalItems || 50}`, cls: 'font-semibold text-[#1A1A2E]' },
+                  { label: 'Status', value: readiness.label, cls: `font-semibold ${readiness.textColor}` },
+                  { label: 'Total Time', value: `${durationMin} min`, cls: 'font-semibold text-[#1A1A2E]' },
                 ].map(({ label, value, cls }) => (
                   <div key={label} className="flex items-center justify-between py-[12px]">
                     <span className="font-inter font-normal text-[14px] text-[#6B7280]">{label}</span>
@@ -504,9 +478,6 @@ const TrialResult = () => {
         )}
       </main>
 
-      {showShareModal && (
-        <ShareModal url={shareUrl} onClose={() => setShowShareModal(false)} />
-      )}
     </div>
   );
 };
