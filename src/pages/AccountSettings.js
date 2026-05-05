@@ -127,26 +127,32 @@ const AccountSettings = () => {
 
           {/* Exam Type */}
           <section className="p-6 sm:p-8">
-            <div className="flex items-start justify-between gap-4 mb-2">
+            <div className="flex items-center justify-between gap-4 mb-1">
               <h2 className="font-inter font-semibold text-[16px] text-[#45464E]">Exam Type</h2>
               {examTypeStatus && (
-                <span
-                  className={`font-inter text-[12px] ${examTypeStatus === 'Saved' ? 'text-[#16A34A]' : 'text-[#DC2626]'
-                    }`}
-                >
+                <span className={`font-inter text-[12px] font-medium ${examTypeStatus === 'Saved' ? 'text-[#16A34A]' : 'text-[#DC2626]'}`}>
                   {examTypeStatus}
                 </span>
               )}
             </div>
-            <p className="font-inter font-normal text-[14px] text-[#64748B] mb-5">
-              Choose the Civil Service Exam track you're preparing for. This drives your
-              dashboard breakdown, mock exams, and sprint plan.
+            <p className="font-inter font-normal text-[13px] text-[#64748B] mb-5">
+              Choose the Civil Service Exam track you're preparing for. This drives your dashboard breakdown, mock exams, and sprint plan.
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-[560px]">
+            <div className="flex flex-col sm:flex-row gap-3 max-w-[560px]">
               {[
-                { key: 'professional', label: 'Professional', sub: 'Higher coverage / difficulty.' },
-                { key: 'subprofessional', label: 'Sub-Professional', sub: 'Clerical / non-prof roles.' },
-              ].map(({ key, label, sub }) => {
+                {
+                  key: 'professional',
+                  label: 'Professional',
+                  sub: 'Higher coverage & difficulty',
+                  badge: 'CS Prof',
+                },
+                {
+                  key: 'subprofessional',
+                  label: 'Sub-Professional',
+                  sub: 'Clerical & non-professional roles',
+                  badge: 'CS Sub-Prof',
+                },
+              ].map(({ key, label, sub, badge }) => {
                 const selected = examType === key;
                 return (
                   <button
@@ -154,21 +160,42 @@ const AccountSettings = () => {
                     type="button"
                     onClick={() => handleSaveExamType(key)}
                     disabled={examTypeSaving}
-                    className={`text-left p-4 rounded-[12px] border transition-all duration-200 disabled:opacity-60 ${selected
-                      ? 'border-2 border-[#6E43B940] bg-[#6E43B91A]'
-                      : 'bg-white border-[#E1E2E9] hover:border-[#C4B5FD]'
-                      }`}
                     aria-pressed={selected}
+                    className={`relative flex-1 text-left px-4 py-4 rounded-[12px] border-2 transition-all duration-200 disabled:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#6E43B9]/40 ${
+                      selected
+                        ? 'border-[#6E43B9] bg-[#F3EFFB]'
+                        : 'border-[#E1E2E9] bg-white hover:border-[#C4B5FD] hover:bg-[#FAF8FF]'
+                    }`}
                   >
-                    <p className="font-inter font-bold text-[16px] text-[#45464E]">{label}</p>
-                    <p className="font-inter text-[13px] text-[#64748B] mt-1">{sub}</p>
+                    {/* Checkmark */}
+                    <span
+                      className={`absolute top-3 right-3 w-5 h-5 rounded-full flex items-center justify-center transition-all duration-200 ${
+                        selected ? 'bg-[#6E43B9]' : 'border border-[#D1D5DB] bg-white'
+                      }`}
+                    >
+                      {selected && (
+                        <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                          <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      )}
+                    </span>
+
+                    {/* Badge */}
+                    <span className={`inline-block font-inter font-semibold text-[10px] px-2 py-[2px] rounded-full mb-2 ${
+                      selected ? 'bg-[#6E43B9] text-white' : 'bg-[#F1F0F5] text-[#6E43B9]'
+                    }`}>
+                      {badge}
+                    </span>
+
+                    <p className={`font-inter font-bold text-[14px] ${selected ? 'text-[#421A83]' : 'text-[#45464E]'}`}>{label}</p>
+                    <p className="font-inter text-[12px] text-[#64748B] mt-0.5">{sub}</p>
                   </button>
                 );
               })}
             </div>
             {!examType && (
-              <p className="font-inter text-[13px] text-[#9CA3AF] mt-3">
-                You haven't picked a track yet. Choose one to personalize your dashboard.
+              <p className="font-inter text-[12px] text-[#9CA3AF] mt-3">
+                You haven't picked a track yet — choose one to personalize your experience.
               </p>
             )}
           </section>
