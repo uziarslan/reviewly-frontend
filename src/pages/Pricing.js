@@ -48,7 +48,11 @@ const AccordionItem = ({ faq, index, isOpen, onToggle }) => {
       </button>
       <div ref={contentRef} style={{ height, overflow: 'hidden', transition: 'height 0.3s ease' }}>
         <div className="font-inter font-normal px-6 pb-4 text-[#45464E] text-[13px] sm:text-[15px] leading-[1.7]">
-          {faq.answer}
+          {Array.isArray(faq.answer)
+            ? faq.answer.map((para, i) => (
+                <p key={i} className={i > 0 ? 'mt-3' : ''}>{para}</p>
+              ))
+            : faq.answer}
         </div>
       </div>
     </div>
@@ -65,27 +69,53 @@ const Pricing = () => {
   const faqs = [
     {
       question: "What's the difference between Free and Premium?",
-      answer: "Free is for checking readiness (mock + score + explanations). Premium is for improvement (topic-level breakdown, sprint plans, focused practice packs, and extra mock forms)."
+      answer: [
+        "Free is for checking readiness (mock exam + score + explanations).",
+        "Premium is for improving your score — with a guided system that helps you focus on weak areas, follow a personalized 7-day plan, and keep improving until the exam."
+      ]
     },
     {
       question: "Is the Readiness Check really free?",
-      answer: "Yes. No card needed. Start free and view your results anytime."
+      answer: [
+        "Yes. You can take a full mock exam, see your score, and review explanations for free.",
+        "No payment required to check your current readiness."
+      ]
     },
     {
       question: "What do I get in Premium?",
-      answer: "Premium unlocks: topic-level breakdown inside each subject, 7-day / 14-day sprint plans (daily missions), focused practice packs per weak topic, extra full mocks (Form B + C), and mistake review + progress tracking."
+      answer: [
+        "Premium gives you a structured way to improve - not just one-time results.",
+        "You'll get:",
+        "- Personalized 7-day study plans based on your weak areas",
+        "- Ability to regenerate new plans as you improve",
+        "- Guided daily sprint tasks and focused practice drills",
+        "- Topic-level breakdown to see exactly what to fix",
+        "- Multiple full mock exams (different sets)",
+        "- Progress tracking across attempts",
+        "It's designed to guide you step-by-step until the exam."
+      ]
     },
     {
       question: "How long does Premium access last?",
-      answer: "Premium is one-time exam-cycle access — valid until the August CSE."
+      answer: [
+        "Premium is a one-time exam-cycle access.",
+        "Once you upgrade, you can use all features until the August Civil Service Exam - including generating new study plans and retaking mock exams as many times as you need."
+      ]
     },
     {
       question: "Can I upgrade later?",
-      answer: "Yes. Start free first, then upgrade anytime when you're ready for a more structured path."
+      answer: "Yes. You can start with the free readiness check and upgrade anytime when you're ready to focus on improving your score."
     },
     {
       question: "Is Premium a subscription?",
-      answer: "No — it's exam-cycle access (one-time), valid until the August CSE."
+      answer: "No. Premium is a one-time payment."
+    },
+    {
+      question: "Can I generate more than one study plan?",
+      answer: [
+        "Yes. Your 7-day plan is not limited.",
+        "As you improve, you can generate new plans based on your latest results - so you always focus on what matters next."
+      ]
     }
   ];
 
@@ -102,18 +132,22 @@ const Pricing = () => {
               className="font-inter font-semibold text-[#0F172A] text-[28px] sm:text-[36px] lg:text-[52px] leading-[1.2] mb-[40px]"
               data-aos="fade-up" data-aos-duration="500" data-aos-delay="0"
             >
-              Start free. Upgrade when you're{' '}
-              <span className="relative inline-block pb-[15px]">
-                ready to improve.
-                <YellowUnderline className="absolute left-0 bottom-0 w-full h-[15px]" />
+              <span className="block lg:whitespace-nowrap">Know where you stand. Fix what</span>
+              <span className="block lg:whitespace-nowrap">
+                matters.{' '}
+                <span className="relative inline-block pb-[15px]">
+                  Pass the CSE.
+                  <YellowUnderline className="absolute left-0 bottom-0 w-full h-[15px]" />
+                </span>
               </span>
             </h1>
 
             <p
-              className="font-inter text-[#0F172A] text-[16px] sm:text-[18px] lg:text-[22px] leading-[1.7] max-w-[660px] mx-auto mb-[40px]"
+              className="font-inter text-[#0F172A] text-[16px] sm:text-[18px] lg:text-[20px] leading-[1.55] max-w-[760px] mx-auto mb-[40px]"
               data-aos="fade-up" data-aos-duration="500" data-aos-delay="100"
             >
-              Take the Readiness Check for free. Unlock sprint plans + topic-level breakdown when you want a clearer path to passing.
+              <span className="block">Take a free mock exam to see your score, breakdown, and weakest areas.</span>
+              <span className="block mt-2">Upgrade when you're ready to follow a structured path to passing.</span>
             </p>
 
             <div
@@ -129,7 +163,7 @@ const Pricing = () => {
                 href="#plans"
                 className="w-full sm:w-auto px-[20px] sm:px-[24px] py-[12px] sm:py-[14px] lg:h-[56px] lg:py-0 rounded-[8px] border border-[#0F172ACC] font-inter font-semibold text-[16px] sm:text-[18px] lg:text-[20px] text-[#0F172ACC] hover:bg-[#0F172ACC] hover:text-white transition-colors flex items-center justify-center whitespace-nowrap"
               >
-                See Premium Features
+                See How Premium Helps You Pass
               </a>
             </div>
 
@@ -137,7 +171,7 @@ const Pricing = () => {
               className="font-inter text-[#0F172A] text-[13px] sm:text-[14px] lg:text-[18px]"
               data-aos="fade-up" data-aos-duration="500" data-aos-delay="250"
             >
-              No credit card for free. Upgrade anytime.
+              Most users start free — then upgrade once they see what they need to fix.
             </p>
           </div>
         </section>
@@ -183,9 +217,9 @@ const Pricing = () => {
               <div className="w-[56px] h-[56px] bg-[#F6F4F9] rounded-[16px] flex items-center justify-center shadow-sm mb-4">
                 <FileChartIcon className="w-[22px] h-6" />
               </div>
-              <h3 className="text-[14px] font-bold text-[#45464E] mb-2">Decide if you want an improvement plan</h3>
+              <h3 className="text-[14px] font-bold text-[#45464E] mb-2">Decide if you want to improve</h3>
               <p className="text-[12px] font-normal text-center text-[#45464E] max-w-[242px]">
-                If you’re happy just checking readiness, stay on Free. No pressure.
+                If you're happy just checking readiness, stay on Free. No pressure.
               </p>
             </div>
 
@@ -203,9 +237,9 @@ const Pricing = () => {
               <div className="w-[56px] h-[56px] bg-[#F6F4F9] rounded-[16px] flex items-center justify-center shadow-sm mb-4">
                 <RocketIcon className="w-6 h-6" />
               </div>
-              <h3 className="text-[14px] font-bold text-[#45464E] mb-2">Upgrade to unlock Premium until the CSE</h3>
+              <h3 className="text-[14px] font-bold text-[#45464E] mb-2">Upgrade to Premium</h3>
               <p className="text-[12px] font-normal text-center text-[#45464E] max-w-[242px]">
-                Get topic-level breakdown, sprint plans, focused practice packs, and multiple mock forms.
+                Follow guided tasks and keep improving until the exam.
               </p>
             </div>
           </div>

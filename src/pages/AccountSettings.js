@@ -12,7 +12,9 @@ const AccountSettings = () => {
   const [marketingEmails, setMarketingEmails] = useState(user?.marketingEmails ?? true);
   const [examType, setExamType] = useState(user?.examType || null);
   const [examTypeSaving, setExamTypeSaving] = useState(false);
-  const [examTypeStatus, setExamTypeStatus] = useState('');
+  // The track the user clicked on but hasn't confirmed yet. While set, the
+  // confirmation modal is open. Null = no pending switch.
+  const [pendingExamType, setPendingExamType] = useState(null);
 
   useEffect(() => {
     AOS.refresh();
@@ -36,19 +38,31 @@ const AccountSettings = () => {
     }
   };
 
-  const handleSaveExamType = async (next) => {
+  // Click on a radio → open the confirmation modal. Switching tracks abandons
+  // the active sprint and the readiness score on the server, so we want the
+  // user to acknowledge that explicitly before we PUT the change.
+  const requestExamTypeSwitch = (next) => {
     if (!next || next === user?.examType || examTypeSaving) return;
+    setPendingExamType(next);
+  };
+
+  const cancelExamTypeSwitch = () => {
+    setPendingExamType(null);
+  };
+
+  const confirmExamTypeSwitch = async () => {
+    const next = pendingExamType;
+    if (!next || examTypeSaving) return;
     setExamTypeSaving(true);
-    setExamTypeStatus('');
     const previous = user?.examType || null;
     setExamType(next);
     try {
       await updateUser({ examType: next });
-      setExamTypeStatus('Saved');
+      setPendingExamType(null);
     } catch (err) {
       console.error('Failed to update exam type:', err);
       setExamType(previous);
-      setExamTypeStatus('Could not save. Please try again.');
+      setPendingExamType(null);
     } finally {
       setExamTypeSaving(false);
     }
@@ -125,82 +139,6 @@ const AccountSettings = () => {
           </section>
           <hr className="border-0 border-t border-[#E1E2E9] mx-6 sm:mx-8" />
 
-          {/* Exam Type */}
-          <section className="p-6 sm:p-8">
-            <div className="flex items-center justify-between gap-4 mb-1">
-              <h2 className="font-inter font-semibold text-[16px] text-[#45464E]">Exam Type</h2>
-              {examTypeStatus && (
-                <span className={`font-inter text-[12px] font-medium ${examTypeStatus === 'Saved' ? 'text-[#16A34A]' : 'text-[#DC2626]'}`}>
-                  {examTypeStatus}
-                </span>
-              )}
-            </div>
-            <p className="font-inter font-normal text-[13px] text-[#64748B] mb-5">
-              Choose the Civil Service Exam track you're preparing for. This drives your dashboard breakdown, mock exams, and sprint plan.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 max-w-[560px]">
-              {[
-                {
-                  key: 'professional',
-                  label: 'Professional',
-                  sub: 'Higher coverage & difficulty',
-                  badge: 'CS Prof',
-                },
-                {
-                  key: 'subprofessional',
-                  label: 'Sub-Professional',
-                  sub: 'Clerical & non-professional roles',
-                  badge: 'CS Sub-Prof',
-                },
-              ].map(({ key, label, sub, badge }) => {
-                const selected = examType === key;
-                return (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => handleSaveExamType(key)}
-                    disabled={examTypeSaving}
-                    aria-pressed={selected}
-                    className={`relative flex-1 text-left px-4 py-4 rounded-[12px] border-2 transition-all duration-200 disabled:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#6E43B9]/40 ${
-                      selected
-                        ? 'border-[#6E43B9] bg-[#F3EFFB]'
-                        : 'border-[#E1E2E9] bg-white hover:border-[#C4B5FD] hover:bg-[#FAF8FF]'
-                    }`}
-                  >
-                    {/* Checkmark */}
-                    <span
-                      className={`absolute top-3 right-3 w-5 h-5 rounded-full flex items-center justify-center transition-all duration-200 ${
-                        selected ? 'bg-[#6E43B9]' : 'border border-[#D1D5DB] bg-white'
-                      }`}
-                    >
-                      {selected && (
-                        <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-                          <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      )}
-                    </span>
-
-                    {/* Badge */}
-                    <span className={`inline-block font-inter font-semibold text-[10px] px-2 py-[2px] rounded-full mb-2 ${
-                      selected ? 'bg-[#6E43B9] text-white' : 'bg-[#F1F0F5] text-[#6E43B9]'
-                    }`}>
-                      {badge}
-                    </span>
-
-                    <p className={`font-inter font-bold text-[14px] ${selected ? 'text-[#421A83]' : 'text-[#45464E]'}`}>{label}</p>
-                    <p className="font-inter text-[12px] text-[#64748B] mt-0.5">{sub}</p>
-                  </button>
-                );
-              })}
-            </div>
-            {!examType && (
-              <p className="font-inter text-[12px] text-[#9CA3AF] mt-3">
-                You haven't picked a track yet — choose one to personalize your experience.
-              </p>
-            )}
-          </section>
-          <hr className="border-0 border-t border-[#E1E2E9] mx-6 sm:mx-8" />
-
           {/* Subscription */}
           <section className="p-6 sm:p-8">
             <h2 className="font-inter font-semibold text-[16px] text-[#45464E] mb-4">Subscription</h2>
@@ -260,6 +198,31 @@ const AccountSettings = () => {
           </section>
           <hr className="border-0 border-t border-[#E1E2E9] mx-6 sm:mx-8" />
 
+          {/* Exam Type */}
+          <section className="p-6 sm:p-8">
+            <h2 className="font-inter font-semibold text-[16px] text-[#45464E] mb-5">Exam Type</h2>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-8">
+              {[
+                { key: 'professional', label: 'Professional' },
+                { key: 'subprofessional', label: 'Sub-Professional' },
+              ].map(({ key, label }) => (
+                <label key={key} className="inline-flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="exam-type"
+                    value={key}
+                    checked={examType === key}
+                    onChange={() => requestExamTypeSwitch(key)}
+                    disabled={examTypeSaving}
+                    className="w-[18px] h-[18px] accent-[#6E43B9] border-[#A7A9B2]"
+                  />
+                  <span className="font-inter font-normal text-[14px] text-[#45464E] leading-none">{label}</span>
+                </label>
+              ))}
+            </div>
+          </section>
+          <hr className="border-0 border-t border-[#E1E2E9] mx-6 sm:mx-8" />
+
           {/* Notifications */}
           {/* <section className="p-6 sm:p-8">
             <h2 className="font-inter font-semibold text-[16px] text-[#45464E] mb-4">Notifications</h2>
@@ -301,6 +264,51 @@ const AccountSettings = () => {
           </section>
         </div>
       </main>
+
+      {/* Confirmation modal for exam-type switch */}
+      {pendingExamType && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center px-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="exam-type-switch-title"
+        >
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={examTypeSaving ? undefined : cancelExamTypeSwitch}
+          />
+          <div className="relative bg-white rounded-[12px] shadow-xl w-full max-w-[460px] p-6">
+            <h3
+              id="exam-type-switch-title"
+              className="font-inter font-semibold text-[18px] text-[#1A1A2E] mb-2"
+            >
+              Switch to {pendingExamType === 'professional' ? 'Professional' : 'Sub-Professional'}?
+            </h3>
+            <p className="font-inter text-[14px] text-[#45464E] leading-relaxed mb-5">
+              Switching exam types will abandon the previously generated sprint and readiness score,
+              and you'll be asked to take a new assessment for a fresh starting point.
+            </p>
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
+              <button
+                type="button"
+                onClick={cancelExamTypeSwitch}
+                disabled={examTypeSaving}
+                className="font-inter font-medium text-[14px] text-[#45464E] border border-[#D1D5DB] py-2.5 px-5 rounded-[8px] hover:bg-[#F5F4FF] disabled:opacity-60"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmExamTypeSwitch}
+                disabled={examTypeSaving}
+                className="font-inter font-semibold text-[14px] text-[#421A83] bg-[#FFC92A] hover:bg-[#FFD54F] py-2.5 px-5 rounded-[8px] disabled:opacity-60"
+              >
+                {examTypeSaving ? 'Switching…' : 'Yes, switch'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

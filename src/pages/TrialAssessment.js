@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, NavLink, useSearchParams } from 'react-router-dom';
 import logo from '../Assets/logo.png';
 import trailImg from '../Assets/trail.png';
@@ -78,24 +78,37 @@ const TrialAssessment = () => {
   // ?retake=1 is set by the Dashboard "Take Assessment" CTA so users who have
   // already completed/skipped the trial can take it again on demand.
   const isRetake = searchParams.get('retake') === '1';
-  const [step, setStep] = useState(1);
-  const [selectedType, setSelectedType] = useState(null);
+  // If the user already has an exam type (e.g. came from the Dashboard CTA
+  // after skipping during onboarding), skip step 1 and land on the exam cover.
+  const fromDashboard = useRef(!!user?.examType);
+  const [step, setStep] = useState(user?.examType ? 3 : 1);
+  const [selectedType, setSelectedType] = useState(user?.examType || null);
   const [reviewers, setReviewers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [starting, setStarting] = useState(false);
   const [startError, setStartError] = useState('');
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await trialAPI.getReviewers();
-        if (res.success) setReviewers(res.data);
-      } catch (err) {
-        console.error('Failed to fetch trial reviewers', err);
-      } finally {
-        setLoading(false);
+  const fetchReviewers = async () => {
+    setLoadError(false);
+    setLoading(true);
+    try {
+      const res = await trialAPI.getReviewers();
+      if (res.success && res.data?.length) {
+        setReviewers(res.data);
+      } else {
+        setLoadError(true);
       }
-    })();
+    } catch (err) {
+      console.error('Failed to fetch trial reviewers', err);
+      setLoadError(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchReviewers();
   }, []);
 
   useEffect(() => {
@@ -137,7 +150,29 @@ const TrialAssessment = () => {
   };
 
   const handleStartExam = async () => {
-    const reviewer = getReviewerByType(selectedType);
+    // If selectedType is missing (e.g. user arrived with no examType and
+    // something went wrong), send them back to step 1 to pick a track.
+    if (!selectedType) {
+      setStep(1);
+      return;
+    }
+
+    let reviewer = getReviewerByType(selectedType);
+
+    // If reviewers didn't load on mount (e.g. transient network error), retry
+    // the fetch once before giving up.
+    if (!reviewer) {
+      try {
+        const retry = await trialAPI.getReviewers();
+        if (retry.success && retry.data?.length) {
+          setReviewers(retry.data);
+          reviewer = (selectedType === 'professional')
+            ? retry.data.find((r) => r.slug === 'trial-professional')
+            : retry.data.find((r) => r.slug === 'trial-subprofessional');
+        }
+      } catch { /* fall through to error below */ }
+    }
+
     if (!reviewer) {
       setStartError('Could not load the assessment. Please refresh and try again.');
       return;
@@ -168,6 +203,27 @@ const TrialAssessment = () => {
         <TrialNav user={user} />
         <div className="flex-1 flex items-center justify-center">
           <div className="w-8 h-8 border-[3px] border-[#E5E7EB] border-t-[#6E43B9] rounded-full animate-spin" />
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-[#F5F3FF] flex flex-col">
+        <TrialNav user={user} />
+        <div className="flex-1 flex items-center justify-center px-6">
+          <div className="w-full max-w-[400px] bg-white rounded-[12px] p-8 shadow-sm text-center">
+            <p className="font-inter font-semibold text-[15px] text-[#1A1A2E] mb-2">Couldn't load the assessment</p>
+            <p className="font-inter text-[13px] text-[#6C737F] mb-6">Check your connection and try again.</p>
+            <button
+              type="button"
+              onClick={fetchReviewers}
+              className="font-inter font-semibold text-[14px] text-[#421A83] bg-[#FFC92A] hover:bg-[#FFD54F] px-6 py-2.5 rounded-[8px]"
+            >
+              Try Again
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -231,7 +287,7 @@ const TrialAssessment = () => {
               </button>
               <button
                 type="button"
-                onClick={() => setStep(2)}
+                onClick={() => fromDashboard.current ? navigate('/dashboard') : setStep(2)}
                 disabled={starting}
                 className="h-[48px] flex items-center justify-center font-inter font-regular text-[16px] text-[#737373] border border-[#737373] py-[14.5px] px-[32px] rounded-[4px] transition-colors"
               >

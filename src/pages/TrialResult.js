@@ -277,7 +277,7 @@ const TrialResult = () => {
       <main className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-20 pt-6 pb-16 space-y-[12px]">
 
         {/* ════ Score Overview Card ════ */}
-        <section className="bg-white rounded-[16px] px-[24px] pt-[24px] pb-[28px] sm:px-[32px] sm:pt-[28px] sm:pb-[32px]">
+        <section className="bg-white rounded-[16px] px-[24px] pt-[24px] pb-[28px] sm:px-[32px] sm:pt-[28px] sm:pb-[32px] max-w-[840px] mx-auto w-full">
 
           {/* Card header */}
           <div className="flex items-center justify-between gap-4 mb-[24px]">
@@ -328,7 +328,7 @@ const TrialResult = () => {
         </section>
 
         {/* ════ Detailed Exam Breakdown ════ */}
-        <section className="bg-white rounded-[16px] px-[24px] pt-[24px] pb-[28px] sm:px-[32px] sm:pt-[28px] sm:pb-[32px]">
+        <section className="bg-white rounded-[16px] px-[24px] pt-[24px] pb-[28px] sm:px-[32px] sm:pt-[28px] sm:pb-[32px] max-w-[840px] mx-auto w-full">
           <h3 className="font-inter font-semibold text-[17px] text-[#1A1A2E] mb-[4px]">
             Detailed Exam Breakdown
           </h3>
@@ -387,7 +387,7 @@ const TrialResult = () => {
             </button>
             <button
               type="button"
-              onClick={() => navigate(`/dashboard/review/${attemptId}`)}
+              onClick={() => navigate(`/dashboard/review/${attemptId}?from=trial`)}
               className="font-inter font-normal text-[14px] text-[#45464E] border border-[#D1D5DB] bg-white hover:bg-[#F9FAFB] transition-colors py-[10px] px-[22px] rounded-[8px]"
             >
               Review Answers
@@ -404,7 +404,7 @@ const TrialResult = () => {
 
         {/* ════ Weakest Area Card ════ */}
         {weakest && (
-          <section className="bg-white rounded-[16px] px-[24px] pt-[24px] pb-[28px] sm:px-[32px] sm:pt-[28px] sm:pb-[32px]">
+          <section className="bg-white rounded-[16px] px-[24px] pt-[24px] pb-[28px] sm:px-[32px] sm:pt-[28px] sm:pb-[32px] max-w-[840px] mx-auto w-full">
             <h3 className="font-inter font-semibold text-[17px] text-[#1A1A2E] mb-[4px]">
               Your weakest area right now
             </h3>

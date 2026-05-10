@@ -50,7 +50,9 @@ function ExamReview() {
   const { attemptId, taskId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const fromLibrary = new URLSearchParams(location.search).get('from') === 'library';
+  const fromParam = new URLSearchParams(location.search).get('from');
+  const fromLibrary = fromParam === 'library';
+  const fromTrial = fromParam === 'trial';
   const fromSprint = Boolean(taskId);
   const [reviewData, setReviewData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -76,7 +78,9 @@ function ExamReview() {
 
   const backLink = fromSprint
     ? '/dashboard'
-    : `/dashboard/results/${attemptId}${fromLibrary ? '?from=library' : ''}`;
+    : fromTrial
+      ? `/trial/results/${attemptId}`
+      : `/dashboard/results/${attemptId}${fromLibrary ? '?from=library' : ''}`;
   const backLabel = fromSprint ? 'Dashboard' : 'Results';
   const backButtonLabel = fromSprint ? 'Back to Dashboard' : 'Back to Results';
 
