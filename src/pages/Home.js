@@ -5,21 +5,17 @@ import Footer from '../components/Footer';
 import GoogleAuthButton from '../components/GoogleAuthButton';
 import FAQ from '../components/FAQ';
 import {
-  RulerIcon,
-  ChartPieIcon,
-  BookOpenIcon,
   TimerIcon,
   FileChartIcon,
   RocketIcon,
   YellowUnderline
 } from '../components/Icons';
-import heroImg from '../Assets/heroImg.png';
-import heroSprintCard from '../Assets/heroSprintCard.png';
+// import heroImg from '../Assets/heroImg.png';
+import heroImg2 from '../Assets/heroImg2.png';
 import featureReadiness from '../Assets/featureReadiness.png';
 import featureAnswerReview from '../Assets/featureAnswerReview.png';
 import featureDashboard from '../Assets/featureDashboard.png';
 import featureNextSteps from '../Assets/featureNextSteps.png';
-import heroReadinessCard from '../Assets/heroReadinessCard.png';
 import whyImg from '../Assets/whyImg.png';
 
 const Home = () => {
@@ -88,53 +84,53 @@ const Home = () => {
               </div>
 
               {/* Right: Circle + person image + floating card images + icon badges */}
-              <div className="relative hidden lg:flex items-center justify-center w-[520px] h-[520px] rounded-full" style={{ background: '#7064A4' }}>
-
+              <div className="relative hidden lg:flex items-center justify-center w-full max-w-[520px] mx-auto lg:mx-0 lg:w-[520px]">
+                <img src={heroImg2} alt="Hero illustration" className="w-full h-auto object-contain" />
                 {/* Person image */}
-                <img src={heroImg} alt="CSE Aspirant" className="relative z-10 h-[520px] w-auto object-contain bottom-[-23px]" />
+                {/* <img src={heroImg} alt="CSE Aspirant" className="relative z-10 h-[497px] w-auto object-contain bottom-[-23px]" /> */}
 
                 {/* 7-Day Sprint Progress card image */}
-                <img
+                {/* <img
                   src={heroSprintCard}
                   alt="7-Day Sprint Progress"
                   className="absolute top-[-12.41px] right-[5.7px] z-9 w-[257px] h-auto"
                   style={{ transform: 'rotate(1.68deg)', boxShadow: '0px 6px 8px 0px rgba(0, 0, 0, 0.15)' }}
                   data-aos="fade-left" data-aos-duration="500" data-aos-delay="200"
-                />
+                /> */}
 
                 {/* Readiness Checker card image */}
-                <img
+                {/* <img
                   src={heroReadinessCard}
                   alt="Readiness Checker"
                   className="absolute bottom-[185.3px] left-[-10px] z-20 w-[163px] h-auto"
                   data-aos="fade-right" data-aos-duration="500" data-aos-delay="200"
-                />
+                /> */}
 
                 {/* RulerIcon badge — left middle */}
-                <div
+                {/* <div
                   className="absolute left-[45px] bottom-[50.57px] z-20 bg-white rounded-[8px] w-[48px] h-[48px] flex items-center justify-center"
                   style={{ transform: 'rotate(-7.8deg)' }}
                   data-aos="fade-up" data-aos-duration="500" data-aos-delay="300"
                 >
                   <RulerIcon className="w-7 h-7" />
-                </div>
+                </div> */}
 
                 {/* ChartPieIcon badge — right upper */}
-                <div
+                {/* <div
                   className="absolute left-[65.15px] top-[67.03px] z-20 bg-white rounded-[8px] w-[48px] h-[48px] flex items-center justify-center"
                   data-aos="fade-down" data-aos-duration="500" data-aos-delay="300"
                 >
                   <ChartPieIcon className="w-6 h-6" />
-                </div>
+                </div> */}
 
                 {/* BookOpenIcon badge — right lower */}
-                <div
+                {/* <div
                   className="absolute right-[17.77px] bottom-[215.74px] z-20 bg-white rounded-[8px] w-[48px] h-[48px] flex items-center justify-center"
                   style={{ transform: 'rotate(5.3deg)' }}
                   data-aos="fade-down" data-aos-duration="500" data-aos-delay="300"
                 >
                   <BookOpenIcon className="w-7 h-7" />
-                </div>
+                </div> */}
 
               </div>
             </div>

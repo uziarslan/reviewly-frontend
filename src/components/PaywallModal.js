@@ -80,7 +80,7 @@ export default function PaywallModal({
 
   const handlePrimary = () => {
     if (onCtaClick) onCtaClick();
-    navigate('/pricing/upgrade');
+    navigate('/dashboard/settings/update-subscription');
   };
 
   return (
