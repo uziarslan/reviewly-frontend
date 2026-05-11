@@ -54,7 +54,7 @@ const Home = () => {
                 <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-[24px] mb-[40px]" data-aos="fade-up" data-aos-duration="600" data-aos-delay="150">
                   <GoogleAuthButton
                     label="Take a Free CSE Mock"
-                    redirectTo="/dashboard/all-reviewers"
+                    redirectTo="/dashboard"
                     className="inline-flex items-center justify-center bg-[#FFC92A] text-[#3B1A71] font-semibold text-[16px] sm:text-[18px] lg:text-[20px] rounded-[8px] py-[12px] sm:py-[14px] lg:h-[56px] lg:py-0 px-[20px] sm:px-[22px] lg:px-[24px] hover:opacity-90 transition-opacity whitespace-nowrap w-full sm:w-auto"
                   />
                   <button
@@ -232,7 +232,7 @@ const Home = () => {
               </p>
               <GoogleAuthButton
                 label="Take a Free CSE Mock"
-                redirectTo="/dashboard/all-reviewers"
+                redirectTo="/dashboard"
                 className="inline-flex items-center justify-center bg-[#FFC92A] text-[#3B1A71] font-semibold text-[14px] sm:text-[16px] lg:text-[20px] rounded-[8px] py-[13px] sm:py-[16px] lg:h-[56px] lg:py-0 px-[20px] sm:px-[24px] hover:opacity-90 transition-opacity whitespace-nowrap w-full sm:w-auto"
               />
             </div>

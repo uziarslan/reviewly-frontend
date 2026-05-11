@@ -25,7 +25,7 @@ const PLANS = [
     note: null,
     badge: null,
     buttonLabel: 'Start Free',
-    buttonUrl: '/dashboard/all-reviewers',
+    buttonUrl: '/dashboard',
     useGoogleAuth: true,
     delay: 0,
   },
