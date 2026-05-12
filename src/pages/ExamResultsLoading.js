@@ -18,6 +18,13 @@ import ExamResultsLoadingSkeleton from '../components/skeletons/ExamResultsLoadi
 import { SaveIcon, ComputeIcon, FindIcon, PrepareIcon } from '../components/LoadingStepIcons';
 import ShareModal from '../components/ShareModal';
 import MockScoreCard from '../components/MockScoreCard';
+import {
+  trackResultsViewed,
+  trackResultsShareClicked,
+  trackResultsRetakeClicked,
+  trackResultsReviewAnswersClicked,
+  trackResultsGoToDashboardClicked,
+} from '../services/analytics';
 
 const getRetakeLabel = (reviewer = {}) => {
   const title = String(reviewer.title || '');
@@ -175,12 +182,14 @@ const ExamResultsLoading = () => {
   const [shareUrl, setShareUrl] = useState('');
   const [shareLinkLoading, setShareLinkLoading] = useState(false);
   const cardRef = useRef(null);
+  const resultViewedTracked = useRef(false);
   const [shouldPlayLoadingFlow] = useState(() => location.state?.showLoadingFlow === true);
 
   const backUrl = fromLibrary ? '/dashboard/library' : '/dashboard/all-reviewers';
   const dashboardUrl = '/dashboard';
 
   const handleOpenShare = useCallback(async () => {
+    trackResultsShareClicked({ examName: attempt?.reviewer?.title });
     setShowShareModal(true);
     if (shareUrl) return; // already fetched
     setShareLinkLoading(true);
@@ -299,6 +308,17 @@ const ExamResultsLoading = () => {
     setStepIndex((prev) => Math.min(prev + 1, stepDurations.length));
     setStepTimerDone(false);
   }, [stepTimerDone, backendReady, stepIndex, stepDurations.length]);
+
+  useEffect(() => {
+    if (!attempt || !backendReady || resultViewedTracked.current) return;
+    resultViewedTracked.current = true;
+    trackResultsViewed({
+      examName: attempt.reviewer?.title,
+      score: parseFloat(attempt.result?.percentage || 0),
+      passed: attempt.result?.passed,
+      examType: attempt.reviewer?.type,
+    });
+  }, [attempt, backendReady]);
 
   if (loading) return <ExamResultsLoadingSkeleton />;
 
@@ -628,14 +648,14 @@ const ExamResultsLoading = () => {
           <div className="flex flex-wrap gap-[10px] mb-[14px]">
             <button
               type="button"
-              onClick={() => navigate(dashboardUrl)}
+              onClick={() => { trackResultsGoToDashboardClicked(); navigate(dashboardUrl); }}
               className="font-inter font-regular text-[14px] text-[#421A83] bg-[#FFC92A] hover:opacity-95 transition-opacity py-[11px] px-[20px] rounded-[8px] whitespace-nowrap text-center flex-[1_1_calc(50%-5px)] min-w-[170px] sm:flex-[0_1_auto] sm:w-auto"
             >
               Go to Dashboard
             </button>
             <button
               type="button"
-              onClick={() => navigate(`/dashboard/review/${attemptId}${fromLibrary ? '?from=library' : ''}`)}
+              onClick={() => { trackResultsReviewAnswersClicked(); navigate(`/dashboard/review/${attemptId}${fromLibrary ? '?from=library' : ''}`); }}
               className="font-inter font-normal text-[14px] text-[#45464E] border border-[#D1D5DB] bg-white hover:bg-gray-50 transition-colors py-[11px] px-[20px] rounded-[8px] whitespace-nowrap text-center flex-[1_1_calc(50%-5px)] min-w-[170px] sm:flex-[0_1_auto] sm:w-auto"
             >
               Review Answers
@@ -644,7 +664,10 @@ const ExamResultsLoading = () => {
               const reviewer = attempt.reviewer;
               const reviewerId = reviewer?._id;
               if (!reviewerId) return null;
-              const handleClick = () => navigate(`/dashboard/exam/${reviewerId}${fromLibrary ? '?from=library' : ''}`);
+              const handleClick = () => {
+                trackResultsRetakeClicked({ examName: reviewer?.title });
+                navigate(`/dashboard/exam/${reviewerId}${fromLibrary ? '?from=library' : ''}`);
+              };
               return (
                 <button
                   type="button"

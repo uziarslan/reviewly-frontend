@@ -4,6 +4,11 @@ import logo from '../Assets/logo.png';
 import trailImg from '../Assets/trail.png';
 import { useAuth } from '../context/AuthContext';
 import { trialAPI } from '../services/api';
+import {
+  trackTrialExamTypeSelected,
+  trackTrialExamStarted,
+  trackTrialExamSkipped,
+} from '../services/analytics';
 
 /* ── Icons ─────────────────────────────────────── */
 const ProfessionalIcon = () => (
@@ -127,14 +132,12 @@ const TrialAssessment = () => {
       : reviewers.find((r) => r.slug === 'trial-subprofessional');
 
   const handleSkip = async () => {
-    // Skip still records a choice — without examType the dashboard cannot
-    // render a coherent state. Step 2 is only reachable after Step 1 sets
-    // selectedType, but guard anyway in case of legacy / retake routing.
     const examType = selectedType || user?.examType || null;
     if (!examType) {
       setStep(1);
       return;
     }
+    trackTrialExamSkipped({ examType });
     try {
       await trialAPI.skip(examType);
       setUser({
@@ -185,6 +188,7 @@ const TrialAssessment = () => {
         if (selectedType) {
           setUser({ ...user, examType: selectedType });
         }
+        trackTrialExamStarted({ examType: selectedType });
         navigate(`/trial/exam/${reviewer._id}`, {
           state: { attempt: res.data, reviewerTitle: reviewer.title },
         });
@@ -335,7 +339,10 @@ const TrialAssessment = () => {
                     <button
                       key={key}
                       type="button"
-                      onClick={() => setSelectedType(key)}
+                      onClick={() => {
+                        setSelectedType(key);
+                        trackTrialExamTypeSelected({ examType: key });
+                      }}
                       className={`flex-1 flex flex-col items-start gap-3 p-5 rounded-[12px] border text-left transition-all duration-200 hover:border-2 hover:border-[#C4B5FD] ${selectedType === key
                         ? 'border-2 border-[#6E43B940] bg-[#6E43B91A]'
                         : 'bg-white'

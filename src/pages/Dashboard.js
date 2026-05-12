@@ -6,6 +6,12 @@ import PaywallModal from '../components/PaywallModal';
 import { useAuth } from '../context/AuthContext';
 import { dashboardAPI, reviewerAPI } from '../services/api';
 import { isPremiumActive } from '../utils/subscription';
+import {
+  trackDashboardGeneratePlanClicked,
+  trackDashboardStartTaskClicked,
+  trackDashboardTakeMockClicked,
+  trackDashboardTakeAssessmentClicked,
+} from '../services/analytics';
 
 const PAYWALL_DISMISSED_KEY = 'reviewly:paywall:after_plan_dismissed';
 
@@ -425,6 +431,10 @@ const Dashboard = () => {
   const handleGeneratePlan = async () => {
     if (planState !== 'idle') return;
     if (!hasData) return; // no exam taken yet — backend would reject anyway
+    trackDashboardGeneratePlanClicked({
+      isRegeneration: canRegenerateSprint,
+      planType: user?.subscription?.plan || 'free',
+    });
     setGenerateError(null);
     setPlanState('loading');
     setLoadingStep(0);
@@ -470,9 +480,23 @@ const Dashboard = () => {
     if (!task) return;
     // Trigger 2 — Start Task is the canonical paywall trigger.
     if (!isPremium) {
+      trackDashboardStartTaskClicked({
+        taskId: task.taskId,
+        taskType: task.type,
+        taskTitle: task.title,
+        triggeredPaywall: true,
+        planType: user?.subscription?.plan || 'free',
+      });
       setPaywallVariant('start_sprint_task');
       return;
     }
+    trackDashboardStartTaskClicked({
+      taskId: task.taskId,
+      taskType: task.type,
+      taskTitle: task.title,
+      triggeredPaywall: false,
+      planType: user?.subscription?.plan || 'free',
+    });
     // Premium users go to the task overview page; the actual
     // dashboardAPI.startTask call happens when they click "Start Task" there.
     setStartingTaskId(task.taskId);
@@ -515,8 +539,12 @@ const Dashboard = () => {
   // completed/skipped the trial back to the dashboard. The Dashboard's
   // assessment CTAs explicitly want to *retake* the trial, so we pass a flag
   // that tells /trial to skip that redirect.
-  const onTakeAssessment = () => navigate('/trial?retake=1');
+  const onTakeAssessment = () => {
+    trackDashboardTakeAssessmentClicked({ planType: user?.subscription?.plan || 'free' });
+    navigate('/trial?retake=1');
+  };
   const onTakeMock = () => {
+    trackDashboardTakeMockClicked({ planType: user?.subscription?.plan || 'free' });
     if (mockReviewerId) navigate(`/dashboard/exam/${mockReviewerId}`);
     else navigate('/dashboard/all-reviewers');
   };

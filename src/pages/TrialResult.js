@@ -1,9 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { NavLink } from 'react-router-dom';
 import logo from '../Assets/logo.png';
 import { useAuth } from '../context/AuthContext';
 import { trialAPI } from '../services/api';
+import {
+  trackTrialResultViewed,
+  trackTrialGoToDashboardClicked,
+  trackTrialReviewAnswersClicked,
+} from '../services/analytics';
 import {
   VerbalAbilityLogoIcon,
   AnalyticalAbilityLogoIcon,
@@ -137,6 +142,7 @@ const TrialResult = () => {
   const [attempt, setAttempt] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeStep, setActiveStep] = useState(0);
+  const resultViewedTracked = useRef(false);
   const shouldPlayLoadingFlow = location.state?.showLoadingFlow === true;
 
   useEffect(() => {
@@ -167,6 +173,25 @@ const TrialResult = () => {
       setUser({ ...user, trialAssessment: true });
     }
   }, [attempt, user, setUser]);
+
+  useEffect(() => {
+    if (!attempt || resultViewedTracked.current) return;
+    resultViewedTracked.current = true;
+    const pct = parseFloat((attempt.result?.percentage || 0).toFixed(2));
+    const readinessLabel =
+      pct >= 85 ? 'Exam Ready'
+      : pct >= 75 ? 'Almost Ready'
+      : pct >= 60 ? 'Needs Improvement'
+      : 'Early Stage';
+    const dSec = Number.isFinite(attempt.result?.duration)
+      ? Math.max(0, Math.round(attempt.result.duration))
+      : 0;
+    trackTrialResultViewed({
+      score: pct,
+      readinessLabel,
+      durationMin: Math.floor(dSec / 60),
+    });
+  }, [attempt]);
 
   /* ── Loading state ── */
   if (loading || (shouldPlayLoadingFlow && activeStep < 4)) {
@@ -380,14 +405,14 @@ const TrialResult = () => {
           <div className="flex flex-wrap gap-[10px] mb-[16px]">
             <button
               type="button"
-              onClick={() => navigate('/dashboard')}
+              onClick={() => { trackTrialGoToDashboardClicked(); navigate('/dashboard'); }}
               className="font-inter font-bold text-[14px] text-[#421A83] bg-[#FFC92A] hover:opacity-90 active:opacity-100 transition-opacity py-[10px] px-[22px] rounded-[8px]"
             >
               Go to Dashboard
             </button>
             <button
               type="button"
-              onClick={() => navigate(`/dashboard/review/${attemptId}?from=trial`)}
+              onClick={() => { trackTrialReviewAnswersClicked(); navigate(`/dashboard/review/${attemptId}?from=trial`); }}
               className="font-inter font-normal text-[14px] text-[#45464E] border border-[#D1D5DB] bg-white hover:bg-[#F9FAFB] transition-colors py-[10px] px-[22px] rounded-[8px]"
             >
               Review Answers

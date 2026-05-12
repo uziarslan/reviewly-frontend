@@ -85,3 +85,84 @@ export function trackPricingClick(location) {
   captureEvent("pricing_click", { location });
   gtagEvent("pricing_click", { location });
 }
+
+// ── Dashboard events ───────────────────────────
+
+export function trackDashboardGeneratePlanClicked({ isRegeneration = false, planType = "free" } = {}) {
+  captureEvent("dashboard_generate_plan_clicked", { is_regeneration: isRegeneration, plan_type: planType });
+}
+
+export function trackDashboardStartTaskClicked({ taskId, taskType, taskTitle, triggeredPaywall = false, planType = "free" } = {}) {
+  captureEvent("dashboard_start_task_clicked", {
+    task_id: taskId,
+    task_type: taskType,
+    task_title: taskTitle,
+    triggered_paywall: triggeredPaywall,
+    plan_type: planType,
+  });
+}
+
+export function trackDashboardTakeMockClicked({ planType = "free" } = {}) {
+  captureEvent("dashboard_take_mock_clicked", { plan_type: planType });
+}
+
+export function trackDashboardTakeAssessmentClicked({ planType = "free" } = {}) {
+  captureEvent("dashboard_take_assessment_clicked", { plan_type: planType });
+}
+
+// ── Trial assessment events ─────────────────────
+
+export function trackTrialExamTypeSelected({ examType } = {}) {
+  captureEvent("trial_exam_type_selected", { exam_type: examType });
+}
+
+export function trackTrialExamStarted({ examType } = {}) {
+  captureEvent("trial_exam_started", { exam_type: examType });
+}
+
+export function trackTrialExamSkipped({ examType } = {}) {
+  captureEvent("trial_exam_skipped", { exam_type: examType });
+}
+
+export function trackTrialResultViewed({ score, readinessLabel, durationMin } = {}) {
+  captureEvent("trial_result_viewed", {
+    score,
+    readiness_label: readinessLabel,
+    duration_min: durationMin,
+  });
+}
+
+export function trackTrialGoToDashboardClicked() {
+  captureEvent("trial_go_to_dashboard_clicked");
+}
+
+export function trackTrialReviewAnswersClicked() {
+  captureEvent("trial_review_answers_clicked");
+}
+
+// ── Exam results events ─────────────────────────
+
+export function trackResultsViewed({ examName, score, passed, examType } = {}) {
+  captureEvent("results_viewed", {
+    exam_name: examName,
+    score,
+    passed,
+    exam_type: examType,
+  });
+}
+
+export function trackResultsShareClicked({ examName } = {}) {
+  captureEvent("results_share_clicked", { exam_name: examName });
+}
+
+export function trackResultsRetakeClicked({ examName } = {}) {
+  captureEvent("results_retake_clicked", { exam_name: examName });
+}
+
+export function trackResultsReviewAnswersClicked() {
+  captureEvent("results_review_answers_clicked");
+}
+
+export function trackResultsGoToDashboardClicked() {
+  captureEvent("results_go_to_dashboard_clicked");
+}

@@ -3,6 +3,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import AOS from 'aos';
 import GoogleAuthButton from '../components/GoogleAuthButton';
+import { trackPricingClick } from '../services/analytics';
 import {
   TimerIcon,
   FileChartIcon,
@@ -154,13 +155,16 @@ const Pricing = () => {
               className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-[24px]"
               data-aos="fade-up" data-aos-duration="500" data-aos-delay="200"
             >
-              <GoogleAuthButton
-                label="Start Free Readiness Check"
-                redirectTo="/dashboard"
-                className="w-full sm:w-auto px-[20px] sm:px-[24px] py-[12px] sm:py-[14px] lg:h-[56px] lg:py-0 rounded-[8px] bg-[#FFC92A] hover:bg-[#f0bb1f] font-inter font-bold text-[16px] sm:text-[18px] lg:text-[20px] text-[#3B1A71] transition-colors flex items-center justify-center whitespace-nowrap"
-              />
+              <span onClick={() => trackPricingClick('hero_cta')} style={{ display: 'contents' }}>
+                <GoogleAuthButton
+                  label="Start Free Readiness Check"
+                  redirectTo="/dashboard"
+                  className="w-full sm:w-auto px-[20px] sm:px-[24px] py-[12px] sm:py-[14px] lg:h-[56px] lg:py-0 rounded-[8px] bg-[#FFC92A] hover:bg-[#f0bb1f] font-inter font-bold text-[16px] sm:text-[18px] lg:text-[20px] text-[#3B1A71] transition-colors flex items-center justify-center whitespace-nowrap"
+                />
+              </span>
               <a
                 href="#plans"
+                onClick={() => trackPricingClick('see_premium_anchor')}
                 className="w-full sm:w-auto px-[20px] sm:px-[24px] py-[12px] sm:py-[14px] lg:h-[56px] lg:py-0 rounded-[8px] border border-[#0F172ACC] font-inter font-semibold text-[16px] sm:text-[18px] lg:text-[20px] text-[#0F172ACC] hover:bg-[#0F172ACC] hover:text-white transition-colors flex items-center justify-center whitespace-nowrap"
               >
                 See How Premium Helps You Pass
