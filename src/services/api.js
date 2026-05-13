@@ -153,6 +153,8 @@ export const supportAPI = {
     apiFetch("/support/contact", { method: "POST", body: data }),
   submitHelp: (data) =>
     apiFetch("/support/help", { method: "POST", body: data }),
+  submitReport: (data) =>
+    apiFetch("/support/report", { method: "POST", body: data }),
 };
 
 // ── Payments (manual GCash upgrade flow) ──

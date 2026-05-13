@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useLocation, useNavigate } from 'react-router-dom';
 import DashNav from '../components/DashNav';
+import ReportModal from '../components/ReportModal';
 import { examAPI, dashboardAPI } from '../services/api';
 import ExamReviewSkeleton from '../components/skeletons/ExamReviewSkeleton';
 
@@ -57,6 +58,7 @@ function ExamReview() {
   const [reviewData, setReviewData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [showReportModal, setShowReportModal] = useState(false);
 
   useEffect(() => {
     if (!attemptId && !taskId) { setLoading(false); return; }
@@ -162,6 +164,21 @@ function ExamReview() {
 
   return (
     <div className="min-h-screen bg-[#F5F4FF]">
+      <ReportModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        source="review"
+        context={{
+          reviewerId: reviewer?._id,
+          reviewerTitle: reviewer?.title,
+          attemptId: attemptId || taskId,
+          questionIndex: currentIndex,
+          questionId: currentQ?._id || currentQ?.id,
+          questionText: currentQ?.questionText,
+          selectedAnswer: selectedLetter,
+          correctAnswer: correctLetter,
+        }}
+      />
       <DashNav />
       <main className="max-w-[1440px] mx-auto px-6 sm:px-8 lg:px-20 pt-[24px] pb-[40px]">
         {/* Breadcrumbs */}
@@ -220,6 +237,17 @@ function ExamReview() {
                       {topicTag}
                     </span>
                   )}
+                  <button
+                    type="button"
+                    onClick={() => setShowReportModal(true)}
+                    className="inline-flex items-center gap-1 font-inter text-[12px] text-[#F0142F] bg-white border border-[#F0142F33] rounded-full px-3 py-1 hover:bg-[#FEF2F3] transition-colors"
+                    aria-label="Report an issue with this question"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                      <path d="M4 22V4M4 4H17L15 8L17 12H4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    Report
+                  </button>
                 </div>
               </div>
 

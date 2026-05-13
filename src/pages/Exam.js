@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import DashNav from '../components/DashNav';
 import ExamSkeleton from '../components/skeletons/ExamSkeleton';
 import Modal from '../components/Modal';
+import ReportModal from '../components/ReportModal';
 import { examAPI, reviewerAPI, trialAPI, dashboardAPI } from '../services/api';
 
 import { trackExamStarted, trackExamCompleted } from '../services/analytics';
@@ -107,6 +108,7 @@ function Exam({ isTrial = false }) {
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [timeUp, setTimeUp] = useState(false);
   const [showReloadWarningModal, setShowReloadWarningModal] = useState(!fromSprint);
+  const [showReportModal, setShowReportModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [saveStatus, setSaveStatus] = useState(null); // null | 'saving' | 'saved'
 
@@ -682,6 +684,21 @@ function Exam({ isTrial = false }) {
         </p>
       </Modal>
 
+      <ReportModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        source="exam"
+        context={{
+          reviewerId: reviewer?._id || routeId,
+          reviewerTitle: reviewer?.title,
+          attemptId,
+          questionIndex: currentIndex,
+          questionId: currentQuestion?._id || currentQuestion?.id,
+          questionText: currentQuestion?.questionText,
+          selectedAnswer: selectedOption != null ? OPTION_LABELS[selectedOption] : '',
+        }}
+      />
+
       <DashNav />
       {/* When exam is frozen (time's up or reload modal open), block all interaction with exam content */}
       {examFrozen && (
@@ -752,6 +769,18 @@ function Exam({ isTrial = false }) {
                       </span>
                     );
                   })()}
+                  <button
+                    type="button"
+                    onClick={() => setShowReportModal(true)}
+                    disabled={examFrozen}
+                    className="inline-flex items-center gap-1 font-inter text-[13px] text-[#F0142F] bg-white border border-[#F0142F33] rounded-[8px] px-3 py-[4px] hover:bg-[#FEF2F3] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    aria-label="Report an issue with this question"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                      <path d="M4 22V4M4 4H17L15 8L17 12H4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    Report
+                  </button>
                 </div>
               </div>
 
