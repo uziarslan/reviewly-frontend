@@ -188,8 +188,10 @@ const ExamResultsLoading = () => {
   const backUrl = fromLibrary ? '/dashboard/library' : '/dashboard/all-reviewers';
   const dashboardUrl = '/dashboard';
 
+  const examName = attempt?.reviewer?.title;
+
   const handleOpenShare = useCallback(async () => {
-    trackResultsShareClicked({ examName: attempt?.reviewer?.title });
+    trackResultsShareClicked({ examName });
     setShowShareModal(true);
     if (shareUrl) return; // already fetched
     setShareLinkLoading(true);
@@ -228,7 +230,7 @@ const ExamResultsLoading = () => {
     } finally {
       setShareLinkLoading(false);
     }
-  }, [attemptId, shareUrl, cardRef]);
+  }, [attemptId, examName, shareUrl, cardRef]);
 
   const result = attempt?.result || {};
   const retakeLabel = getRetakeLabel(attempt?.reviewer);
