@@ -113,6 +113,7 @@ function ExamReview() {
   const optionLabels = ['A', 'B', 'C', 'D'];
   const correctLetter = (currentQ.correctAnswer || '').toString().toUpperCase().trim();
   const selectedLetter = (currentQ.selectedAnswer || '').toString().toUpperCase().trim();
+  const isUnanswered = !selectedLetter;
   const isCorrectAnswer = currentQ.isCorrect;
 
   const explanationCorrect = currentQ.explanationCorrect || '';
@@ -160,6 +161,14 @@ function ExamReview() {
 
   const correctSet = new Set(
     questions.map((q, i) => (q.isCorrect ? i + 1 : null)).filter(Boolean)
+  );
+  const unansweredSet = new Set(
+    questions
+      .map((q, i) => {
+        const sel = (q.selectedAnswer || '').toString().trim();
+        return sel ? null : i + 1;
+      })
+      .filter(Boolean)
   );
 
   return (
@@ -252,30 +261,43 @@ function ExamReview() {
               </div>
 
               {/* Question text */}
-              <p className="font-inter font-medium text-[#0F172A] text-[16px] leading-relaxed mb-6">
+              <p className="font-inter font-medium text-[#0F172A] text-[16px] leading-relaxed mb-2">
                 {currentQ.questionText}
               </p>
 
+              {/* Unanswered notice */}
+              {isUnanswered && (
+                <p className="font-inter italic text-[14px] text-[#F0142F] mb-4">
+                  You have not selected an answer for this item.
+                </p>
+              )}
+
               {/* Options */}
-              <div className="space-y-3 mb-6">
+              <div className={`space-y-3 mb-6 ${isUnanswered ? '' : 'mt-6'}`}>
                 {[currentQ.choiceA, currentQ.choiceB, currentQ.choiceC, currentQ.choiceD].map((option, idx) => {
                   const letter = optionLabels[idx];
                   const isCorrectOption = letter === correctLetter;
                   const isUserChoice = letter === selectedLetter;
+                  // When unanswered, keep all rows neutral and only show a green check
+                  // next to the correct answer — don't tint the row as if the user picked it.
                   const showCheck = isCorrectOption;
-                  const showX = !isCorrectAnswer && isUserChoice && !isCorrectOption;
+                  const showX = !isUnanswered && !isCorrectAnswer && isUserChoice && !isCorrectOption;
 
-                  const rowClass = isCorrectOption
-                    ? 'bg-[#F0FBF6] border border-[#06A56126]'
-                    : showX
-                      ? 'bg-[#FEF2F3] border border-[#F0142F26]'
-                      : 'bg-white border border-[#E5E7EB]';
+                  const rowClass = isUnanswered
+                    ? 'bg-white border border-[#E5E7EB]'
+                    : isCorrectOption
+                      ? 'bg-[#F0FBF6] border border-[#06A56126]'
+                      : showX
+                        ? 'bg-[#FEF2F3] border border-[#F0142F26]'
+                        : 'bg-white border border-[#E5E7EB]';
 
-                  const badgeClass = isCorrectOption
-                    ? 'bg-[#06A561] text-white'
-                    : showX
-                      ? 'bg-[#F0142F] text-white'
-                      : 'bg-white text-[#9CA3AF] border border-[#D1D5DB]';
+                  const badgeClass = isUnanswered
+                    ? 'bg-white text-[#9CA3AF] border border-[#D1D5DB]'
+                    : isCorrectOption
+                      ? 'bg-[#06A561] text-white'
+                      : showX
+                        ? 'bg-[#F0142F] text-white'
+                        : 'bg-white text-[#9CA3AF] border border-[#D1D5DB]';
 
                   return (
                     <div key={idx} className={`flex items-center gap-3 px-4 py-3 rounded-[10px] ${rowClass}`}>
@@ -427,7 +449,7 @@ function ExamReview() {
               )}
 
               {/* Legend */}
-              <div className="flex items-center gap-4 mb-4">
+              <div className="flex items-center gap-4 mb-4 flex-wrap">
                 <div className="flex items-center gap-2">
                   <span className="w-7 h-7 rounded-[4px] bg-[#DAF9EC]" aria-hidden />
                   <span className="font-inter text-[13px] text-[#53545C]">Correct Answer</span>
@@ -436,20 +458,30 @@ function ExamReview() {
                   <span className="w-7 h-7 rounded-[4px] bg-[#FDE7EA]" aria-hidden />
                   <span className="font-inter text-[13px] text-[#53545C]">Incorrect Answer</span>
                 </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-7 h-7 rounded-[4px] bg-[#E5E7EB]" aria-hidden />
+                  <span className="font-inter text-[13px] text-[#53545C]">No Answer</span>
+                </div>
               </div>
 
               {/* Question number grid */}
               <div className="grid grid-cols-10 gap-[4px]">
                 {Array.from({ length: totalQuestions }, (_, i) => i + 1).map((num) => {
+                  const isUnansweredQ = unansweredSet.has(num);
                   const isCorrect = correctSet.has(num);
                   const isCurrent = num === questionNumber;
+                  const cellClass = isUnansweredQ
+                    ? 'bg-[#E5E7EB] text-[#53545C]'
+                    : isCorrect
+                      ? 'bg-[#DAF9EC] text-[#53545C]'
+                      : 'bg-[#FDE7EA] text-[#53545C]';
                   return (
                     <button
                       key={num}
                       type="button"
                       onClick={() => goToQuestion(num)}
                       className={`w-full aspect-square font-inter text-[12px] font-medium rounded-[4px] transition-colors flex items-center justify-center
-                        ${isCorrect ? 'bg-[#DAF9EC] text-[#53545C]' : 'bg-[#FDE7EA] text-[#53545C]'}
+                        ${cellClass}
                         ${isCurrent ? 'ring-2 ring-[#6E43B9] ring-offset-1' : ''}`}
                     >
                       {num}
